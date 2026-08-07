@@ -1,0 +1,24 @@
+# Release signing config template.
+#
+# Copy this file to `android/key.properties` and fill in your real values, then
+# keep that copy PRIVATE — it is git-ignored and must never be committed.
+#
+#   cp android/key.properties.example android/key.properties
+#
+# When key.properties is present, the release build is signed with the keystore
+# below (see android/app/build.gradle.kts). When it is absent, the release build
+# falls back to the shared debug key so `flutter run --release` still works.
+
+# Password for the keystore file.
+storePassword=
+
+# Password for the key inside the keystore (often the same as storePassword).
+keyPassword=
+
+# Alias of the key inside the keystore.
+keyAlias=
+
+# Path to the keystore file, RELATIVE TO android/app (so `../../` is the repo
+# root, where keystore.jks currently lives). An absolute path also works and is
+# a good option if you keep the keystore outside the repository.
+storeFile=../../keystore.jks

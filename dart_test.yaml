@@ -1,0 +1,5 @@
+# The DB-backed repository tests share a single on-disk sqflite database
+# (DatabaseHelper is a singleton over a fixed path). Running test files in
+# parallel isolates makes them race on that file ("database is locked"), so we
+# pin test concurrency to 1.
+concurrency: 1

@@ -1,0 +1,80 @@
+# pubspec.yaml
+name: smart_contacts_dialer
+description: Advanced contacts and dialer app with SQLite
+
+# Drives flutter.versionName/versionCode (android/app/build.gradle.kts) and
+# PackageInfo.fromPlatform(). Keep in sync with assets/config/app_config.json
+# (version/build); ConfigService.loadAndVerify() logs a debug drift note if they differ.
+version: 15.15.48+72
+
+environment:
+  sdk: '^3.12.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter  # GlobalMaterial/Widgets/Cupertino localization delegates (standard §8.1)
+  sqflite: ^2.4.2  # types (Database, ConflictAlgorithm) shared across repos + ffi tests
+  sqflite_sqlcipher: ^3.1.0  # SQLCipher-backed openDatabase; DB is encrypted at rest
+  flutter_secure_storage: ^10.3.1  # stores the DB key in the Android Keystore
+  path: ^1.8.3
+  path_provider: ^2.1.1
+  characters: ^1.3.0  # grapheme-aware first letter for avatars/section headers (Malayalam-safe)
+  permission_handler: ^12.0.1
+  flutter_phone_direct_caller: ^2.1.1
+  image_picker: ^1.0.4
+  share_plus: ^13.1.0
+  csv: ^8.0.0
+  intl: ^0.20.2
+  timezone: ^0.11.0
+  speech_to_text: ^7.2.0
+  flutter_contacts: ^2.1.0
+  call_log: ^6.0.0
+  flutter_blue_plus: ^2.3.9
+  local_auth: ^3.0.1
+  shared_preferences: ^2.2.2
+  provider: ^6.1.1
+  file_selector: ^1.1.0
+  phone_numbers_parser: ^9.0.24
+  qr_flutter: ^4.1.0
+  mobile_scanner: ^7.0.1
+  url_launcher: ^6.3.0
+  flutter_slidable: ^4.0.3
+  cryptography: ^2.9.0
+  logger: ^2.4.0  # AppLogger backend (lib/core/logging/app_logger.dart) — see standard §14
+  package_info_plus: ^10.2.0  # About screen: verify app_config.json version/build vs the build
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  sqflite_common_ffi: ^2.3.6  # host-side sqflite for unit tests (flutter test)
+
+flutter:
+  uses-material-design: true
+
+  # Runtime config. `assets/config/app_config.json` is the source of truth for
+  # the About screen (loaded via lib/core/config/config_service.dart).
+  assets:
+    - assets/config/
+
+  # Bundled fonts for the Appearance → Font picker. All three cover Latin +
+  # Malayalam. The `family:` names must match the strings passed to
+  # ThemeData(fontFamily: ...) in lib/theme/app_theme.dart. Static Regular/Bold
+  # instances (open-license, SIL OFL — see assets/fonts/OFL-*.txt).
+  fonts:
+    - family: Manjari
+      fonts:
+        - asset: assets/fonts/Manjari-Regular.ttf
+        - asset: assets/fonts/Manjari-Bold.ttf
+          weight: 700
+    - family: Anek Malayalam
+      fonts:
+        - asset: assets/fonts/AnekMalayalam-Regular.ttf
+        - asset: assets/fonts/AnekMalayalam-Bold.ttf
+          weight: 700
+    - family: Noto Sans Malayalam
+      fonts:
+        - asset: assets/fonts/NotoSansMalayalam-Regular.ttf
+        - asset: assets/fonts/NotoSansMalayalam-Bold.ttf
+          weight: 700

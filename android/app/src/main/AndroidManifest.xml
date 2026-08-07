@@ -1,0 +1,329 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Dialer -->
+    <uses-permission android:name="android.permission.CALL_PHONE"/>
+    <uses-permission android:name="android.permission.READ_CALL_LOG"/>
+
+    <!-- Default phone app / Telecom in-call UI. READ_PHONE_STATE tracks call
+         state; ANSWER_PHONE_CALLS (API 26+) lets our in-call UI answer calls. -->
+    <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+    <uses-permission android:name="android.permission.ANSWER_PHONE_CALLS"/>
+    <!-- The in-call service runs as a phoneCall foreground service (API 34+). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL"/>
+    <!-- We own the ringing UI (IN_CALL_SERVICE_RINGING), so we ring + vibrate
+         ourselves and post a full-screen incoming-call notification. -->
+    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT"/>
+    <!-- Proximity screen-off wake lock: blanks the screen (and touch) while the
+         phone is held to the ear during a call, like the stock in-call UI. -->
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+
+    <!-- Device contacts sync (flutter_contacts) -->
+    <uses-permission android:name="android.permission.READ_CONTACTS"/>
+    <uses-permission android:name="android.permission.WRITE_CONTACTS"/>
+
+    <!-- Location (geolocator / BLE scan on older Android) -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+
+    <!-- Speech to text -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+
+    <!-- QR contact scanning (mobile_scanner). The plugin's manifest also
+         declares this; listed here so the app's permissions stay auditable in
+         one place. -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+
+    <!-- Biometrics (local_auth) -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"/>
+
+    <!-- P2P LAN sync (device-to-device clone over Wi-Fi). Plain TCP socket on
+         the local network; no internet server is contacted. The payload is
+         AES-GCM sealed with a per-session pairing code (see P2PSyncService). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
+
+    <!-- Notifications (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+    <!-- Smart Redial's auto-call-back alarm (SmartRedialManager uses
+         AlarmManager.setAlarmClock, which requires this even though it's not
+         a plain setExact call). A special, user-togglable permission on
+         Android 13+ (Settings > Apps > ContactSphere > "Alarms & reminders")
+         — declaring it here does not grant it; SmartRedialManager checks
+         canScheduleExactAlarms() and the Smart Redial sheet prompts the user
+         to the settings screen if it's off. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
+
+    <!-- Re-posts the lock-screen "Emergency info" shortcut after a reboot
+         (notifications don't survive one). See EmergencyBootReceiver. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+
+    <!-- Photo picking: scoped media on Android 13+, legacy storage below it -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"/>
+
+    <!-- Bluetooth LE (flutter_blue_plus). Android 12+ split permissions; legacy
+         entries for older devices. neverForLocation since we don't derive
+         physical location from BLE scans. -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
+    <!-- Sender side of "Share via Bluetooth": advertising the contact so a
+         nearby ContactSphere can find it (Android 12+). -->
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE"/>
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30"/>
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30"/>
+
+    <application
+        android:label="@string/app_name"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        tools:replace="android:allowBackup"><!-- The contact DB holds "secret" contacts;
+             never let adb backup / cloud auto-backup sweep it off-device.
+             tools:replace makes our "false" win the manifest merge unconditionally,
+             so no dependency manifest can flip allowBackup back to true. -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <!-- Specifies an Android theme to apply to this Activity as soon as
+                 the Android process has started. This theme is visible to the user
+                 while the Flutter UI initializes. After that, this theme continues
+                 to determine the Window background behind the Flutter UI. -->
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme"
+              />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+
+            <!-- Dialer role: an app that fills ROLE_DIALER must handle ACTION_DIAL
+                 both with and without data, plus VIEW/CALL_BUTTON on tel: URIs. -->
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL"/>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="tel"/>
+            </intent-filter>
+            <!-- ACTION_CALL on a tel: URI (a "place this call now" caller, e.g. the
+                 system's own missed-call "Call back"). Kept WITHOUT category.BROWSABLE
+                 so a web page can't reach it. NOTE: because this activity is exported,
+                 any app can send ACTION_CALL, so we treat every external ACTION_CALL as
+                 "open the dialer pre-filled" (never a silent call) — see
+                 MainActivity.handleDialIntent. Our own missed-call notification's Call
+                 back auto-dials by launching this activity with ACTION_TRUSTED_CALL_BACK
+                 (a getActivity PendingIntent, so the app reliably foregrounds), guarded by
+                 a one-shot token in PendingCallback so a crafted external intent can't
+                 forge an auto-dial — see MainActivity.handleTrustedCallbackIntent. -->
+            <intent-filter>
+                <action android:name="android.intent.action.CALL"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:scheme="tel"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.CALL_BUTTON"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+
+            <!-- Contacts: no formal "default contacts app" role exists, so we
+                 register the standard contact VIEW/EDIT/INSERT/PICK intents to appear
+                 in the "Open with" chooser for contacts. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <action android:name="android.intent.action.EDIT"/>
+                <action android:name="android.intent.action.INSERT_OR_EDIT"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="vnd.android.cursor.item/contact"/>
+                <data android:mimeType="vnd.android.cursor.item/person"/>
+                <data android:mimeType="vnd.android.cursor.item/raw_contact"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.INSERT"/>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="vnd.android.cursor.dir/contact"/>
+                <data android:mimeType="vnd.android.cursor.dir/person"/>
+            </intent-filter>
+            <!-- Contacts Picking: allow other apps to pick a contact from us -->
+            <intent-filter>
+                <action android:name="android.intent.action.PICK"/>
+                <action android:name="android.intent.action.GET_CONTENT"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <!-- MIME types for contact list, phone directory, email directory -->
+                <data android:mimeType="vnd.android.cursor.dir/contact"/>
+                <data android:mimeType="vnd.android.cursor.dir/person"/>
+                <data android:mimeType="vnd.android.cursor.dir/phone_v2"/>
+                <data android:mimeType="vnd.android.cursor.dir/email_v2"/>
+                <!-- MIME types for individual contact items -->
+                <data android:mimeType="vnd.android.cursor.item/contact"/>
+                <data android:mimeType="vnd.android.cursor.item/person"/>
+                <data android:mimeType="vnd.android.cursor.item/phone_v2"/>
+                <data android:mimeType="vnd.android.cursor.item/email_v2"/>
+            </intent-filter>
+
+            <!-- vCard files: opening a .vcf (file manager, mail, messaging apps
+                 use VIEW; share sheets use SEND) offers ContactSphere, which
+                 imports the contact(s) into the app and the device book.
+                 MainActivity reads the stream and hands the text to Flutter. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="text/x-vcard"/>
+                <data android:mimeType="text/vcard"/>
+                <data android:mimeType="text/directory"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="text/x-vcard"/>
+                <data android:mimeType="text/vcard"/>
+            </intent-filter>
+        </activity>
+
+        <!-- The emergency info card, opened from its lock-screen notification.
+             showWhenLocked draws it over the keyguard so a first responder can
+             read it without the PIN — that is the whole point of the feature.
+             It renders only the fields the user chose to publish, from our own
+             SharedPreferences, and never touches the encrypted DB.
+             Not exported: only our own PendingIntent can start it. Own task with
+             an empty taskAffinity + excludeFromRecents so it can never surface
+             the real app's task (or its contents) from the lock screen, and
+             noHistory so it is gone as soon as the user leaves it. -->
+        <activity
+            android:name=".EmergencyInfoActivity"
+            android:exported="false"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:launchMode="singleTask"
+            android:taskAffinity=".EmergencyInfoActivity"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:label="Emergency info"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar"/>
+
+        <!-- Re-posts the emergency notification after a reboot. -->
+        <receiver
+            android:name=".EmergencyBootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
+
+        <!-- In-call UI service. The system binds this (guarded by
+             BIND_INCALL_SERVICE) once ContactSphere is the default phone app and
+             routes every call through it. IN_CALL_SERVICE_UI = we own the in-call
+             screen; IN_CALL_SERVICE_RINGING = we also own the incoming-call UI. -->
+        <service
+            android:name=".ContactSphereInCallService"
+            android:exported="true"
+            android:permission="android.permission.BIND_INCALL_SERVICE"
+            android:foregroundServiceType="phoneCall">
+            <meta-data
+                android:name="android.telecom.IN_CALL_SERVICE_UI"
+                android:value="true"/>
+            <meta-data
+                android:name="android.telecom.IN_CALL_SERVICE_RINGING"
+                android:value="true"/>
+            <intent-filter>
+                <action android:name="android.telecom.InCallService"/>
+            </intent-filter>
+        </service>
+
+        <!-- Screens incoming calls before they ring (blocked numbers, unknown-
+             caller blocking, spam silencing). Bound automatically by the system
+             while ContactSphere is the default phone app; decisions come from
+             the screening mirror in native SharedPreferences, so it works even
+             before the Flutter engine starts. -->
+        <service
+            android:name=".ContactSphereCallScreeningService"
+            android:exported="true"
+            android:permission="android.permission.BIND_SCREENING_SERVICE">
+            <intent-filter>
+                <action android:name="android.telecom.CallScreeningService"/>
+            </intent-filter>
+        </service>
+
+        <!-- Handles the call notification's action buttons (hang up / answer / decline /
+             mute / speaker) and the missed-call notification's cancel-only "Dismiss",
+             routing them back into CallRegistry / NotificationManager. Not exported: only
+             our own PendingIntents trigger it. (The missed-call "Call back" does NOT go
+             through here — it launches MainActivity directly; see the CALL intent-filter.) -->
+        <receiver
+            android:name=".CallActionReceiver"
+            android:exported="false"/>
+
+        <!-- Fires a scheduled Smart Redial (auto-retry) when its alarm is due and
+             places the call natively, so it works with the app fully closed. Not
+             exported: only SmartRedialManager's own alarm PendingIntent triggers
+             it, and it still checks the task's one-shot token before dialing. -->
+        <receiver
+            android:name=".SmartRedialReceiver"
+            android:exported="false"/>
+        <!-- Don't delete the meta-data below.
+             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+    </application>
+    <!-- Required to query activities that can process text, see:
+         https://developer.android.com/training/package-visibility and
+         https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
+
+         In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- Lets us resolve/label the current default dialer when offering to
+             hand the role back. -->
+        <intent>
+            <action android:name="android.intent.action.DIAL"/>
+        </intent>
+        <!-- Lets the Email quick-action resolve/launch the default mail app via
+             a mailto: intent (package visibility on Android 11+). -->
+        <intent>
+            <action android:name="android.intent.action.SENDTO"/>
+            <data android:scheme="mailto"/>
+        </intent>
+        <!-- Lets speech_to_text find the device speech recognizer (package
+             visibility on Android 11+); without it voice search/dialing report
+             "unavailable". -->
+        <intent>
+            <action android:name="android.speech.RecognitionService"/>
+        </intent>
+        <!-- Lets the contact detail "Connected apps" section resolve which app
+             (WhatsApp, Telegram, …) handles each custom contacts-provider row
+             (package visibility on Android 11+). -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:mimeType="vnd.android.cursor.item/*"/>
+        </intent>
+    </queries>
+</manifest>

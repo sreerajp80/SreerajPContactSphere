@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box}
+  .dlsc::-webkit-scrollbar{width:0;height:0}
+</style>
+</helmet>
+
+<div style="--bg:{{ vBg }}; --card:{{ vCard }}; --field:{{ vField }}; --fieldBorder:{{ vFieldBorder }}; --text:{{ vText }}; --sub:{{ vSub }}; --caption:{{ vCaption }}; --accent:{{ vAccent }}; --accentSoft:{{ vAccentSoft }}; --accentText:{{ vAccentText }}; --avatar:{{ vAvatar }}; --keyBg:{{ vKeyBg }}; --shadow:{{ vShadow }}; --callShadow:{{ vCallShadow }}; width:380px; height:806px; border-radius:34px; overflow:hidden; background:var(--bg); display:flex; flex-direction:column; font-family:'Plus Jakarta Sans',system-ui; position:relative">
+
+  <!-- status bar -->
+  <div style="height:38px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;font:700 13px 'Plus Jakarta Sans',system-ui;color:var(--text);flex:none">
+    <span>9:41</span>
+    <div style="display:flex;align-items:center;gap:7px;color:var(--text)">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="5" y="4" width="3" height="7" rx="1"/><rect x="10" y="2" width="3" height="9" rx="1"/><rect x="14" y="0" width="3" height="11" rx="1" opacity=".35"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="currentColor"><path d="M7.5 11l2.4-3a3.8 3.8 0 00-4.8 0z"/><path d="M2.6 5.6a7.6 7.6 0 019.8 0l-1.5 1.7a5.3 5.3 0 00-6.8 0z" opacity=".55"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x="1" y="1" width="20" height="10" rx="3" stroke="currentColor" stroke-width="1.2"/><rect x="3" y="3" width="14" height="6" rx="1.5" fill="currentColor"/><rect x="22.5" y="4" width="2" height="4" rx="1" fill="currentColor"/></svg>
+    </div>
+  </div>
+
+  <!-- app bar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 16px 6px;flex:none">
+    <span style="font:800 22px 'Plus Jakarta Sans',system-ui;color:var(--text);letter-spacing:-.4px">Dialer</span>
+    <button title="More" style="border:none;background:var(--field);width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--sub);cursor:pointer" style-active="transform:scale(.92)"><svg width="19" height="19" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg></button>
+  </div>
+
+  <!-- number display -->
+  <div style="flex:none;padding:6px 20px 2px;min-height:64px;display:flex;align-items:center;gap:12px">
+    <div style="flex:1;min-width:0;text-align:center">
+      <sc-if value="{{ hasNumber }}" hint-placeholder-val="{{ false }}">
+        <div style="font:700 34px 'Plus Jakarta Sans',system-ui;color:var(--text);letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:rtl">{{ displayNumber }}</div>
+      </sc-if>
+      <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ true }}">
+        <div style="font:600 15px 'Plus Jakarta Sans',system-ui;color:var(--caption)">Start typing to find a contact</div>
+      </sc-if>
+    </div>
+    <sc-if value="{{ hasNumber }}" hint-placeholder-val="{{ false }}">
+      <button onClick="{{ onBackspace }}" title="Delete" style="border:none;background:transparent;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;color:var(--sub);cursor:pointer;flex:none" style-active="background:var(--field)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5H8.5a2 2 0 0 0-1.5.7L2 12l5 6.3a2 2 0 0 0 1.5.7H21a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z"/><line x1="17" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="17" y2="15"/></svg></button>
+    </sc-if>
+  </div>
+
+  <!-- match / suggestion strip -->
+  <div class="dlsc" style="flex:1;overflow:auto;padding:6px 16px 4px;display:flex;flex-direction:column;gap:9px;min-height:0">
+    <sc-if value="{{ showAdd }}" hint-placeholder-val="{{ false }}">
+      <button style="display:flex;align-items:center;gap:12px;background:var(--field);border:1px solid var(--fieldBorder);border-radius:16px;padding:12px 14px;cursor:pointer;width:100%;text-align:left" style-active="transform:scale(.99)">
+        <span style="width:42px;height:42px;border-radius:13px;background:var(--accentSoft);color:var(--accent);display:grid;place-items:center;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="8" r="3.4"/><path d="M5.5 20a6.5 6.5 0 0 1 11 0"/><line x1="19" y1="6" x2="19" y2="12"/><line x1="16" y1="9" x2="22" y2="9"/></svg></span>
+        <span style="flex:1;min-width:0"><span style="display:block;font:800 14.5px 'Plus Jakarta Sans',system-ui;color:var(--text)">Add to contacts</span><span style="display:block;font:600 12.5px 'Plus Jakarta Sans',system-ui;color:var(--caption);margin-top:1px">{{ displayNumber }}</span></span>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--sub)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
+      </button>
+    </sc-if>
+
+    <sc-if value="{{ hasHeader }}" hint-placeholder-val="{{ true }}">
+      <div style="font:800 11px 'Plus Jakarta Sans',system-ui;color:var(--caption);letter-spacing:.6px;text-transform:uppercase;padding:2px 4px 0">{{ listHeader }}</div>
+    </sc-if>
+
+    <sc-for list="{{ results }}" as="c" hint-placeholder-count="3">
+      <div style="display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--fieldBorder);border-radius:16px;padding:10px 12px;box-shadow:var(--shadow)">
+        <sc-if value="{{ c.isFav }}" hint-placeholder-val="{{ false }}">
+          <div style="width:42px;height:42px;border-radius:50%;background:var(--avatar);color:#fff;display:grid;place-items:center;font:800 16px 'Plus Jakarta Sans',system-ui;flex:none">{{ c.initial }}</div>
+        </sc-if>
+        <sc-if value="{{ c.isMatch }}" hint-placeholder-val="{{ true }}">
+          <div style="width:42px;height:42px;border-radius:13px;background:var(--avatar);color:#fff;display:grid;place-items:center;font:800 16px 'Plus Jakarta Sans',system-ui;flex:none">{{ c.initial }}</div>
+        </sc-if>
+        <div style="flex:1;min-width:0">
+          <div style="font:700 14.5px 'Plus Jakarta Sans',system-ui;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.nameEl }}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:2px;font:600 12px 'Plus Jakarta Sans',system-ui;color:var(--caption)"><span>{{ c.label }}</span><span style="opacity:.5">·</span><span>{{ c.phoneEl }}</span></div>
+        </div>
+        <button title="Call" style="border:none;background:var(--accentSoft);width:38px;height:38px;border-radius:50%;display:grid;place-items:center;color:var(--accent);cursor:pointer;flex:none" style-active="transform:scale(.9)"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3.5h3.2l1.4 3.7-2 1.3a11 11 0 0 0 4.9 4.9l1.3-2 3.7 1.4V19a1.9 1.9 0 0 1-2 1.9A15.5 15.5 0 0 1 3.1 5.5a1.9 1.9 0 0 1 1.9-2z"/></svg></button>
+      </div>
+    </sc-for>
+
+    <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;padding:22px 20px;font:600 13.5px 'Plus Jakarta Sans',system-ui;color:var(--caption)">No saved contact for this number yet.</div>
+    </sc-if>
+  </div>
+
+  <!-- keypad -->
+  <div style="flex:none;padding:2px 30px 6px">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px 12px">
+      <sc-for list="{{ keys }}" as="k" hint-placeholder-count="12">
+        <button onClick="{{ k.onPress }}" style="border:none;background:transparent;border-radius:22px;height:60px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;color:var(--text)" style-active="background:var(--keyBg)">
+          <span style="font:600 28px 'Plus Jakarta Sans',system-ui;line-height:1">{{ k.digit }}</span>
+          <span style="font:700 8.5px 'Plus Jakarta Sans',system-ui;letter-spacing:1.4px;color:var(--caption);min-height:9px">{{ k.letters }}</span>
+        </button>
+      </sc-for>
+    </div>
+    <!-- call row -->
+    <div style="display:grid;grid-template-columns:1fr 60px 1fr;align-items:center;padding:4px 0 2px">
+      <span></span>
+      <button onClick="{{ onCall }}" title="Call" style="width:60px;height:60px;border-radius:50%;border:none;background:var(--accent);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:var(--callShadow);justify-self:center" style-active="transform:scale(.9)"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3.5h3.2l1.4 3.7-2 1.3a11 11 0 0 0 4.9 4.9l1.3-2 3.7 1.4V19a1.9 1.9 0 0 1-2 1.9A15.5 15.5 0 0 1 3.1 5.5a1.9 1.9 0 0 1 1.9-2z"/></svg></button>
+      <sc-if value="{{ hasNumber }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ onBackspace }}" title="Delete" style="border:none;background:transparent;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--sub);cursor:pointer;justify-self:start;margin-left:6px" style-active="background:var(--field)"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5H8.5a2 2 0 0 0-1.5.7L2 12l5 6.3a2 2 0 0 0 1.5.7H21a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z"/><line x1="17" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="17" y2="15"/></svg></button>
+      </sc-if>
+    </div>
+  </div>
+
+  <!-- bottom nav -->
+  <div style="flex:none;display:flex;align-items:center;justify-content:space-around;padding:8px 14px 14px;border-top:1px solid var(--fieldBorder);background:var(--card)">
+    <button style="border:none;background:transparent;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:var(--sub);padding:2px 14px" style-active="opacity:.6">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6"/><path d="M21 20a5.2 5.2 0 0 0-4-5"/></svg>
+      <span style="font:700 11px 'Plus Jakarta Sans',system-ui">Contacts</span>
+    </button>
+    <button style="border:none;background:transparent;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:var(--accent);padding:2px 14px">
+      <span style="width:52px;height:30px;border-radius:16px;background:var(--accentSoft);display:grid;place-items:center;color:var(--accent)"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="6" r="1.7"/><circle cx="12" cy="6" r="1.7"/><circle cx="19" cy="6" r="1.7"/><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/><circle cx="5" cy="18" r="1.7"/><circle cx="12" cy="18" r="1.7"/><circle cx="19" cy="18" r="1.7"/></svg></span>
+      <span style="font:800 11px 'Plus Jakarta Sans',system-ui">Dialer</span>
+    </button>
+    <button style="border:none;background:transparent;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:var(--sub);padding:2px 14px" style-active="opacity:.6">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v6h6"/><path d="M3.5 9a9 9 0 1 0 2.2-3.4L3 9"/><path d="M12 8v4l3 2"/></svg>
+      <span style="font:700 11px 'Plus Jakarta Sans',system-ui">Recents</span>
+    </button>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:380,&quot;height&quot;:806},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;}}">
+class Component extends DCLogic {
+  state = { number: '' };
+
+  keypad = [
+    { d: '1', l: '' }, { d: '2', l: 'ABC' }, { d: '3', l: 'DEF' },
+    { d: '4', l: 'GHI' }, { d: '5', l: 'JKL' }, { d: '6', l: 'MNO' },
+    { d: '7', l: 'PQRS' }, { d: '8', l: 'TUV' }, { d: '9', l: 'WXYZ' },
+    { d: '*', l: '' }, { d: '0', l: '+' }, { d: '#', l: '' },
+  ];
+
+  contacts = [
+    { initial: 'A', name: 'Amara Okafor', label: 'Mobile', phone: '+1 555 0142', fav: true },
+    { initial: 'S', name: 'Sofia Romano', label: 'Family', phone: '+1 555 0199', fav: true },
+    { initial: 'P', name: 'Priya Nair', label: 'Mobile', phone: '+1 555 0123', fav: true },
+    { initial: 'D', name: 'Daniel Reyes', label: 'Work', phone: '+1 555 0188', fav: false },
+    { initial: 'M', name: 'Marcus Lee', label: 'Work', phone: '+1 555 0177', fav: false },
+    { initial: 'J', name: 'Jordan Blake', label: 'Mobile', phone: '+1 555 0165', fav: false },
+  ];
+
+  press(d) { this.setState(s => ({ number: (s.number + d).slice(0, 18) })); }
+  backspace() { this.setState(s => ({ number: s.number.slice(0, -1) })); }
+
+  // format like +1 555 0142 as user types digits
+  format(raw) {
+    const plus = raw.startsWith('+');
+    const digits = raw.replace(/[^0-9]/g, '');
+    if (!digits) return raw;
+    let out = '';
+    if (digits.length <= 3) out = digits;
+    else if (digits.length <= 6) out = digits.slice(0, 3) + ' ' + digits.slice(3);
+    else if (digits.length <= 10) out = digits.slice(0, 3) + ' ' + digits.slice(3, 6) + ' ' + digits.slice(6);
+    else out = digits.slice(0, 3) + ' ' + digits.slice(3, 6) + ' ' + digits.slice(6, 10) + ' ' + digits.slice(10);
+    return (plus ? '+' : '') + out;
+  }
+
+  // highlight matched substring in name/phone
+  highlight(text, q) {
+    if (!q) return text;
+    const i = text.toLowerCase().indexOf(q.toLowerCase());
+    if (i < 0) return text;
+    const h = React.createElement;
+    return h('span', null,
+      text.slice(0, i),
+      h('span', { style: { color: 'var(--accent)' } }, text.slice(i, i + q.length)),
+      text.slice(i + q.length)
+    );
+  }
+
+  renderVals() {
+    const light = this.props.theme === 'light';
+    const T = light ? {
+      vBg: '#eef4f3', vCard: '#ffffff', vField: 'rgba(15,42,40,.05)', vFieldBorder: 'rgba(15,42,40,.12)',
+      vText: '#0f2e2b', vSub: '#5a7572', vCaption: '#6b8784',
+      vAccent: '#0d9488', vAccentSoft: 'rgba(13,148,136,.12)', vAccentText: '#0c8276',
+      vAvatar: 'linear-gradient(135deg,#34d3b6,#0fb5a8)',
+      vKeyBg: 'rgba(13,148,136,.1)',
+      vShadow: '0 8px 20px -16px rgba(15,42,40,.5)',
+      vCallShadow: '0 14px 26px -10px rgba(13,148,136,.7)',
+    } : {
+      vBg: '#0a0c16', vCard: 'rgba(255,255,255,.045)', vField: 'rgba(255,255,255,.05)', vFieldBorder: 'rgba(255,255,255,.08)',
+      vText: '#f4f5ff', vSub: '#9ba0c9', vCaption: '#7c829e',
+      vAccent: '#7c8aff', vAccentSoft: 'rgba(124,138,255,.15)', vAccentText: '#a8b1ff',
+      vAvatar: 'linear-gradient(135deg,#6366f1,#a855f7)',
+      vKeyBg: 'rgba(124,138,255,.14)',
+      vShadow: '0 8px 22px -18px rgba(0,0,0,.8)',
+      vCallShadow: '0 0 26px -2px rgba(124,138,255,.85)',
+    };
+
+    const raw = this.state.number;
+    const hasNumber = raw.length > 0;
+    const q = raw.replace(/[^0-9]/g, '');
+
+    let results = [];
+    let listHeader = '';
+    let showAdd = false;
+    let noResults = false;
+
+    if (!hasNumber) {
+      listHeader = 'Favorites';
+      results = this.contacts.filter(c => c.fav).map(c => ({
+        initial: c.initial, label: c.label,
+        nameEl: c.name, phoneEl: c.phone,
+        isFav: true, isMatch: false,
+      }));
+    } else {
+      const matched = this.contacts.filter(c => c.phone.replace(/[^0-9]/g, '').includes(q) && q.length > 0);
+      if (matched.length) {
+        listHeader = matched.length + (matched.length === 1 ? ' match' : ' matches');
+        results = matched.map(c => ({
+          initial: c.initial, label: c.label,
+          nameEl: c.name,
+          phoneEl: this.highlight(c.phone, this.format(raw)),
+          isFav: false, isMatch: true,
+        }));
+      } else {
+        noResults = true;
+        showAdd = true;
+      }
+    }
+
+    return {
+      ...T,
+      hasNumber,
+      isEmpty: !hasNumber,
+      displayNumber: this.format(raw),
+      onBackspace: () => this.backspace(),
+      onCall: () => {},
+      keys: this.keypad.map(k => ({
+        digit: k.d, letters: k.l, onPress: () => this.press(k.d),
+      })),
+      results,
+      listHeader,
+      hasHeader: !!listHeader,
+      showAdd,
+      noResults,
+    };
+  }
+}
+</script>
+</body>
+</html>

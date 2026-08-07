@@ -1,0 +1,13 @@
+{
+  "appName": "ContactSphere",
+  "description": "Advanced contacts and dialer app with SQLite.",
+  "version": "15.15.48",
+  "build": "72",
+  "details": {
+    "Author": "Sreeraj P",
+    "Email": "sreerajp@zohomail.in",
+    "License": "All libraries used are open source.",
+    "AI used": "Anthropic Claude, Gemini 3.6 Flash",
+    "IDE used": "Visual Studio Code, Antigravity"
+  }
+}
