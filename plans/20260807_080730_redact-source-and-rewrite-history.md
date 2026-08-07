@@ -1,6 +1,6 @@
 # Redact PII from source and tests, then replace the GitHub history
 
-**Status:** in_progress
+**Status:** completed
 
 ## The issue
 
