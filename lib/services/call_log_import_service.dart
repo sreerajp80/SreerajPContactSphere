@@ -182,7 +182,10 @@ class CallLogImportService {
       final callOutcome = mapDeviceCallOutcome(e.callType, e.duration);
       final key = CallLogRepository.matchKey(number);
 
-      final match = CallLogRepository.findMatch(existing, key, millis);
+      final match = CallLogRepository.findMatch(
+        existing, key, millis,
+        isOutgoing: CallLogRepository.isOutgoingType(callType),
+      );
       if (match != null) {
         // Already in Recents. Fill in what the device knows and the app may not
         // (a provisional row has no duration yet, and its direction is a guess).

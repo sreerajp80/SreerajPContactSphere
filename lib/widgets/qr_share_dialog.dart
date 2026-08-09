@@ -13,6 +13,8 @@ import 'package:smart_contacts_dialer/models/contact.dart';
 import 'package:smart_contacts_dialer/services/qr_share_service.dart';
 import 'package:smart_contacts_dialer/services/vcard_service.dart';
 
+import 'package:smart_contacts_dialer/widgets/air_qr_share_dialog.dart';
+
 /// Shows [contact]'s QR code with a share action.
 Future<void> showQrShareDialog(BuildContext context, Contact contact) {
   return showDialog<void>(
@@ -94,6 +96,14 @@ class _QrShareDialogState extends State<QrShareDialog> {
         ],
       ),
       actions: [
+        IconButton(
+          tooltip: 'Air-Gap Stream (Full Contact)',
+          icon: const Icon(Icons.sensors, color: Colors.blue),
+          onPressed: () {
+            Navigator.of(context).pop();
+            showAirQrShareDialog(context, contact: widget.contact);
+          },
+        ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Close'),

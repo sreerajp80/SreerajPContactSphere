@@ -14,8 +14,11 @@ import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.speech.tts.TextToSpeech
 import org.json.JSONObject
 import java.io.File
+import java.util.Calendar
+import java.util.Locale
 
 /**
  * Plays the incoming-call ringtone and drives vibration while ContactSphere owns
@@ -42,6 +45,7 @@ class IncomingCallRinger(private val context: Context) {
     private var player: MediaPlayer? = null
     private var focusRequest: AudioFocusRequest? = null
     private var vibrating = false
+    private var announcer: CallerAnnouncer? = null
 
     /** Set while a call-waiting beep is running (a second call arriving while
      *  another call is already active). Instead of the loud ringtone we play the
@@ -104,6 +108,7 @@ class IncomingCallRinger(private val context: Context) {
             else -> {
                 startVibration()
                 requestFocus()
+                startAnnouncement(number)
                 // A mirrored tone can be stale (backing file deleted/moved); fall
                 // through to the next tier so the call still rings audibly.
                 val contactUri = contactTonePath(number)?.let { safeUri(it) }
@@ -179,8 +184,25 @@ class IncomingCallRinger(private val context: Context) {
         playingUri = null
         playingTier = TIER_DEFAULT
         stopCallWaiting()
+        stopAnnouncement()
         abandonFocus()
         stopVibration()
+    }
+
+    private fun startAnnouncement(number: String?) {
+        try {
+            announcer?.stop()
+            val a = CallerAnnouncer(context)
+            announcer = a
+            a.announceIfEligible(number, ringerPrefs)
+        } catch (e: Exception) {
+            /* Best-effort */
+        }
+    }
+
+    private fun stopAnnouncement() {
+        try { announcer?.stop() } catch (e: Exception) { /* ignore */ }
+        announcer = null
     }
 
     /** Stop and release the call-waiting beep (if any). */
@@ -340,6 +362,11 @@ class IncomingCallRinger(private val context: Context) {
         const val KEY_VOLUME_PERCENT = "ringtone_volume_percent"
         const val KEY_VIBRATE = "vibrate_on_incoming_call"
 
+        const val KEY_SPOKEN_ANNOUNCEMENT_ENABLED = "spoken_caller_announcement_enabled"
+        const val KEY_QUIET_HOURS_ENABLED = "spoken_caller_quiet_hours_enabled"
+        const val KEY_QUIET_HOURS_START = "spoken_caller_quiet_hours_start"
+        const val KEY_QUIET_HOURS_END = "spoken_caller_quiet_hours_end"
+
         /** JSON map: trailing-digit number key → contact ringtone path/URI. */
         const val KEY_CONTACT_TONES = "contact_ringtones"
 
@@ -380,6 +407,15 @@ class IncomingCallRinger(private val context: Context) {
             return if (digits.length > MATCH_DIGITS) digits.takeLast(MATCH_DIGITS) else digits
         }
 
+        fun previewAnnouncement(context: Context, name: String) {
+            try {
+                val announcer = CallerAnnouncer(context)
+                announcer.speak(name)
+            } catch (e: Exception) {
+                /* Best-effort */
+            }
+        }
+
         /** How often the call-waiting supervisory tone repeats while a second
          *  call keeps ringing (the tone itself is a short pattern). */
         private const val CALL_WAITING_REPEAT_MS = 4000L
@@ -395,5 +431,145 @@ class IncomingCallRinger(private val context: Context) {
 
         /** [setCustomTone] source value marking a contact-specific tone push. */
         const val SOURCE_CONTACT = "contact"
+    }
+}
+
+/**
+ * Drives Text-To-Speech for spoken caller announcements ("Amma calling" or "അമ്മ വിളിക്കുന്നു").
+ */
+class CallerAnnouncer(private val context: Context) : TextToSpeech.OnInitListener {
+    private var tts: TextToSpeech? = null
+    private var pendingText: String? = null
+    private var pendingLocale: Locale? = null
+    private var isInitialized = false
+
+    fun announceIfEligible(number: String?, ringerPrefs: android.content.SharedPreferences) {
+        val enabled = ringerPrefs.getBoolean(IncomingCallRinger.KEY_SPOKEN_ANNOUNCEMENT_ENABLED, false)
+        if (!enabled) return
+
+        val quietHoursEnabled = ringerPrefs.getBoolean(IncomingCallRinger.KEY_QUIET_HOURS_ENABLED, true)
+        if (quietHoursEnabled) {
+            val startStr = ringerPrefs.getString(IncomingCallRinger.KEY_QUIET_HOURS_START, "22:00") ?: "22:00"
+            val endStr = ringerPrefs.getString(IncomingCallRinger.KEY_QUIET_HOURS_END, "07:00") ?: "07:00"
+            if (isInQuietHours(startStr, endStr)) return
+        }
+
+        val nameMapRaw = ringerPrefs.getString(IncomingCallRinger.KEY_CONTACT_NAMES, null)
+        var callerName: String? = null
+        if (!nameMapRaw.isNullOrBlank() && !number.isNullOrBlank()) {
+            val key = IncomingCallRinger.matchKey(number)
+            if (key != null) {
+                try {
+                    callerName = org.json.JSONObject(nameMapRaw).optString(key).takeIf { it.isNotBlank() }
+                } catch (e: Exception) {
+                    callerName = null
+                }
+            }
+        }
+
+        val textToSpeak: String
+        val locale: Locale
+        if (!callerName.isNullOrBlank()) {
+            if (isMalayalamScript(callerName)) {
+                textToSpeak = "$callerName വിളിക്കുന്നു"
+                locale = Locale("ml", "IN")
+            } else {
+                textToSpeak = "$callerName calling"
+                locale = Locale.ENGLISH
+            }
+        } else {
+            textToSpeak = "Incoming call"
+            locale = Locale.ENGLISH
+        }
+
+        speakText(textToSpeak, locale)
+    }
+
+    fun speak(name: String) {
+        val textToSpeak: String
+        val locale: Locale
+        if (isMalayalamScript(name)) {
+            textToSpeak = "$name വിളിക്കുന്നു"
+            locale = Locale("ml", "IN")
+        } else {
+            textToSpeak = "$name calling"
+            locale = Locale.ENGLISH
+        }
+        speakText(textToSpeak, locale)
+    }
+
+    private fun speakText(text: String, locale: Locale) {
+        pendingText = text
+        pendingLocale = locale
+        if (tts == null) {
+            tts = TextToSpeech(context.applicationContext, this)
+        } else if (isInitialized) {
+            doSpeak()
+        }
+    }
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            isInitialized = true
+            doSpeak()
+        }
+    }
+
+    private fun doSpeak() {
+        val engine = tts ?: return
+        val text = pendingText ?: return
+        val targetLocale = pendingLocale ?: Locale.ENGLISH
+        try {
+            val result = engine.setLanguage(targetLocale)
+            if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                engine.setLanguage(Locale.ENGLISH)
+            }
+            val params = android.os.Bundle()
+            params.putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, 1.0f)
+            engine.speak(text, TextToSpeech.QUEUE_FLUSH, params, "caller_announcement")
+        } catch (e: Exception) {
+            // Best effort
+        }
+    }
+
+    fun stop() {
+        try {
+            tts?.stop()
+            tts?.shutdown()
+        } catch (e: Exception) {
+            // ignore
+        }
+        tts = null
+        isInitialized = false
+    }
+
+    companion object {
+        fun isMalayalamScript(text: String): Boolean {
+            for (ch in text) {
+                if (ch.code in 0x0D00..0x0D7F) return true
+            }
+            return false
+        }
+
+        fun isInQuietHours(startStr: String, endStr: String): Boolean {
+            try {
+                val startParts = startStr.split(":").map { it.toInt() }
+                val endParts = endStr.split(":").map { it.toInt() }
+                if (startParts.size < 2 || endParts.size < 2) return false
+
+                val now = Calendar.getInstance()
+                val currentMinutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
+                val startMinutes = startParts[0] * 60 + startParts[1]
+                val endMinutes = endParts[0] * 60 + endParts[1]
+
+                return if (startMinutes < endMinutes) {
+                    currentMinutes in startMinutes until endMinutes
+                } else {
+                    currentMinutes >= startMinutes || currentMinutes < endMinutes
+                }
+            } catch (e: Exception) {
+                return false
+            }
+        }
     }
 }

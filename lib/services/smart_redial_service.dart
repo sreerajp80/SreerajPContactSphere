@@ -195,6 +195,9 @@ class SmartRedialService extends ChangeNotifier {
   }) async {
     await init();
 
+    // Cancel any existing active scheduled redial for this phone number before arming a new one.
+    await cancelTasksForNumber(phoneNumber);
+
     final now = DateTime.now();
     final fireAt = now.add(Duration(minutes: delayMinutes));
     final id = 'redial_${now.millisecondsSinceEpoch}_${phoneNumber.replaceAll(RegExp(r'\D'), '')}';
@@ -244,6 +247,26 @@ class SmartRedialService extends ChangeNotifier {
       return await SimService().defaultSim(await AppSettings.readDefaultSimId());
     } catch (_) {
       return null;
+    }
+  }
+
+  /// Cancels any active auto-redial tasks for [phoneNumber].
+  Future<void> cancelTasksForNumber(String phoneNumber) async {
+    await init();
+    final targetDigits = phoneNumber.replaceAll(RegExp(r'\D'), '');
+    final toCancel = _tasks.where((t) {
+      if (t.isCompleted || t.isCancelled) return false;
+      final taskDigits = t.phoneNumber.replaceAll(RegExp(r'\D'), '');
+      return taskDigits == targetDigits || t.phoneNumber == phoneNumber;
+    }).toList();
+
+    for (final task in toCancel) {
+      task.isCancelled = true;
+      await TelecomService().cancelSmartRedial(task.id);
+    }
+    if (toCancel.isNotEmpty) {
+      await _persistTasks();
+      notifyListeners();
     }
   }
 

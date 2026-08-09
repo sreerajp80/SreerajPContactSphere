@@ -25,5 +25,6 @@ class EmergencyBootReceiver : BroadcastReceiver() {
         }
         EmergencyCardNotifier.refresh(context)
         SmartRedialManager.rescheduleAfterBoot(context)
+        NotificationSchedulerManager.rescheduleAfterBoot(context)
     }
 }

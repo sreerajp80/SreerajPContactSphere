@@ -2,16 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:smart_contacts_dialer/services/app_pin_service.dart';
 import 'package:smart_contacts_dialer/services/auth_service.dart';
-import 'package:smart_contacts_dialer/services/telecom_service.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 import 'package:smart_contacts_dialer/utils/phone_normalizer.dart';
 import 'package:smart_contacts_dialer/screens/about_screen.dart';
-import 'package:smart_contacts_dialer/screens/app_pin_setup_screen.dart';
 import 'package:smart_contacts_dialer/screens/appearance_screen.dart';
-import 'package:smart_contacts_dialer/screens/audit_log_screen.dart';
 import 'package:smart_contacts_dialer/screens/backup/backup_restore_screen.dart';
 import 'package:smart_contacts_dialer/screens/contacts_settings_screen.dart';
 import 'package:smart_contacts_dialer/screens/default_country_screen.dart';
@@ -20,11 +16,11 @@ import 'package:smart_contacts_dialer/screens/features_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/help_home_screen.dart';
 import 'package:smart_contacts_dialer/screens/permissions_screen.dart';
 import 'package:smart_contacts_dialer/screens/ringtone_settings_screen.dart';
+import 'package:smart_contacts_dialer/screens/security_screen.dart';
 import 'package:smart_contacts_dialer/screens/sim_settings_screen.dart';
 import 'package:smart_contacts_dialer/screens/sync/sync_home_screen.dart';
 
-/// Settings hub reached from the contacts ⋮ menu. Three cards route to the
-/// Appearance, Permissions and About screens.
+/// Settings hub reached from the contacts ⋮ menu.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
@@ -35,22 +31,16 @@ class SettingsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
-          const _DefaultDialerCard(),
-          const SizedBox(height: 12),
-          const _AppLockCard(),
+          _SettingsCard(
+            icon: Icons.security_outlined,
+            title: 'Security',
+            subtitle: 'App lock, block screenshots and audit log',
+            onTap: () => _push(context, const SecurityScreen()),
+          ),
           const SizedBox(height: 12),
           const _DialerTopContactsCard(),
           const SizedBox(height: 12),
           const _DialpadScriptCard(),
-          const SizedBox(height: 12),
-          const _ScreenshotGuardCard(),
-          const SizedBox(height: 12),
-          _SettingsCard(
-            icon: Icons.history,
-            title: 'Audit Log',
-            subtitle: 'What changed on your contacts, and how to undo it',
-            onTap: () => _push(context, const AuditLogScreen()),
-          ),
           const SizedBox(height: 12),
           _SettingsCard(
             icon: Icons.contacts_outlined,
@@ -268,350 +258,6 @@ class SettingsScreen extends StatelessWidget {
         ? iso
         : '${PhoneNormalizer.nameFor(code)} (+${PhoneNormalizer.dialCodeFor(code)})';
     return '$label · used to identify callers';
-  }
-}
-
-/// Shows whether ContactSphere is Android's default phone app and lets the user
-/// request the role. On non-Android hosts the status query resolves false and
-/// tapping is a no-op, so the card simply prompts (harmlessly) to set default.
-class _DefaultDialerCard extends StatefulWidget {
-  const _DefaultDialerCard();
-
-  @override
-  State<_DefaultDialerCard> createState() => _DefaultDialerCardState();
-}
-
-class _DefaultDialerCardState extends State<_DefaultDialerCard> {
-  final TelecomService _telecom = TelecomService();
-  bool _isDefault = false;
-  bool _busy = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _refresh();
-  }
-
-  Future<void> _refresh() async {
-    final value = await _telecom.isDefaultDialer();
-    if (mounted) setState(() => _isDefault = value);
-  }
-
-  Future<void> _request() async {
-    if (_isDefault || _busy) return;
-    setState(() => _busy = true);
-    await _telecom.requestDefaultDialer();
-    if (!mounted) return;
-    setState(() => _busy = false);
-    await _refresh();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.extension<AppColors>()!;
-    final accent = theme.colorScheme.primary;
-    const green = Color(0xFF10B981);
-
-    return Card(
-      margin: EdgeInsets.zero,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: _isDefault ? null : _request,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: (_isDefault ? green : accent).withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Icon(
-                  _isDefault ? Icons.verified_outlined : Icons.dialpad,
-                  color: _isDefault ? green : accent,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Default phone app',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _isDefault
-                          ? 'ContactSphere handles your calls'
-                          : 'Set ContactSphere as your default dialer',
-                      style: TextStyle(color: colors.mutedText, fontSize: 13),
-                    ),
-                  ],
-                ),
-              ),
-              if (_busy)
-                const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              else if (_isDefault)
-                const Icon(Icons.check_circle, color: green)
-              else
-                Icon(Icons.chevron_right, color: colors.mutedText),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Card that picks how the app is locked: Off, Device lock, or an app PIN.
-/// Tapping opens a chooser. "Device lock" is disabled when the device has no
-/// screen lock (authentication can't run); "App PIN" is always available and
-/// launches PIN setup the first time it's chosen.
-class _AppLockCard extends StatefulWidget {
-  const _AppLockCard();
-
-  @override
-  State<_AppLockCard> createState() => _AppLockCardState();
-}
-
-class _AppLockCardState extends State<_AppLockCard> {
-  bool _deviceLockAvailable = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkAvailable();
-  }
-
-  Future<void> _checkAvailable() async {
-    final available = await AuthService().isAvailable;
-    if (mounted) setState(() => _deviceLockAvailable = available);
-  }
-
-  String _subtitleFor(LockMode mode) => switch (mode) {
-    LockMode.none => 'Off — the app opens without a lock',
-    LockMode.deviceLock => 'On — unlock with your device lock',
-    LockMode.appPin => 'On — unlock with your app PIN',
-  };
-
-  Future<void> _openChooser(AppSettings settings) async {
-    final chosen = await showModalBottomSheet<LockMode>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetCtx) => _LockModeSheet(
-        current: settings.lockMode,
-        deviceLockAvailable: _deviceLockAvailable,
-      ),
-    );
-    if (chosen == null || chosen == settings.lockMode) return;
-    if (!mounted) return;
-
-    switch (chosen) {
-      case LockMode.none:
-        await settings.setLockMode(LockMode.none);
-      case LockMode.deviceLock:
-        await settings.setLockMode(LockMode.deviceLock);
-      case LockMode.appPin:
-        // Reuse an existing PIN if one is already set; otherwise run setup and
-        // only switch to PIN mode once a PIN was actually saved.
-        final hasPin = await AppPinService().hasPin();
-        if (!mounted) return;
-        if (hasPin) {
-          await settings.setLockMode(LockMode.appPin);
-          return;
-        }
-        final saved = await Navigator.of(context).push<bool>(
-          MaterialPageRoute(builder: (_) => const AppPinSetupScreen()),
-        );
-        if (saved == true && mounted) {
-          await settings.setLockMode(LockMode.appPin);
-        }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.extension<AppColors>()!;
-    final accent = theme.colorScheme.primary;
-    final settings = context.watch<AppSettings>();
-    final on = settings.appLockEnabled;
-    final iconColor = on ? accent : colors.mutedText;
-
-    return Card(
-      margin: EdgeInsets.zero,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () => _openChooser(settings),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Icon(Icons.lock_outline, color: iconColor),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'App lock',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _subtitleFor(settings.lockMode),
-                      style: TextStyle(color: colors.mutedText, fontSize: 13),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right, color: colors.mutedText),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Bottom-sheet chooser for the [LockMode]. Returns the picked mode (or null if
-/// dismissed). Device lock is shown disabled when no device screen lock exists.
-class _LockModeSheet extends StatelessWidget {
-  final LockMode current;
-  final bool deviceLockAvailable;
-
-  const _LockModeSheet({
-    required this.current,
-    required this.deviceLockAvailable,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColors>()!;
-    return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'App lock',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-          ),
-          _option(
-            context,
-            mode: LockMode.none,
-            icon: Icons.lock_open_outlined,
-            title: 'Off',
-            subtitle: 'No lock when opening the app',
-          ),
-          _option(
-            context,
-            mode: LockMode.deviceLock,
-            icon: Icons.fingerprint,
-            title: 'Device lock',
-            subtitle: deviceLockAvailable
-                ? 'Fingerprint, face or device PIN'
-                : 'Set a screen lock on your device to use this',
-            enabled: deviceLockAvailable,
-            colors: colors,
-          ),
-          _option(
-            context,
-            mode: LockMode.appPin,
-            icon: Icons.pin_outlined,
-            title: 'App PIN',
-            subtitle: 'A separate PIN just for this app',
-          ),
-          const SizedBox(height: 8),
-        ],
-      ),
-    );
-  }
-
-  Widget _option(
-    BuildContext context, {
-    required LockMode mode,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    bool enabled = true,
-    AppColors? colors,
-  }) {
-    final muted = colors?.mutedText;
-    return ListTile(
-      enabled: enabled,
-      leading: Icon(icon),
-      title: Text(title),
-      subtitle: Text(
-        subtitle,
-        style: (!enabled && muted != null) ? TextStyle(color: muted) : null,
-      ),
-      trailing: current == mode ? const Icon(Icons.check) : null,
-      onTap: enabled ? () => Navigator.of(context).pop(mode) : null,
-    );
-  }
-}
-
-/// Blocks screenshots, screen recording and the Recents thumbnail on the
-/// contact detail and in-call screens. On by default. The app-lock screen and
-/// the secret-contacts list block them regardless of this switch — the user has
-/// already said that data is to stay hidden.
-class _ScreenshotGuardCard extends StatelessWidget {
-  const _ScreenshotGuardCard();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.extension<AppColors>()!;
-    final enabled = context.watch<AppSettings>().screenshotGuardEnabled;
-
-    return Card(
-      margin: EdgeInsets.zero,
-      child: SwitchListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        value: enabled,
-        activeThumbColor: theme.colorScheme.primary,
-        onChanged: (v) =>
-            context.read<AppSettings>().setScreenshotGuardEnabled(v),
-        secondary: const Icon(Icons.screenshot_monitor_outlined),
-        title: const Text(
-          'Block screenshots',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-        ),
-        subtitle: Text(
-          'Keeps contact details and calls out of screenshots, screen '
-          'recordings and the Recents preview',
-          style: TextStyle(color: colors.mutedText, fontSize: 13),
-        ),
-      ),
-    );
   }
 }
 

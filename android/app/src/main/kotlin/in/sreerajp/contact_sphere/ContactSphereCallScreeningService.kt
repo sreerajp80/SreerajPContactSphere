@@ -79,6 +79,19 @@ class ContactSphereCallScreeningService : CallScreeningService() {
         ) {
             return silence()
         }
+
+        // Relationship-tier quiet hours: silence non-allowed calls during night hours.
+        if (prefs.getBoolean(KEY_QUIET_HOURS_ENABLED, false)) {
+            val start = prefs.getString(KEY_QUIET_HOURS_START, "22:00") ?: "22:00"
+            val end = prefs.getString(KEY_QUIET_HOURS_END, "07:00") ?: "07:00"
+            if (isTimeInQuietHours(start, end)) {
+                val allowedNumbers = readList(prefs, KEY_QUIET_HOURS_ALLOWED_NUMBERS)
+                if (!matchesList(digits, allowedNumbers)) {
+                    return silence()
+                }
+            }
+        }
+
         return allow()
     }
 
@@ -135,6 +148,31 @@ class ContactSphereCallScreeningService : CallScreeningService() {
         return n.length >= 10 && n.startsWith("140")
     }
 
+    /** Returns true if current local time is within [startStr] and [endStr] ("HH:mm"). */
+    private fun isTimeInQuietHours(startStr: String, endStr: String): Boolean {
+        return try {
+            val startParts = startStr.split(":").map { it.toInt() }
+            val endParts = endStr.split(":").map { it.toInt() }
+            if (startParts.size != 2 || endParts.size != 2) return false
+
+            val now = java.util.Calendar.getInstance()
+            val currentMinutes =
+                now.get(java.util.Calendar.HOUR_OF_DAY) * 60 + now.get(java.util.Calendar.MINUTE)
+            val startMinutes = startParts[0] * 60 + startParts[1]
+            val endMinutes = endParts[0] * 60 + endParts[1]
+
+            if (startMinutes < endMinutes) {
+                currentMinutes in startMinutes until endMinutes
+            } else if (startMinutes > endMinutes) {
+                currentMinutes >= startMinutes || currentMinutes < endMinutes
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     // ---- Blocked-call journal (drained into Recents by the Flutter side) ----
 
     /** Appends `{number, at}` to the parked blocked-call events, capped at
@@ -180,6 +218,18 @@ class ContactSphereCallScreeningService : CallScreeningService() {
 
         /** Silence suspected-spam calls instead of ringing loudly. */
         const val KEY_SPAM_FILTER = "spam_filter"
+
+        /** Enable relationship-tier quiet hours call silencing. */
+        const val KEY_QUIET_HOURS_ENABLED = "quiet_hours_enabled"
+
+        /** Start time for quiet hours ("HH:mm"). */
+        const val KEY_QUIET_HOURS_START = "quiet_hours_start"
+
+        /** End time for quiet hours ("HH:mm"). */
+        const val KEY_QUIET_HOURS_END = "quiet_hours_end"
+
+        /** JSON array of allowed digit strings during quiet hours. */
+        const val KEY_QUIET_HOURS_ALLOWED_NUMBERS = "quiet_hours_allowed_numbers"
 
         /** JSON array of `{number, at}` for calls rejected while the app was
          *  down, drained one-shot via MainActivity.getBlockedCallEvents. */

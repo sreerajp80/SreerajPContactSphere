@@ -1,8 +1,10 @@
 // lib/repositories/relationship_repository.dart
+import 'dart:async' show unawaited;
 import 'package:sqflite/sqflite.dart';
 
 import 'package:smart_contacts_dialer/database/database_helper.dart';
 import 'package:smart_contacts_dialer/models/relationship.dart';
+import 'package:smart_contacts_dialer/services/quiet_hours_service.dart';
 
 /// Read/write access to the `relationships` table.
 ///
@@ -46,6 +48,7 @@ class RelationshipRepository {
         'relationship_type': reverse,
       });
     });
+    unawaited(QuietHoursService().syncQuietHoursMirror());
   }
 
   /// Removes the link between the two contacts (both directed rows).
@@ -57,6 +60,7 @@ class RelationshipRepository {
     await db.transaction((txn) async {
       await _deletePair(txn, contactId, relatedContactId);
     });
+    unawaited(QuietHoursService().syncQuietHoursMirror());
   }
 
   /// The `gender` value of the contact with [id], or null if unset/missing.

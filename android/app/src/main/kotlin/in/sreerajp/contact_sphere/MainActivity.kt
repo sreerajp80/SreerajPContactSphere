@@ -88,6 +88,8 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
     private var pendingDial: String? = null
     private var pendingDialAutoCall: Boolean = false
 
+    private var pendingNotificationPayload: String? = null
+
     /** The `contact_sphere/telecom` channel, kept so warm dial intents can nudge Dart. */
     private var telecomChannel: MethodChannel? = null
 
@@ -115,6 +117,7 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
         handleDialIntent(intent)
         handleTrustedCallbackIntent(intent)
         handleSmartRedialIntent(intent)
+        handleScheduledNotificationIntent(intent)
         handleContactIntent(intent)
         registerCallLogObserver()
     }
@@ -125,7 +128,17 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
         handleDialIntent(intent)
         handleTrustedCallbackIntent(intent)
         handleSmartRedialIntent(intent)
+        handleScheduledNotificationIntent(intent)
         handleContactIntent(intent)
+    }
+
+    private fun handleScheduledNotificationIntent(intent: Intent?) {
+        if (intent?.action == ScheduledNotificationReceiver.ACTION_NOTIFICATION_TAP) {
+            val payload = intent.getStringExtra(ScheduledNotificationReceiver.EXTRA_PAYLOAD)
+            if (!payload.isNullOrBlank()) {
+                pendingNotificationPayload = payload
+            }
+        }
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -173,6 +186,10 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
                         call.argument<List<String>>("spamNumbers"),
                         call.argument<Boolean>("blockUnknown"),
                         call.argument<Boolean>("spamFilter"),
+                        call.argument<Boolean>("quietHoursEnabled"),
+                        call.argument<String>("quietHoursStart"),
+                        call.argument<String>("quietHoursEnd"),
+                        call.argument<List<String>>("quietHoursAllowedNumbers"),
                     )
                     result.success(null)
                 }
@@ -181,7 +198,18 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
                     setRingerPrefs(
                         call.argument<Int>("volumePercent"),
                         call.argument<Boolean>("vibrate"),
+                        call.argument<Boolean>("spokenAnnouncementEnabled"),
+                        call.argument<Boolean>("quietHoursEnabled"),
+                        call.argument<String>("quietHoursStart"),
+                        call.argument<String>("quietHoursEnd"),
                     )
+                    result.success(null)
+                }
+                "previewCallerAnnouncement" -> {
+                    val name = call.argument<String>("name")
+                    if (!name.isNullOrBlank()) {
+                        IncomingCallRinger.previewAnnouncement(this, name)
+                    }
                     result.success(null)
                 }
                 "setRingtoneMirror" -> {
@@ -291,6 +319,40 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
                 "requestExactAlarmPermission" -> {
                     SmartRedialManager.requestExactAlarmPermission(this)
                     result.success(null)
+                }
+                "scheduleNotification" -> {
+                    val id = call.argument<String>("id")
+                    val title = call.argument<String>("title")
+                    val body = call.argument<String>("body")
+                    val fireAtMillis = call.argument<Long>("fireAtMillis")
+                    val payload = call.argument<String>("payload")
+                    val category = call.argument<String>("category")
+                    val armed = if (id != null && title != null && body != null && fireAtMillis != null) {
+                        NotificationSchedulerManager.schedule(
+                            this,
+                            id,
+                            title,
+                            body,
+                            fireAtMillis,
+                            payload,
+                            category,
+                        )
+                    } else {
+                        false
+                    }
+                    result.success(armed)
+                }
+                "cancelNotification" -> {
+                    val id = call.argument<String>("id")
+                    if (id != null) NotificationSchedulerManager.cancel(this, id)
+                    result.success(null)
+                }
+                "getPendingNotificationIds" ->
+                    result.success(NotificationSchedulerManager.pendingIds(this))
+                "getPendingNotificationPayload" -> {
+                    val payload = pendingNotificationPayload
+                    pendingNotificationPayload = null
+                    result.success(payload)
                 }
                 else -> result.notImplemented()
             }
@@ -1069,7 +1131,14 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
      * so the ringer can read them synchronously even on a cold-start incoming call
      * (before the Flutter engine is running). Null args leave that key untouched.
      */
-    private fun setRingerPrefs(volumePercent: Int?, vibrate: Boolean?) {
+    private fun setRingerPrefs(
+        volumePercent: Int?,
+        vibrate: Boolean?,
+        spokenAnnouncementEnabled: Boolean?,
+        quietHoursEnabled: Boolean?,
+        quietHoursStart: String?,
+        quietHoursEnd: String?,
+    ) {
         val prefs = getSharedPreferences(
             IncomingCallRinger.RINGER_PREFS,
             Context.MODE_PRIVATE,
@@ -1079,6 +1148,18 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
                 putInt(IncomingCallRinger.KEY_VOLUME_PERCENT, volumePercent.coerceIn(0, 100))
             }
             if (vibrate != null) putBoolean(IncomingCallRinger.KEY_VIBRATE, vibrate)
+            if (spokenAnnouncementEnabled != null) {
+                putBoolean(IncomingCallRinger.KEY_SPOKEN_ANNOUNCEMENT_ENABLED, spokenAnnouncementEnabled)
+            }
+            if (quietHoursEnabled != null) {
+                putBoolean(IncomingCallRinger.KEY_QUIET_HOURS_ENABLED, quietHoursEnabled)
+            }
+            if (quietHoursStart != null) {
+                putString(IncomingCallRinger.KEY_QUIET_HOURS_START, quietHoursStart)
+            }
+            if (quietHoursEnd != null) {
+                putString(IncomingCallRinger.KEY_QUIET_HOURS_END, quietHoursEnd)
+            }
             apply()
         }
     }
@@ -1129,6 +1210,10 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
         spamNumbers: List<String>?,
         blockUnknown: Boolean?,
         spamFilter: Boolean?,
+        quietHoursEnabled: Boolean?,
+        quietHoursStart: String?,
+        quietHoursEnd: String?,
+        quietHoursAllowedNumbers: List<String>?,
     ) {
         val prefs = getSharedPreferences(
             ContactSphereCallScreeningService.SCREENING_PREFS,
@@ -1157,6 +1242,30 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
                 putBoolean(
                     ContactSphereCallScreeningService.KEY_SPAM_FILTER,
                     spamFilter,
+                )
+            }
+            if (quietHoursEnabled != null) {
+                putBoolean(
+                    ContactSphereCallScreeningService.KEY_QUIET_HOURS_ENABLED,
+                    quietHoursEnabled,
+                )
+            }
+            if (quietHoursStart != null) {
+                putString(
+                    ContactSphereCallScreeningService.KEY_QUIET_HOURS_START,
+                    quietHoursStart,
+                )
+            }
+            if (quietHoursEnd != null) {
+                putString(
+                    ContactSphereCallScreeningService.KEY_QUIET_HOURS_END,
+                    quietHoursEnd,
+                )
+            }
+            if (quietHoursAllowedNumbers != null) {
+                putString(
+                    ContactSphereCallScreeningService.KEY_QUIET_HOURS_ALLOWED_NUMBERS,
+                    JSONArray(quietHoursAllowedNumbers).toString(),
                 )
             }
             apply()

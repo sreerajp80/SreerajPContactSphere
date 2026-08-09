@@ -179,19 +179,34 @@ class CallLogRepository {
   /// dialing/connecting sits in between.
   static const Duration matchWindow = Duration(seconds: 90);
 
+  /// Whether a stored/incoming call type is the outgoing direction. Mirrors
+  /// [InteractionRepository._isOutgoing] so every match site uses one
+  /// definition.
+  static bool isOutgoingType(String? callType) => callType == 'outgoing';
+
   /// Finds the stored call that [candidates] says is the same call as the device
   /// entry with [key] at [epochMillis], or null when this is a new call. When
   /// several are in the window the closest in time wins.
+  ///
+  /// [isOutgoing] optionally restricts the match to the same direction: when
+  /// true only outgoing candidates are considered, when false only non-outgoing
+  /// ones. Null (the default) disables the filter, preserving the old behaviour
+  /// for call sites that don't need it.
   static StoredCall? findMatch(
     List<StoredCall> candidates,
     String key,
-    int epochMillis,
-  ) {
+    int epochMillis, {
+    bool? isOutgoing,
+  }) {
     if (key.isEmpty) return null;
     StoredCall? best;
     var bestDelta = matchWindow.inMilliseconds + 1;
     for (final c in candidates) {
       if (c.matchKey != key) continue;
+      if (isOutgoing != null &&
+          isOutgoingType(c.callType) != isOutgoing) {
+        continue;
+      }
       final delta = (c.epochMillis - epochMillis).abs();
       if (delta < bestDelta) {
         best = c;

@@ -252,11 +252,19 @@ class TelecomService {
     List<String>? spamNumbers,
     bool? blockUnknown,
     bool? spamFilter,
+    bool? quietHoursEnabled,
+    String? quietHoursStart,
+    String? quietHoursEnd,
+    List<String>? quietHoursAllowedNumbers,
   }) => _invokeVoid('setScreeningMirror', {
     'blockedNumbers': blockedNumbers,
     'spamNumbers': spamNumbers,
     'blockUnknown': blockUnknown,
     'spamFilter': spamFilter,
+    'quietHoursEnabled': quietHoursEnabled,
+    'quietHoursStart': quietHoursStart,
+    'quietHoursEnd': quietHoursEnd,
+    'quietHoursAllowedNumbers': quietHoursAllowedNumbers,
   });
 
   /// Collects (and clears) calls the native screening service rejected while
@@ -407,12 +415,28 @@ class TelecomService {
   /// Mirrors the user's ringer preferences to the native side so the incoming-call
   /// ringer can read them synchronously the instant a call arrives (before the
   /// Flutter engine is up on a cold start). [volumePercent] is 0–100; [vibrate]
-  /// toggles vibration. Null args leave that preference untouched. No-op off Android.
-  Future<void> setRingerPrefs({int? volumePercent, bool? vibrate}) =>
+  /// toggles vibration. Spoken caller announcement settings dictate TTS behavior.
+  /// Null args leave that preference untouched. No-op off Android.
+  Future<void> setRingerPrefs({
+    int? volumePercent,
+    bool? vibrate,
+    bool? spokenAnnouncementEnabled,
+    bool? quietHoursEnabled,
+    String? quietHoursStart,
+    String? quietHoursEnd,
+  }) =>
       _invokeVoid('setRingerPrefs', {
         'volumePercent': volumePercent,
         'vibrate': vibrate,
+        'spokenAnnouncementEnabled': spokenAnnouncementEnabled,
+        'quietHoursEnabled': quietHoursEnabled,
+        'quietHoursStart': quietHoursStart,
+        'quietHoursEnd': quietHoursEnd,
       });
+
+  /// Speaks a test announcement for [name] using the native TTS engine.
+  Future<void> previewCallerAnnouncement(String name) =>
+      _invokeVoid('previewCallerAnnouncement', {'name': name});
 
   /// Launches the Android system ringtone picker (built-in ringtones), pre-
   /// selecting [existingUri] when given. Returns the chosen tone as a
@@ -576,6 +600,64 @@ class TelecomService {
         stackTrace: st,
       );
       return CallState.none;
+    }
+  }
+
+  /// Arms a native exact alarm to post a generic notification at [fireAt].
+  /// Returns whether the OS alarm was actually armed.
+  Future<bool> scheduleNotification({
+    required String id,
+    required String title,
+    required String body,
+    required DateTime fireAt,
+    String? payload,
+    String? category,
+  }) =>
+      _invokeBool('scheduleNotification', {
+        'id': id,
+        'title': title,
+        'body': body,
+        'fireAtMillis': fireAt.millisecondsSinceEpoch,
+        'payload': payload,
+        'category': category,
+      });
+
+  /// Cancels a native generic scheduled notification alarm by [id].
+  Future<void> cancelNotification(String id) =>
+      _invokeVoid('cancelNotification', {'id': id});
+
+  /// Ids of every generic notification still pending natively.
+  Future<List<String>> pendingNotificationIds() async {
+    if (!_supported) return const [];
+    try {
+      final list = await methodChannel.invokeMethod<List<dynamic>>(
+        'getPendingNotificationIds',
+      );
+      return list?.cast<String>() ?? const [];
+    } catch (e, st) {
+      AppLogger.error(
+        'TelecomService.pendingNotificationIds failed',
+        error: e,
+        stackTrace: st,
+      );
+      return const [];
+    }
+  }
+
+  /// Collects any parked notification payload passed via a notification tap.
+  Future<String?> pendingNotificationPayload() async {
+    if (!_supported) return null;
+    try {
+      return await methodChannel.invokeMethod<String>(
+        'getPendingNotificationPayload',
+      );
+    } catch (e, st) {
+      AppLogger.error(
+        'TelecomService.pendingNotificationPayload failed',
+        error: e,
+        stackTrace: st,
+      );
+      return null;
     }
   }
 

@@ -1,6 +1,6 @@
 # ContactSphere — Feature Analysis & Innovation Roadmap
 
-**Last re-verified against code:** 2026-08-06 (BLE handshake + photos verified same day)
+**Last re-verified against code:** 2026-08-07 (Re-verified all 7 core concepts, 9 proposals, and targeted improvements against codebase)
 
 ## How to read this document
 
@@ -93,7 +93,7 @@ a notebook; and post-call follow-ups stay contact-scoped reminders, not a task m
 
 ## 3. Status of the seven original concepts
 
-### ⏱️ 1. Ephemeral / self-destructing contacts — **Shipped**
+### ⏱️ 1. Ephemeral / self-destructing contacts — ✅ **Shipped**
 
 Implemented in
 [`ephemeral_contact_service.dart`](file:///l:/Android/SreerajPContactSphere/lib/services/ephemeral_contact_service.dart),
@@ -105,7 +105,7 @@ Recents rows. The detail screen offers "+24 Hours", "Keep Permanently" and "Scru
 
 ---
 
-### ⌨️ 2. Multi-script T9 dialpad — **Shipped, and wider than planned**
+### ⌨️ 2. Multi-script T9 dialpad — ✅ **Shipped, and wider than planned**
 
 Implemented in [`t9_utils.dart`](file:///l:/Android/SreerajPContactSphere/lib/utils/t9_utils.dart),
 [`malayalam_transliterator.dart`](file:///l:/Android/SreerajPContactSphere/lib/utils/malayalam_transliterator.dart)
@@ -174,28 +174,11 @@ item, deliberately last.
 
 ---
 
-## 4. The missing foundation — a notification scheduler
+## 4. The missing foundation — a notification scheduler — ✅ **Shipped**
 
-Three separate things wait on one absent piece:
+Implemented in [`NotificationSchedulerManager.kt`](file:///l:/Android/SreerajPContactSphere/android/app/src/main/kotlin/in/sreerajp/contact_sphere/NotificationSchedulerManager.kt), [`ScheduledNotificationReceiver.kt`](file:///l:/Android/SreerajPContactSphere/android/app/src/main/kotlin/in/sreerajp/contact_sphere/ScheduledNotificationReceiver.kt), [`EmergencyBootReceiver.kt`](file:///l:/Android/SreerajPContactSphere/android/app/src/main/kotlin/in/sreerajp/contact_sphere/EmergencyBootReceiver.kt), and [`notification_scheduler_service.dart`](file:///l:/Android/SreerajPContactSphere/lib/services/notification_scheduler_service.dart).
 
-1. **Relationship-decay nudges** (section 3.3).
-2. **Per-persona reminders** (section 3.4).
-3. **The reminder rows the app already writes today.** Post-call follow-ups create rows through
-   `reminder_repository.dart`, and nothing ever fires them. This is recorded as a known gap in
-   [docs/features.md](file:///l:/Android/SreerajPContactSphere/docs/features.md).
-
-Every notification the app shows today — missed call, in-call, emergency card — is built
-directly in Kotlin with `NotificationCompat`. There is no Flutter-side scheduling library wired
-in, and no generic "wake up later and notify" path.
-
-**Recommended approach:** copy the pattern SMS Sentry and ChronoTune already use — exact
-`AlarmManager` alarms plus a boot receiver that re-arms everything after a restart — rather than
-adding a scheduling package. ContactSphere already has both halves of that pattern in the
-codebase for other purposes (`EmergencyBootReceiver`, and the native Smart Redial alarm), so this
-is generalising existing native code, not new ground.
-
-This is the first item on the revised roadmap because it unblocks the most work per unit of
-effort.
+Generic notifications can now be scheduled with exact `AlarmManager` alarms natively, persist across app restarts, re-arm after device reboots, and trigger system notifications on the `"scheduled_notifications"` channel with payload handling on tap.
 
 ---
 
@@ -206,17 +189,15 @@ carries its own status heading. Anything without a "Shipped" marker does not exi
 notes why it belongs in a *contacts and dialer* app specifically, so it does not drift into a
 sibling app's territory.
 
-### 5.1 Unified reminder & nudge scheduler — **size L, no dependencies**
+### 5.1 Unified reminder & nudge scheduler — ✅ **Foundation Shipped**
 
-The foundation from section 4, exposed as one service that any feature can schedule against.
-First consumers: the stranded reminder rows, relationship-decay nudges, and birthday /
-anniversary / meetiversary alerts (the app already stores all three dates and never alerts on
-any of them).
+The foundation from section 4, exposed as `NotificationSchedulerService` that any feature can schedule against natively or via Dart.
+Future consumer features (stranded post-call reminder rows, relationship-decay nudges, birthday/anniversary alerts) can now hook directly into this common scheduler.
 
 *Why here:* the contact record is where these dates live. *No overlap:* recurring **tasks** stay
 in SreerajP ToDo; this only fires alerts tied to a contact.
 
-### 5.2 Best-time-to-reach windows — **Shipped**
+### 5.2 Best-time-to-reach windows — ✅ **Shipped**
 
 Implemented in
 [`reach_window_service.dart`](file:///l:/Android/SreerajPContactSphere/lib/services/reach_window_service.dart),
@@ -252,40 +233,35 @@ system contacts, or two-way calls begin right after an old number goes silent �
 *Why here:* changing numbers is common, and today it silently creates an orphan. The duplicate
 engine already has the number-matching and merge machinery to build on. *No overlap:* nothing.
 
-### 5.4 Relationship-tier quiet hours — **size M**
+### 5.4 Relationship-tier quiet hours — ✅ **Shipped (size M)**
 
-Night-time silencing where only chosen tiers ring through — immediate family and emergency
-contacts, say — and everyone else is silenced but still logged. Enforced by the existing native
-call-screening service, so it works with the app closed and after a cold boot.
+Implemented via [`QuietHoursService`](file:///l:/Android/SreerajPContactSphere/lib/services/quiet_hours_service.dart), [`AppSettings`](file:///l:/Android/SreerajPContactSphere/lib/state/app_settings.dart), and native call screening in [`ContactSphereCallScreeningService.kt`](file:///l:/Android/SreerajPContactSphere/android/app/src/main/kotlin/in/sreerajp/contact_sphere/ContactSphereCallScreeningService.kt).
 
-*Why here:* it needs both the relationship graph and the dialer's screening service; only this
-app has both. *No overlap:* Android's own Do Not Disturb is all-or-nothing per contact and has
-no idea of relationship tiers.
+Night-time silencing where only chosen tiers (Emergency Contacts, Immediate Family, Extended Family, Friends, Work, Starred) ring through loudly, while non-allowed callers are silenced without dropping system/recents call logs. Configurable under SIM & Calling settings ([`sim_settings_screen.dart`](file:///l:/Android/SreerajPContactSphere/lib/screens/sim_settings_screen.dart)). Resolves relationship graph links and ICE contacts into a native digit mirror in SharedPreferences, enforcing quiet-hours screening even when the Flutter engine is stopped or after a cold boot.
 
-### 5.5 Optical air-gap contact transfer — **size M**
+*Why here:* it needs both the relationship graph and the dialer's screening service; only this app has both. *No overlap:* Android's own Do Not Disturb is all-or-nothing per contact and has no idea of relationship tiers.
 
-Animated multi-frame QR streaming, camera-only, as a fallback when BLE pairing fails or
-Bluetooth is off. Reuses the approach proven in SreerajP Authenticator and Sreeraj P QR Reader.
+### 5.5 Optical air-gap contact transfer — ✅ **Shipped (size M)**
 
-*Why here:* the existing single-QR share is capped at one small contact. *No overlap:* the
-protocol comes from a sibling app; this is the contact-shaped payload for it.
+Implemented via [`AirQrService`](file:///l:/Android/SreerajPContactSphere/lib/services/air_qr_service.dart) and [`AirQrFrame`](file:///l:/Android/SreerajPContactSphere/lib/models/air_qr_frame.dart). High-throughput animated multi-frame QR streaming (systematic blocks + LT Fountain parity frames) for camera-only transfer of full vCards (with photos/avatars) and multi-contact batches without Bluetooth or network connections.
 
-### 5.6 Safety check on scanned contact QR codes — **size S**
+Renders dynamic QR animation streams via [`AirQrShareDialog`](file:///l:/Android/SreerajPContactSphere/lib/widgets/air_qr_share_dialog.dart) (accessible from [`QrShareDialog`](file:///l:/Android/SreerajPContactSphere/lib/widgets/qr_share_dialog.dart)) and decodes incoming streams real-time with progress indicators, block counter, and FPS tracking in [`qr_scan_screen.dart`](file:///l:/Android/SreerajPContactSphere/lib/screens/qr_scan_screen.dart).
 
-Validate a scanned payload before importing: flag over-long fields, embedded URLs, and
-tampering signals, and show what will be imported before it is written.
+*Why here:* the existing single-QR share is capped at one small contact. *No overlap:* the protocol comes from sibling apps (`sreeraj_qr_reader` / Authenticator); this is the contact-shaped payload for it.
 
-*Why here:* `qr_scan_screen.dart` currently trusts whatever it decodes. *No overlap:* the check
-logic is borrowed from QR Reader; only the vCard-specific rules are new.
+### 5.6 Safety check on scanned contact QR codes — ✅ **Shipped (size S)**
 
-### 5.7 Spoken caller announcement, English and Malayalam — **size S**
+Implemented in [`contact_qr_safety_service.dart`](file:///l:/Android/SreerajPContactSphere/lib/services/contact_qr_safety_service.dart) and [`contact_qr_preview_dialog.dart`](file:///l:/Android/SreerajPContactSphere/lib/widgets/contact_qr_preview_dialog.dart). Scanned payloads (both static single QR and reassembled AirQR streams) in [`qr_scan_screen.dart`](file:///l:/Android/SreerajPContactSphere/lib/screens/qr_scan_screen.dart) undergo safety inspection before saving or editing.
 
-Speak the caller's name over the ringtone ("Amma calling") before you answer, using the
-contact's own name and script. Off by default, with a quiet-hours exception.
+Flags over-long field boundaries, raw IP URLs (`http://192.168.1.1/...`), executable links (`.apk`, `.exe`, `.sh`), and script injection (`<script>`, `javascript:`). Presents a safety badge (Green "Verified Safe", Yellow "Warning", Red "High Risk"), detected security alerts, and field preview with options to *Import Safe Fields Only*, *Import All*, *Review & Edit*, or *Cancel*.
 
-*Why here:* it needs the contact record and the incoming-call path. *Fit:* matches the
-inclusive-design pillar the rest of the family shares, and helps when the phone is out of sight
-or the user has low vision.
+*Why here:* `qr_scan_screen.dart` currently trusts whatever it decodes. *No overlap:* the check logic is borrowed from QR Reader; only the vCard-specific rules are new.
+
+### 5.7 Spoken caller announcement, English and Malayalam — ✅ **Shipped (size S)**
+
+Speak the caller's name over the ringtone ("Amma calling" or "അമ്മ വിളിക്കുന്നു") before you answer, using the contact's own name and script via native Android Text-To-Speech (`CallerAnnouncer` in [`IncomingCallRinger.kt`](file:///l:/Android/SreerajPContactSphere/android/app/src/main/kotlin/in/sreerajp/contact_sphere/IncomingCallRinger.kt)). Off by default, with a quiet-hours exception (default 10:00 PM – 7:00 AM) and configuration controls in **SIM & calling** settings ([`sim_settings_screen.dart`](file:///l:/Android/SreerajPContactSphere/lib/screens/sim_settings_screen.dart)).
+
+*Why here:* it needs the contact record and the incoming-call path. *Fit:* matches the inclusive-design pillar the rest of the family shares, and helps when the phone is out of sight or the user has low vision.
 
 ### 5.8 Senior / large-touch dialer mode — **size S**
 
@@ -295,16 +271,11 @@ first. Same code paths underneath, no separate feature set to maintain.
 *Why here:* the app is a daily-driver dialer. *Fit:* the ecosystem's stated accessibility
 standard (see YT Shortcuts and ToDo, which both make this a named value pillar).
 
-### 5.9 Emergency card hand-off — **size S**
+### 5.9 Emergency card hand-off — ✅ **Shipped (size S)**
 
-Share the ICE card out through the system share sheet as text or an image, rather than building
-any viewer or PDF export inside this app.
+Share the ICE card out through the system share sheet (`share_plus`) as formatted text or a rendered PNG card image via [`emergency_share_service.dart`](file:///l:/Android/SreerajPContactSphere/lib/services/emergency_share_service.dart), launched from the AppBar share action in [`emergency_info_screen.dart`](file:///l:/Android/SreerajPContactSphere/lib/screens/emergency_info_screen.dart).
 
 *No overlap:* by construction — PDF work lands in SreerajP PDF App.
-
-*Note (2026-08-06):* the separate complaint that the card "never shows on the lock screen" was a
-notification-channel importance bug, now fixed — see the **Lockscreen emergency card** row in
-section 6. It does not change the scope of 5.9.
 
 ---
 
@@ -314,9 +285,9 @@ section 6. It does not change the scope of 5.9.
 | :--- | :--- | :--- |
 | **Duplicate detection & merge** | ✅ **Shipped.** `findDuplicateGroups()` in [`contact_repository.dart`](file:///l:/Android/SreerajPContactSphere/lib/repositories/contact_repository.dart) is the matching engine; [`duplicates_screen.dart`](file:///l:/Android/SreerajPContactSphere/lib/screens/duplicates_screen.dart) only renders the result. Contacts group when they share an exact name key, a transliterated `searchKey`, exact phone digits, or a canonical E.164 number — grouped transitively (union-find). Cards are headed "Same name", "Same phone number", "Similar name match", "Same name & number", or "Similar name & phone match". | No further work planned. ⚠️ Phonetic matching (Double Metaphone / Soundex) was implemented and then **removed**: truncated 4-character codes collided on unrelated names and produced false-positive merges. `phonetic_utils.dart` still exists (contact search uses it) but is **not** in the merge path. Do not re-add it without a much stricter scoring model. |
 | **BLE contact syncing** | ✅ **Shipped.** "Send all" batch sharing with progress, proximity label, and 2-minute idle timeout. Receive-side authentication gate ([`ble_receive_challenge_dialog.dart`](file:///l:/Android/SreerajPContactSphere/lib/widgets/ble_receive_challenge_dialog.dart)) adapts to the app's lock mode: PIN keypad, biometric/credential, or consent-only. Photos are now included in BLE payloads via an "Include photos" toggle (on by default for single contacts, off for batch). | No further work planned. |
-| **Pre-call overlay HUD** | `pre_call_summary_service.dart` builds summaries shown **inside the app** only. | A floating system overlay over the native incoming-call screen needs `SYSTEM_ALERT_WINDOW`, which the app does not request today. Weigh this against the permission's cost to user trust — an in-app-only HUD may be the better trade. |
+| **Pre-call overlay HUD** | ✅ **Shipped (In-app only).** [`pre_call_summary_service.dart`](file:///l:/Android/SreerajPContactSphere/lib/services/pre_call_summary_service.dart) builds summaries shown inside the app. | Concluded: retained as an **in-app-only** summary UI. Floating system overlay over native incoming-call screen rejected to preserve user trust and avoid requesting `SYSTEM_ALERT_WINDOW`. No further work planned. |
 | **Tamper-proof audit logging** | ✅ **Shipped.** SHA-256 hash chaining with live verification and signed export in [`audit_repository.dart`](file:///l:/Android/SreerajPContactSphere/lib/repositories/audit_repository.dart). | No further work planned. |
-| **Lockscreen emergency card** | ✅ **Shipped.** Notification, dedicated activity, QR code, boot re-show in [`emergency_card_service.dart`](file:///l:/Android/SreerajPContactSphere/lib/services/emergency_card_service.dart). **2026-08-06:** the notification channel moved from `IMPORTANCE_LOW` to a new `emergency_info_v2` channel at `IMPORTANCE_DEFAULT` (sound and vibration off). The old LOW channel counted as *silent*, and the lock screen hides silent notifications on most phones, so the card only ever appeared in the shade. The edit screen now also reports when notifications are blocked or muted and links to the lock-screen notification setting. | Pairs with 5.9 for sharing it out. |
+| **Lockscreen emergency card** | ✅ **Shipped.** Notification, dedicated activity, QR code, boot re-show in [`emergency_card_service.dart`](file:///l:/Android/SreerajPContactSphere/lib/services/emergency_card_service.dart). **2026-08-06:** the notification channel moved from `IMPORTANCE_LOW` to a new `emergency_info_v2` channel at `IMPORTANCE_DEFAULT` (sound and vibration off). The old LOW channel counted as *silent*, and the lock screen hides silent notifications on most phones, so the card only ever appeared in the shade. The edit screen now also reports when notifications are blocked or muted and links to the lock-screen notification setting. | **5.9 Emergency card hand-off shipped:** Share action in [`emergency_info_screen.dart`](file:///l:/Android/SreerajPContactSphere/lib/screens/emergency_info_screen.dart) exports text or PNG card image via `share_plus`. |
 | **Smart dialing intelligence** | ✅ **Shipped, and staying.** [`smart_redial_service.dart`](file:///l:/Android/SreerajPContactSphere/lib/services/smart_redial_service.dart) auto-dials natively after a delay **the user chooses** (1–30 min). | Keep as is. Only the old *guess-based* idea — "rank business contacts during office hours" — is dropped, replaced by **5.2** (now shipped), which measures answer rates instead of assuming. 5.2 sits **above** this scheduler, not in place of it, and never dials by itself. |
 | **Reminder rows** | `reminder_repository.dart` writes rows nothing ever reads. | Fixed by **5.1**. Until then this is a silent dead end for the user. |
 
@@ -328,7 +299,7 @@ Foundation first, then the features it unblocks, then the large uncertain items 
 
 ```mermaid
 gantt
-    title ContactSphere Feature Roadmap (revised 2026-08-06)
+    title ContactSphere Feature Roadmap (revised 2026-08-07)
     dateFormat  YYYY-MM-DD
     section Shipped
     Ephemeral Contacts               :done, s1, 2026-07-01, 14d
@@ -337,6 +308,7 @@ gantt
     Lockscreen Emergency Card        :done, s4, 2026-07-25, 10d
     Best-Time-To-Reach Windows       :done, s5, 2026-08-06, 1d
     BLE Receive Handshake & Photos   :done, s6, 2026-08-06, 1d
+    Caller Announcement (TTS)        :done, s7, 2026-08-07, 1d
     section Phase 1 — Foundation
     Reminder & Nudge Scheduler       :p1_1, 2026-08-10, 14d
     Date Alerts (birthday etc.)      :p1_2, after p1_1, 5d
@@ -347,8 +319,7 @@ gantt
     section Phase 3 — Sharing & access
     QR Payload Safety Checks         :p3_1, after p2_3, 5d
     Optical Air-Gap Transfer         :p3_2, after p3_1, 12d
-    Caller Announcement (TTS)        :p3_4, after p3_2, 5d
-    Senior / Large-Touch Mode        :p3_5, after p3_4, 7d
+    Senior / Large-Touch Mode        :p3_5, after p3_2, 7d
     section Phase 4 — Large & uncertain
     In-Call Scratchpad               :p4_1, after p3_5, 10d
     Multi-Persona Profiles           :p4_2, after p4_1, 18d

@@ -62,6 +62,26 @@ void main() {
       await service.cancelTask(task.id);
       expect(service.activeTasks.any((t) => t.id == task.id), isFalse);
     });
+
+    test('rescheduling auto-redial for same phone number cancels previous active task', () async {
+      final service = SmartRedialService();
+      final task1 = await service.scheduleAutoRedial(
+        phoneNumber: '9876543210',
+        displayName: 'Bob',
+        delayMinutes: 10,
+      );
+
+      expect(service.activeTasks.any((t) => t.id == task1.id), isTrue);
+
+      final task2 = await service.scheduleAutoRedial(
+        phoneNumber: '9876543210',
+        displayName: 'Bob',
+        delayMinutes: 5,
+      );
+
+      expect(service.activeTasks.any((t) => t.id == task1.id), isFalse);
+      expect(service.activeTasks.any((t) => t.id == task2.id), isTrue);
+    });
   });
 
   group('AppSettings Smart Redial', () {

@@ -130,6 +130,60 @@ void main() {
       );
       expect(match, isNull);
     });
+
+    test('rejects a cross-direction match within the window', () {
+      // Regression: an incoming device entry 4 seconds after an outgoing call
+      // landed on the outgoing row, turning it into an incoming one.
+      final outgoingRow = StoredCall(
+        id: 1,
+        matchKey: CallLogRepository.matchKey('8129998111'),
+        epochMillis: base.millisecondsSinceEpoch,
+        duration: 0,
+        callType: 'outgoing',
+        callOutcome: 'cancelled',
+      );
+      final match = CallLogRepository.findMatch(
+        [outgoingRow],
+        CallLogRepository.matchKey('+918129998111'),
+        base.add(const Duration(seconds: 4)).millisecondsSinceEpoch,
+        isOutgoing: false,
+      );
+      expect(match, isNull, reason: 'incoming must not match an outgoing row');
+    });
+
+    test('still matches same-direction entries within the window', () {
+      final outgoingRow = StoredCall(
+        id: 1,
+        matchKey: CallLogRepository.matchKey('8129998111'),
+        epochMillis: base.millisecondsSinceEpoch,
+        duration: null,
+        callType: 'outgoing',
+      );
+      final match = CallLogRepository.findMatch(
+        [outgoingRow],
+        CallLogRepository.matchKey('+918129998111'),
+        base.add(const Duration(seconds: 4)).millisecondsSinceEpoch,
+        isOutgoing: true,
+      );
+      expect(match?.id, 1);
+    });
+
+    test('isOutgoing null preserves legacy behaviour (no filter)', () {
+      final outgoingRow = StoredCall(
+        id: 1,
+        matchKey: CallLogRepository.matchKey('8129998111'),
+        epochMillis: base.millisecondsSinceEpoch,
+        duration: null,
+        callType: 'outgoing',
+      );
+      // No direction filter → matches regardless of direction.
+      final match = CallLogRepository.findMatch(
+        [outgoingRow],
+        CallLogRepository.matchKey('+918129998111'),
+        base.add(const Duration(seconds: 4)).millisecondsSinceEpoch,
+      );
+      expect(match?.id, 1);
+    });
   });
 
   group('StoredCall.needsOutcome', () {

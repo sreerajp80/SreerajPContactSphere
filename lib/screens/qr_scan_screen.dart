@@ -1,12 +1,9 @@
 // lib/screens/qr_scan_screen.dart
 //
-// Camera QR scanner for importing a contact: reads a vCard QR code (the kind
-// our own share dialog renders — widgets/qr_share_dialog.dart — or any
-// standard contacts-app code) and routes it through the same review/import
-// flow the .vcf-intent path in main.dart uses: a single contact opens the
-// Add/Edit screen pre-filled, several get a confirm dialog and a bulk import
-// through ContactSyncService. Pops with `true` when at least one contact was
-// saved, so the caller can reload its list.
+// Camera QR scanner for importing contacts: supports both single static vCard
+// QR codes and multi-frame optical AirQR streams (AirQrService). All scanned
+// payloads are validated through ContactQrSafetyService and displayed in
+// ContactQrPreviewDialog before saving or editing.
 
 import 'dart:async';
 
@@ -14,9 +11,12 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import 'package:smart_contacts_dialer/models/contact.dart';
+import 'package:smart_contacts_dialer/services/air_qr_service.dart';
+import 'package:smart_contacts_dialer/services/contact_qr_safety_service.dart';
 import 'package:smart_contacts_dialer/services/contact_sync_service.dart';
 import 'package:smart_contacts_dialer/services/vcard_service.dart';
 import 'package:smart_contacts_dialer/screens/add_edit_contact_screen.dart';
+import 'package:smart_contacts_dialer/widgets/contact_qr_preview_dialog.dart';
 
 class QrScanScreen extends StatefulWidget {
   const QrScanScreen({super.key});
@@ -29,6 +29,9 @@ class _QrScanScreenState extends State<QrScanScreen> {
   final MobileScannerController _controller = MobileScannerController(
     formats: const [BarcodeFormat.qrCode],
   );
+
+  final AirQrService _airQrService = AirQrService();
+  AirQrProgress _airProgress = const AirQrProgress(status: AirQrStatus.idle);
 
   /// True from the first accepted detection until scanning resumes (or the
   /// screen pops). onDetect keeps firing on every camera frame that shows the
@@ -54,32 +57,98 @@ class _QrScanScreenState extends State<QrScanScreen> {
     }
     if (raw == null) return;
 
-    _handling = true;
-    await _controller.stop();
+    // Handle Optical AirQR Stream Frame
+    if (raw.startsWith('AIRQR|')) {
+      final progress = _airQrService.processFrameString(raw, _airProgress);
+      setState(() {
+        _airProgress = progress;
+      });
 
-    if (!raw.toUpperCase().startsWith('BEGIN:VCARD')) {
-      await _resumeAfterMessage('Not a contact QR code');
+      if (progress.status == AirQrStatus.receiving) {
+        // Keep camera scanning frames
+        return;
+      }
+
+      if (progress.status == AirQrStatus.error) {
+        await _resumeAfterMessage(
+          progress.errorMessage ?? 'AirQR stream reassembly failed',
+        );
+        _airQrService.reset();
+        setState(() {
+          _airProgress = const AirQrProgress(status: AirQrStatus.idle);
+        });
+        return;
+      }
+
+      if (progress.status == AirQrStatus.completed &&
+          progress.reassembledContent != null) {
+        _handling = true;
+        await _controller.stop();
+        final content = progress.reassembledContent!;
+        _airQrService.reset();
+        setState(() {
+          _airProgress = const AirQrProgress(status: AirQrStatus.idle);
+        });
+        await _processScannedPayload(content);
+        return;
+      }
+    }
+
+    // Handle Standard Static Single QR Code
+    if (raw.toUpperCase().startsWith('BEGIN:VCARD')) {
+      _handling = true;
+      await _controller.stop();
+      await _processScannedPayload(raw);
       return;
     }
 
+    // Unrecognized format
+    if (!_handling && _airProgress.status == AirQrStatus.idle) {
+      _handling = true;
+      await _controller.stop();
+      await _resumeAfterMessage('Not a valid contact or AirQR code');
+    }
+  }
+
+  Future<void> _processScannedPayload(String rawPayload) async {
     List<Contact> parsed;
     try {
-      parsed = await VCardService().fromVCard(raw);
+      parsed = await VCardService().fromVCard(rawPayload);
     } catch (_) {
       parsed = const <Contact>[];
     }
+
     if (parsed.isEmpty) {
-      await _resumeAfterMessage('Could not read a contact from this code');
+      await _resumeAfterMessage('Could not read a contact from this payload');
       return;
     }
 
-    if (parsed.length == 1) {
+    if (!mounted) return;
+
+    // Safety Inspection
+    final report = ContactQrSafetyService().analyzePayload(rawPayload, parsed);
+    final decision = await showContactQrPreviewDialog(context, report);
+
+    if (decision == null || decision == ContactQrImportDecision.cancel) {
+      await _resume();
+      return;
+    }
+
+    final contactsToImport =
+        decision == ContactQrImportDecision.importSanitized
+            ? report.sanitizedContacts
+            : report.originalContacts;
+
+    if (contactsToImport.isEmpty) {
+      await _resumeAfterMessage('No valid contacts to import');
+      return;
+    }
+
+    if (contactsToImport.length == 1) {
       if (!mounted) return;
-      // Review before saving; AddEditContactScreen's save runs the normal
-      // two-way sync (app DB + device book), same as the vCard-intent flow.
       final saved = await Navigator.of(context).push<bool>(
         MaterialPageRoute(
-          builder: (_) => AddEditContactScreen(contact: parsed.first),
+          builder: (_) => AddEditContactScreen(contact: contactsToImport.first),
         ),
       );
       if (!mounted) return;
@@ -91,44 +160,18 @@ class _QrScanScreenState extends State<QrScanScreen> {
       return;
     }
 
-    // A single QR rarely holds several contacts, but the vCard format allows
-    // it — confirm and bulk-import, mirroring the multi-contact .vcf flow.
-    if (!mounted) return;
-    final approved = await showDialog<bool>(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('Import contacts'),
-        content: Text(
-          'This QR code contains ${parsed.length} contacts. Import them '
-          'into ContactSphere and your phone contacts?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogCtx).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogCtx).pop(true),
-            child: const Text('Import'),
-          ),
-        ],
-      ),
-    );
-    if (approved != true) {
-      await _resume();
-      return;
-    }
-
+    // Multi-contact bulk import
     final sync = ContactSyncService();
     var imported = 0;
-    for (final contact in parsed) {
+    for (final contact in contactsToImport) {
       try {
         await sync.saveContact(contact);
         imported++;
       } catch (_) {
-        // Keep going; report what actually made it.
+        // Keep going
       }
     }
+
     if (!mounted) return;
     if (imported > 0) {
       Navigator.of(context).pop(true);
@@ -151,24 +194,29 @@ class _QrScanScreenState extends State<QrScanScreen> {
     try {
       await _controller.start();
     } catch (_) {
-      // The camera error (if any) surfaces through the scanner's errorBuilder.
+      // Handled in errorBuilder
     }
     _handling = false;
+    setState(() {
+      _airProgress = const AirQrProgress(status: AirQrStatus.idle);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final accent = Theme.of(context).colorScheme.primary;
+    final isReceivingAirStream =
+        _airProgress.status == AirQrStatus.receiving;
 
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: const Text('Scan QR code'),
+        title: Text(
+          isReceivingAirStream ? 'Receiving AirQR Stream' : 'Scan QR code',
+        ),
         actions: [
-          // The controller is a ValueNotifier of the scanner state; rebuild the
-          // torch button as the torch toggles (or turns out to be absent).
           ValueListenableBuilder<MobileScannerState>(
             valueListenable: _controller,
             builder: (context, state, _) {
@@ -196,8 +244,7 @@ class _QrScanScreenState extends State<QrScanScreen> {
             onDetect: _onDetect,
             errorBuilder: (context, error) => _ScannerError(error: error),
           ),
-          // Aiming frame + hint. IgnorePointer so the preview keeps receiving
-          // gestures (e.g. tap-to-focus if ever enabled).
+          // Aiming frame + hint
           IgnorePointer(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -206,36 +253,108 @@ class _QrScanScreenState extends State<QrScanScreen> {
                   width: 250,
                   height: 250,
                   decoration: BoxDecoration(
-                    border: Border.all(color: accent, width: 3),
+                    border: Border.all(
+                      color: isReceivingAirStream ? Colors.blue : accent,
+                      width: 3,
+                    ),
                     borderRadius: BorderRadius.circular(24),
                   ),
                 ),
                 const SizedBox(height: 24),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+                if (!isReceivingAirStream)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.55),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Text(
+                      'Point camera at static or animated AirQR code',
+                      style: TextStyle(color: Colors.white, fontSize: 13.5),
+                    ),
                   ),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.55),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Text(
-                    'Point the camera at a contact QR code',
-                    style: TextStyle(color: Colors.white, fontSize: 13.5),
-                  ),
-                ),
               ],
             ),
           ),
+          // Live AirQR Stream Progress Overlay
+          if (isReceivingAirStream)
+            Positioned(
+              left: 24,
+              right: 24,
+              bottom: 40,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.black87,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.blue.shade400, width: 1.5),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.blue,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'AirQR Receiving... ${_airProgress.progressPercent}%',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Text(
+                          '${_airProgress.fps.toStringAsFixed(1)} FPS',
+                          style: TextStyle(
+                            color: Colors.grey.shade400,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: _airProgress.progressRatio,
+                        backgroundColor: Colors.grey.shade800,
+                        color: Colors.blue,
+                        minHeight: 6,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Captured ${_airProgress.receivedBlockCount} of ${_airProgress.totalBlocks} blocks',
+                      style: TextStyle(
+                        color: Colors.grey.shade300,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
   }
 }
 
-/// Full-screen scanner failure state; permission denial gets its own wording
-/// since it's the one the user can fix themselves.
 class _ScannerError extends StatelessWidget {
   final MobileScannerException error;
 

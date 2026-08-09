@@ -16,6 +16,7 @@ import 'package:smart_contacts_dialer/models/phone_number.dart';
 import 'package:smart_contacts_dialer/repositories/contact_repository.dart';
 import 'package:smart_contacts_dialer/repositories/emergency_info_repository.dart';
 import 'package:smart_contacts_dialer/services/emergency_card_service.dart';
+import 'package:smart_contacts_dialer/services/emergency_share_service.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 import 'package:smart_contacts_dialer/widgets/contact_search_picker_sheet.dart';
 import 'package:smart_contacts_dialer/widgets/number_picker_sheet.dart';
@@ -193,6 +194,65 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
     return leave ?? false;
   }
 
+  Future<void> _showShareOptions() async {
+    final currentInfo = EmergencyInfo(
+      enabled: _info.enabled,
+      ownerName: _ownerCtrl.text.trim(),
+      showOwnerName: _info.showOwnerName,
+      bloodGroup: _blood ?? '',
+      showBloodGroup: _info.showBloodGroup,
+      allergies: _allergiesCtrl.text.trim(),
+      showAllergies: _info.showAllergies,
+      medications: _medsCtrl.text.trim(),
+      showMedications: _info.showMedications,
+      conditions: _conditionsCtrl.text.trim(),
+      showConditions: _info.showConditions,
+      notes: _notesCtrl.text.trim(),
+      showNotes: _info.showNotes,
+      address: _addressCtrl.text.trim(),
+      showAddress: _info.showAddress,
+      organDonor: _info.organDonor,
+      showOrganDonor: _info.showOrganDonor,
+      contacts: _info.contacts,
+    );
+
+    if (currentInfo.hasNothingToShow) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nothing on the card is switched on to share.')),
+      );
+      return;
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.text_snippet),
+              title: const Text('Share as Text'),
+              subtitle: const Text('Send formatted details via messaging or email'),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                EmergencyShareService().shareAsText(currentInfo);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.image),
+              title: const Text('Share as Card Image'),
+              subtitle: const Text('Send visual ICE card image (PNG)'),
+              onTap: () {
+                Navigator.of(ctx).pop();
+                EmergencyShareService().shareAsImage(currentInfo);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -209,6 +269,11 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
         appBar: AppBar(
           title: const Text('Emergency info'),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.share),
+              tooltip: 'Share ICE Card',
+              onPressed: _loading || _saving ? null : _showShareOptions,
+            ),
             TextButton(
               onPressed: _loading || _saving ? null : _save,
               child: const Text('Save'),

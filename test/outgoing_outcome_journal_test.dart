@@ -59,7 +59,7 @@ void main() {
     await DatabaseHelper().close();
   });
 
-  final placedAt = DateTime(2026, 8, 6, 18, 25);
+  final placedAt = DateTime.now().subtract(const Duration(minutes: 5));
 
   Map<String, Object?> event(
     String number,

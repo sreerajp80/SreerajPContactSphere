@@ -285,6 +285,11 @@
         <receiver
             android:name=".SmartRedialReceiver"
             android:exported="false"/>
+
+        <!-- Fires generic scheduled notifications when their alarm is due. -->
+        <receiver
+            android:name=".ScheduledNotificationReceiver"
+            android:exported="false"/>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

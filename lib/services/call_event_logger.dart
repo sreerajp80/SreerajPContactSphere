@@ -188,6 +188,7 @@ class CallEventLogger {
           stored,
           CallLogRepository.matchKey(event.number),
           event.when.millisecondsSinceEpoch,
+          isOutgoing: true,
         );
         if (match == null) {
           // No row for this call yet — hold it for the next drain.

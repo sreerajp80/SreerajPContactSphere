@@ -2,7 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:smart_contacts_dialer/models/sim_account.dart';
 import 'package:smart_contacts_dialer/screens/sim_settings_screen.dart';
+import 'package:smart_contacts_dialer/services/sim_service.dart';
 import 'package:smart_contacts_dialer/services/smart_redial_service.dart';
 import 'package:smart_contacts_dialer/services/telecom_service.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
@@ -52,6 +54,10 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
   late TextEditingController _messageController;
   bool _isEditingMessage = false;
 
+  List<SimAccount> _availableSims = const [];
+  SimAccount? _selectedSim;
+  bool _loadingSims = true;
+
   static const List<int> _delayOptions = [1, 3, 5, 10, 15, 30];
 
   @override
@@ -61,6 +67,40 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
     _selectedDelayMinutes = settings.smartRedialDelayMinutes;
     _messageController =
         TextEditingController(text: settings.presetReachMeMessage);
+    _loadSims();
+  }
+
+  Future<void> _loadSims() async {
+    final settings = Provider.of<AppSettings>(context, listen: false);
+    List<SimAccount> sims = const [];
+    try {
+      sims = await SimService().list();
+    } catch (_) {
+      sims = const [];
+    }
+
+    SimAccount? initialSim;
+    if (widget.simId != null) {
+      for (final s in sims) {
+        if (s.phoneAccountId == widget.simId) {
+          initialSim = s;
+          break;
+        }
+      }
+    }
+
+    initialSim ??= await SimService().defaultSim(settings.defaultSimId);
+    if (initialSim == null && sims.isNotEmpty) {
+      initialSim = sims.first;
+    }
+
+    if (mounted) {
+      setState(() {
+        _availableSims = sims;
+        _selectedSim = initialSim;
+        _loadingSims = false;
+      });
+    }
   }
 
   @override
@@ -70,10 +110,6 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
   }
 
   Future<void> _scheduleAutoRetry() async {
-    // Without this permission the native alarm can't be armed at all (it
-    // throws and silently schedules nothing) — check first so the user gets
-    // a clear "go grant this" prompt instead of a reminder that quietly
-    // never fires.
     final hasPermission = await TelecomService().hasExactAlarmPermission();
     if (!hasPermission) {
       if (!mounted) return;
@@ -91,7 +127,7 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
         contactId: widget.contactId,
         displayName: widget.displayName,
         delayMinutes: _selectedDelayMinutes,
-        simId: widget.simId,
+        simId: _selectedSim?.phoneAccountId ?? widget.simId,
       );
     } catch (_) {
       // Belt-and-suspenders: the permission check above should already
@@ -270,6 +306,7 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
                   colors: colors,
                 ),
                 const SizedBox(height: 10),
+                _simSelector(colors, accent),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -448,6 +485,102 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
           _selectedDelayMinutes = minutes;
         });
       },
+    );
+  }
+
+  Widget _simSelector(AppColors colors, Color accent) {
+    if (_loadingSims) {
+      return const SizedBox.shrink();
+    }
+
+    final simLabel = _selectedSim?.displayLabel ?? 'Default SIM';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: colors.searchFill,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colors.mutedText.withValues(alpha: 0.15),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.sim_card_outlined, size: 18, color: accent),
+          const SizedBox(width: 8),
+          Text(
+            'SIM to dial:',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: colors.mutedText,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              simLabel,
+              style: const TextStyle(
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          if (_availableSims.length > 1)
+            InkWell(
+              onTap: _showSimPicker,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Text(
+                  'Change',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: accent,
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _showSimPicker() {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                'Select SIM for Auto-Retry',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              ),
+            ),
+            for (final sim in _availableSims)
+              ListTile(
+                leading: const Icon(Icons.sim_card),
+                title: Text(sim.displayLabel),
+                trailing: _selectedSim?.phoneAccountId == sim.phoneAccountId
+                    ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
+                    : null,
+                onTap: () {
+                  setState(() => _selectedSim = sim);
+                  Navigator.pop(ctx);
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
     );
   }
 }

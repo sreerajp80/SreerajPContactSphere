@@ -15,6 +15,7 @@ import 'package:smart_contacts_dialer/models/relationship.dart';
 import 'package:smart_contacts_dialer/repositories/contact_repository.dart';
 import 'package:smart_contacts_dialer/repositories/emergency_info_repository.dart';
 import 'package:smart_contacts_dialer/repositories/flagged_number_repository.dart';
+import 'package:smart_contacts_dialer/services/quiet_hours_service.dart';
 import 'package:smart_contacts_dialer/services/telecom_service.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
@@ -264,6 +265,27 @@ class AppSettings extends ChangeNotifier {
   static const String _kRingtoneVolume = 'ringtone_volume_percent';
   static const String _kVibrateOnCall = 'vibrate_on_incoming_call';
   static const String _kPerSimRingtones = 'per_sim_ringtones';
+  static const String _kSpokenCallerAnnouncement =
+      'spoken_caller_announcement_enabled';
+  static const String _kSpokenCallerQuietHours =
+      'spoken_caller_quiet_hours_enabled';
+  static const String _kSpokenCallerQuietHoursStart =
+      'spoken_caller_quiet_hours_start';
+  static const String _kSpokenCallerQuietHoursEnd =
+      'spoken_caller_quiet_hours_end';
+
+  static const String _kRelationshipQuietHoursEnabled =
+      'rel_quiet_hours_enabled';
+  static const String _kRelationshipQuietHoursStart =
+      'rel_quiet_hours_start';
+  static const String _kRelationshipQuietHoursEnd =
+      'rel_quiet_hours_end';
+  static const String _kRelationshipQuietHoursAllowedTiers =
+      'rel_quiet_hours_allowed_tiers';
+  static const String _kRelationshipQuietHoursAllowedTags =
+      'rel_quiet_hours_allowed_tags';
+  static const String _kRelationshipQuietHoursAllowedContactIds =
+      'rel_quiet_hours_allowed_contact_ids';
 
   /// Per-SIM display colors (in-call SIM chip), mapping a SIM's phone-account
   /// id to an ARGB int, stored as a JSON object. Absent = slot default
@@ -369,6 +391,21 @@ class AppSettings extends ChangeNotifier {
   Map<String, RingtoneRef> _perSimRingtones = const {};
   Map<String, Color> _perSimColors = const {};
 
+  bool _spokenCallerAnnouncementEnabled = false;
+  bool _spokenCallerQuietHoursEnabled = true;
+  String _spokenCallerQuietHoursStart = '22:00';
+  String _spokenCallerQuietHoursEnd = '07:00';
+
+  bool _relationshipQuietHoursEnabled = false;
+  String _relationshipQuietHoursStart = '22:00';
+  String _relationshipQuietHoursEnd = '07:00';
+  List<String> _relationshipQuietHoursAllowedTiers = const [
+    QuietHoursTiers.emergency,
+    QuietHoursTiers.immediateFamily,
+  ];
+  List<String> _relationshipQuietHoursAllowedTags = const [];
+  List<int> _relationshipQuietHoursAllowedContactIds = const [];
+
   String _defaultCountryIso = _autoDetectedCountryIso();
 
   bool _includeSecretInExport = false;
@@ -443,6 +480,39 @@ class AppSettings extends ChangeNotifier {
   /// Whether the phone vibrates on an incoming call (subject to the device
   /// ringer mode — silent mode still suppresses vibration).
   bool get vibrateOnIncomingCall => _vibrateOnIncomingCall;
+
+  /// Whether incoming callers' names are announced aloud ("Amma calling").
+  bool get spokenCallerAnnouncementEnabled => _spokenCallerAnnouncementEnabled;
+
+  /// Whether spoken caller announcements are suppressed during quiet hours.
+  bool get spokenCallerQuietHoursEnabled => _spokenCallerQuietHoursEnabled;
+
+  /// Start time for spoken caller announcement quiet hours (HH:mm).
+  String get spokenCallerQuietHoursStart => _spokenCallerQuietHoursStart;
+
+  /// End time for spoken caller announcement quiet hours (HH:mm).
+  String get spokenCallerQuietHoursEnd => _spokenCallerQuietHoursEnd;
+
+  /// Whether relationship-tier quiet hours call silencing is enabled.
+  bool get relationshipQuietHoursEnabled => _relationshipQuietHoursEnabled;
+
+  /// Start time for relationship-tier quiet hours (HH:mm).
+  String get relationshipQuietHoursStart => _relationshipQuietHoursStart;
+
+  /// End time for relationship-tier quiet hours (HH:mm).
+  String get relationshipQuietHoursEnd => _relationshipQuietHoursEnd;
+
+  /// Allowed relationship tiers during quiet hours (e.g. emergency, immediate_family).
+  List<String> get relationshipQuietHoursAllowedTiers =>
+      List.unmodifiable(_relationshipQuietHoursAllowedTiers);
+
+  /// Allowed tag names during quiet hours.
+  List<String> get relationshipQuietHoursAllowedTags =>
+      List.unmodifiable(_relationshipQuietHoursAllowedTags);
+
+  /// Allowed contact IDs during quiet hours.
+  List<int> get relationshipQuietHoursAllowedContactIds =>
+      List.unmodifiable(_relationshipQuietHoursAllowedContactIds);
 
   /// Per-SIM ringtones, keyed by phone-account id. Empty when none are set.
   Map<String, RingtoneRef> get perSimRingtones =>
@@ -611,6 +681,35 @@ class AppSettings extends ChangeNotifier {
       final volume = prefs.getInt(_kRingtoneVolume);
       if (volume != null) _ringtoneVolumePercent = volume.clamp(0, 100);
       _vibrateOnIncomingCall = prefs.getBool(_kVibrateOnCall) ?? true;
+      _spokenCallerAnnouncementEnabled =
+          prefs.getBool(_kSpokenCallerAnnouncement) ?? false;
+      _spokenCallerQuietHoursEnabled =
+          prefs.getBool(_kSpokenCallerQuietHours) ?? true;
+      _spokenCallerQuietHoursStart =
+          prefs.getString(_kSpokenCallerQuietHoursStart) ?? '22:00';
+      _spokenCallerQuietHoursEnd =
+          prefs.getString(_kSpokenCallerQuietHoursEnd) ?? '07:00';
+
+      _relationshipQuietHoursEnabled =
+          prefs.getBool(_kRelationshipQuietHoursEnabled) ?? false;
+      _relationshipQuietHoursStart =
+          prefs.getString(_kRelationshipQuietHoursStart) ?? '22:00';
+      _relationshipQuietHoursEnd =
+          prefs.getString(_kRelationshipQuietHoursEnd) ?? '07:00';
+      _relationshipQuietHoursAllowedTiers =
+          prefs.getStringList(_kRelationshipQuietHoursAllowedTiers) ??
+              const [
+                QuietHoursTiers.emergency,
+                QuietHoursTiers.immediateFamily,
+              ];
+      _relationshipQuietHoursAllowedTags =
+          prefs.getStringList(_kRelationshipQuietHoursAllowedTags) ?? const [];
+      final rawContactIds =
+          prefs.getStringList(_kRelationshipQuietHoursAllowedContactIds) ?? [];
+      _relationshipQuietHoursAllowedContactIds = rawContactIds
+          .map((e) => int.tryParse(e))
+          .whereType<int>()
+          .toList();
       _perSimRingtones = _decodeSimRingtones(
         prefs.getString(_kPerSimRingtones),
       );
@@ -629,6 +728,7 @@ class AppSettings extends ChangeNotifier {
       // repository), so the screening service has them on a cold start.
       _mirrorScreeningPrefs();
       unawaited(FlaggedNumberRepository().pushScreeningMirror());
+      unawaited(QuietHoursService().syncQuietHoursMirror(settings: this));
 
       // And the emergency card, so the lock-screen shortcut matches the saved
       // record after a reinstall/restore without waiting for the next edit.
@@ -882,15 +982,129 @@ class AppSettings extends ChangeNotifier {
     }
   }
 
-  /// Pushes the current volume/vibrate prefs to the native ringer. Fire-and-forget:
-  /// the native side reads its own persisted copy, so a failed push is harmless.
+  /// Pushes the current volume/vibrate/spoken-announcement prefs to the native ringer.
+  /// Fire-and-forget: the native side reads its own persisted copy, so a failed push is harmless.
   void _mirrorRingerPrefs() {
     unawaited(
       TelecomService().setRingerPrefs(
         volumePercent: _ringtoneVolumePercent,
         vibrate: _vibrateOnIncomingCall,
+        spokenAnnouncementEnabled: _spokenCallerAnnouncementEnabled,
+        quietHoursEnabled: _spokenCallerQuietHoursEnabled,
+        quietHoursStart: _spokenCallerQuietHoursStart,
+        quietHoursEnd: _spokenCallerQuietHoursEnd,
       ),
     );
+  }
+
+  /// Enables or disables spoken caller announcements ("Amma calling").
+  Future<void> setSpokenCallerAnnouncementEnabled(bool enabled) async {
+    if (enabled == _spokenCallerAnnouncementEnabled) return;
+    _spokenCallerAnnouncementEnabled = enabled;
+    _mirrorRingerPrefs();
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_kSpokenCallerAnnouncement, enabled);
+    } catch (_) {}
+  }
+
+  /// Enables or disables suppressing spoken announcements during quiet hours.
+  Future<void> setSpokenCallerQuietHoursEnabled(bool enabled) async {
+    if (enabled == _spokenCallerQuietHoursEnabled) return;
+    _spokenCallerQuietHoursEnabled = enabled;
+    _mirrorRingerPrefs();
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_kSpokenCallerQuietHours, enabled);
+    } catch (_) {}
+  }
+
+  /// Sets the quiet hours time range (start and end as "HH:mm").
+  Future<void> setSpokenCallerQuietHoursRange(String start, String end) async {
+    if (start == _spokenCallerQuietHoursStart &&
+        end == _spokenCallerQuietHoursEnd) {
+      return;
+    }
+    _spokenCallerQuietHoursStart = start;
+    _spokenCallerQuietHoursEnd = end;
+    _mirrorRingerPrefs();
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_kSpokenCallerQuietHoursStart, start);
+      await prefs.setString(_kSpokenCallerQuietHoursEnd, end);
+    } catch (_) {}
+  }
+
+  /// Enables or disables relationship-tier quiet hours call silencing.
+  Future<void> setRelationshipQuietHoursEnabled(bool enabled) async {
+    if (enabled == _relationshipQuietHoursEnabled) return;
+    _relationshipQuietHoursEnabled = enabled;
+    unawaited(QuietHoursService().syncQuietHoursMirror(settings: this));
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_kRelationshipQuietHoursEnabled, enabled);
+    } catch (_) {}
+  }
+
+  /// Sets the relationship quiet hours time range (start and end as "HH:mm").
+  Future<void> setRelationshipQuietHoursRange(
+      String start, String end) async {
+    if (start == _relationshipQuietHoursStart &&
+        end == _relationshipQuietHoursEnd) {
+      return;
+    }
+    _relationshipQuietHoursStart = start;
+    _relationshipQuietHoursEnd = end;
+    unawaited(QuietHoursService().syncQuietHoursMirror(settings: this));
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_kRelationshipQuietHoursStart, start);
+      await prefs.setString(_kRelationshipQuietHoursEnd, end);
+    } catch (_) {}
+  }
+
+  /// Sets the allowed relationship tiers during quiet hours.
+  Future<void> setRelationshipQuietHoursAllowedTiers(
+      List<String> tiers) async {
+    _relationshipQuietHoursAllowedTiers = List.from(tiers);
+    unawaited(QuietHoursService().syncQuietHoursMirror(settings: this));
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_kRelationshipQuietHoursAllowedTiers, tiers);
+    } catch (_) {}
+  }
+
+  /// Sets the allowed tags during quiet hours.
+  Future<void> setRelationshipQuietHoursAllowedTags(
+      List<String> tags) async {
+    _relationshipQuietHoursAllowedTags = List.from(tags);
+    unawaited(QuietHoursService().syncQuietHoursMirror(settings: this));
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(_kRelationshipQuietHoursAllowedTags, tags);
+    } catch (_) {}
+  }
+
+  /// Sets the allowed individual contact IDs during quiet hours.
+  Future<void> setRelationshipQuietHoursAllowedContactIds(
+      List<int> ids) async {
+    _relationshipQuietHoursAllowedContactIds = List.from(ids);
+    unawaited(QuietHoursService().syncQuietHoursMirror(settings: this));
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setStringList(
+        _kRelationshipQuietHoursAllowedContactIds,
+        ids.map((id) => id.toString()).toList(),
+      );
+    } catch (_) {}
   }
 
   /// Pushes the per-SIM tone map to the native ringtone mirror so the ringer can
