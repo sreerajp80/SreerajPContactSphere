@@ -418,24 +418,24 @@ than what exists.
 
 ## 12. Settings screen
 
-Audit Log, Contacts (see "Contacts settings" below), Sync to Another
-Device, Backup & Restore, SIM & calling (default SIM, per-SIM color,
-caller ID, spam filter, quick replies, post-call feedback toggle, a Smart
-Redial on/off toggle (on by default), delay, and "Reach Me" message, and a
-list of pending Smart Redial reminders with a cancel action),
-Spoken Caller Announcements (English/Malayalam voice announcement over ringtone with
-quiet-hours exception range and test preview),
-Ringtone, Emergency info, Default country (for
-phone number formatting), Appearance, Features (an in-app showcase screen —
-note it contains some marketing-style copy that is not fully backed by the
-code, e.g. it describes a per-contact notes timeline that doesn't exist, so
-don't treat it as ground truth on its own), Permissions, Help (separate
-help pages for backup, biometrics, contact sync, emergency info, P2P sync,
-and T9 dialing), About (version and build number, plus other app details
-read from config, e.g. author/email), a default-dialer-role status card, an
-app-lock-mode status card, a screenshot-guard toggle, and a card to choose
-the dialer's "top contacts" source (Most recent / Family & friends / Likely
-to answer now).
+The Settings hub (`SettingsScreen`) organizes options into dedicated sub-screens and cards:
+
+- **Security** (`SecurityScreen`): App lock mode chooser (Off / Device lock / App PIN with PIN setup), Screenshot Guard toggle (`ScreenshotGuardSettingsScreen`), and Audit Log (`AuditLogScreen`).
+- **Top contacts source**: An inline card on the hub to select the source for the dialer's top contacts strip ("Most recent", "Family & friends", or "Likely to answer now").
+- **Dialpad script**: An inline card on the hub to pick the active T9 dialpad script (Latin, Malayalam, Devanagari, Cyrillic, Arabic, Greek, Auto-detect).
+- **Contacts** (`ContactsSettingsScreen`): Sort order, Name display format, "Hide contacts without a phone number" toggle, Search index health check and rebuild, Secret-contacts export settings, "Add Me" shortcut, device sync actions, blocked numbers management, and relationship names & quiet hours settings (see "Contacts settings" below).
+- **Sync to Another Device** (`SyncHomeScreen`): Gated by biometric/PIN check; direct LAN P2P contact sync hub.
+- **Backup & Restore** (`BackupRestoreScreen`): Gated by biometric/PIN check; AES-GCM encrypted database export and restore.
+- **SIM & calling** (`SimSettingsScreen`): Default dialer role status card (`DefaultDialerCard`), SIM Cards & Accounts (`SimPreferencesScreen`: default SIM, ask per call, SIM display colors), Identification & Spam (`IdentificationSettingsScreen`: local caller ID heuristics, filter suspected spam), Spoken caller announcements (`SpokenAnnouncementsScreen`), Relationship-tier quiet hours (`RelationshipQuietHoursScreen`), Quick replies (`QuickRepliesScreen`), Post-call options (`PostCallFeedbackScreen`), and Smart Redial & "Reach Me" (`SmartRedialSettingsScreen`).
+- **Ringtone** (`RingtoneSettingsScreen`): Volume & vibration (`RingtoneVolumeVibrationScreen`), Per-SIM ringtones (`PerSimRingtoneScreen`), and Ringtone pickers with in-app audio preview.
+- **Emergency info** (`EmergencyInfoScreen`): ICE profile editor, published lock-screen fields, persistent notification, lock-screen card preview, and high-res PNG / plain text export.
+- **Default country** (`DefaultCountryScreen`): Country picker for phone number formatting and normalization.
+- **Appearance** (`AppearanceScreen`): Theme Mode (`ThemeModeSettingsScreen`), Typography & Text Size (`TypographySettingsScreen`), and Accent Color (`AccentColorSettingsScreen`).
+- **Features** (`FeaturesScreen`): An in-app showcase screen (note it contains some marketing-style copy that is not fully backed by the code, e.g. it describes a per-contact notes timeline that doesn't exist, so don't treat it as ground truth on its own).
+- **Permissions** (`PermissionsScreen`): Screen listing every permission the app uses, its rationale, and current grant status.
+- **Help** (`HelpHomeScreen`): Separate help pages for backup, biometrics, contact sync, emergency info, P2P sync, and T9 dialing.
+- **About** (`AboutScreen`): Version and build number, app description, and dynamic developer details loaded from configuration (`assets/config/app_config.json`).
+
 
 ### Contacts settings
 
