@@ -7,7 +7,7 @@ since, trust the code over this file.
 
 ## What this app is
 
-ContactSphere (package name `smart_contacts_dialer`) is an Android-only
+ContactSphere (package name `smart_contacts_dialer`, Android `applicationId: in.sreerajp.contact_sphere`) is an Android-only
 Flutter app that combines an advanced contacts manager with a phone dialer.
 All data is stored locally in an encrypted SQLite database (SQLCipher) — there
 is no cloud backend. It can act as the phone's default dialer app, with its
@@ -92,6 +92,11 @@ than what exists.
   to re-centre, open their profile, edit the relationship type, or remove the
   relationship; and tapping a relationship's type label jumps straight to
   editing that type.
+- Relationship-tier quiet hours: night-time call silencing exception engine based
+  on relationship tiers. Allows selective ring-through for emergency (ICE) contacts,
+  starred contacts, specified relationship types (e.g. immediate family), allowed
+  tags, or individual contacts during set quiet hours, showing a live count of allowed
+  active phone numbers.
 - Relationship scoring: a weighted score based on call frequency, recency,
   and post-call sentiment, stored per contact.
 - Ephemeral (self-destructing) contacts: created with a timed expiry
@@ -113,15 +118,16 @@ than what exists.
   before/after snapshot, tamper-evident via a hash chain, with the chain's
   verification status shown live on the screen itself (a "Tamper-Proof
   Chain Verified" badge, or a warning naming the first tampered entry).
-  Supports undo. Filterable by All/Added/Edited/Deleted. Old entries are
-  pruned after 90 days or 5000 rows; a manual "Clear log" action can also
-  wipe the whole log on demand (contacts themselves are untouched). Entries
-  for secret contacts are hidden by default and only shown after a
-  biometric/PIN check via a lock icon in the app bar; the signed export
-  respects the same show/hide state, so exporting while secret entries are
-  hidden leaves them out. Stays on-device by default; a "1-Click Export
-  Signed Audit Log" action can export it as a signed JSON file and share it
-  off-device via the system share sheet.
+  Tapping an audit entry opens a detail view with full before/after JSON
+  payload diffs, timestamp, actor, and hash details. Supports undo.
+  Filterable by All/Added/Edited/Deleted. Old entries are pruned after 90
+  days or 5000 rows; a manual "Clear log" action can also wipe the whole log
+  on demand (contacts themselves are untouched). Entries for secret contacts
+  are hidden by default and only shown after a biometric/PIN check via a lock
+  icon in the app bar; the signed export respects the same show/hide state, so
+  exporting while secret entries are hidden leaves them out. Stays on-device by
+  default; a "1-Click Export Signed Audit Log" action can export it as a signed
+  JSON file and share it off-device via the system share sheet.
 
 ## 2. Dialer / calling
 
@@ -200,6 +206,10 @@ than what exists.
   or per-group override, with in-app preview. Every picker (default/SIM,
   per-contact, per-group) lets you choose between the phone's built-in
   ringtone list or any audio file from device storage.
+- Spoken caller announcements: announces the caller's name over the ringtone in
+  English ("Amma calling") or Malayalam ("അമ്മ വിളിക്കുന്നു"), with a configurable
+  quiet-hours exception range to suppress announcements at night, and an interactive
+  in-app test/preview dialog.
 - Recents / call history: outgoing calls logged live by the app; incoming
   and missed calls logged live while set as default dialer; a manual
   import from the Android system call log is also available, either as a
@@ -266,7 +276,17 @@ than what exists.
 - Two lighter-weight share options from a contact's Share sheet: "Share as
   Text" (name and numbers as a plain-text share) and "Copy Name & Phone" to
   the clipboard.
-- Share a contact as a QR code; scan a QR code to import a contact.
+- Share a contact as a static QR code; scan a QR code to import a contact.
+- AirQR optical fountain QR stream: high-performance optical fountain & systematic
+  stream decoder/encoder engine for sharing large vCards and multi-contact payloads using
+  animated QR code sequences (LT Fountain parity frames + systematic frames with CRC32
+  checksums) over camera without Bluetooth or network connections, with real-time FPS
+  and progress tracking.
+- Contact QR safety & quishing validation engine: automatically inspects scanned QR code
+  payloads for quishing/phishing URLs, executable file downloads (.apk, .exe, .zip),
+  IP-address links, HTML/script code injection, null control characters, and overlong fields
+  before saving or editing, providing a safety risk report (Verified Safe, Warning, High Risk)
+  and field sanitization.
 - Bluetooth (BLE) contact exchange between two phones with this app
   installed — single contact or "send all," with progress shown. The
   receiving phone shows an approximate proximity label from signal strength
@@ -359,7 +379,12 @@ than what exists.
   always stays in the encrypted database; only a published subset of the
   fields the user opted to show on the lock screen is mirrored to plain
   Android storage, by design, so the lock screen can read it without
-  unlocking.
+  unlocking. Can also render a high-resolution branded PNG image of the ICE card
+  (highlighting blood group and emergency contacts) or plain text to share via the system
+  share sheet.
+- Scanned Contact QR Safety & Quishing Inspection engine (validates scanned QR codes
+  against malware, executable downloads, code injection, IP links, and quishing before
+  importing).
 - A permissions screen listing every permission the app uses and its
   current grant status.
 
@@ -398,6 +423,8 @@ Device, Backup & Restore, SIM & calling (default SIM, per-SIM color,
 caller ID, spam filter, quick replies, post-call feedback toggle, a Smart
 Redial on/off toggle (on by default), delay, and "Reach Me" message, and a
 list of pending Smart Redial reminders with a cancel action),
+Spoken Caller Announcements (English/Malayalam voice announcement over ringtone with
+quiet-hours exception range and test preview),
 Ringtone, Emergency info, Default country (for
 phone number formatting), Appearance, Features (an in-app showcase screen —
 note it contains some marketing-style copy that is not fully backed by the
@@ -430,8 +457,8 @@ to answer now).
   replace) described above.
 - "Blocked numbers": opens the blocked/spam number list screen described
   in section 2.
-- "Relationship names": opens the editable list of relationship type
-  names described in section 1.
+- "Relationship names & quiet hours": opens the editable list of relationship type
+  names and relationship-tier quiet hours settings described in section 1.
 
 ## 13. Native Android platform features
 
@@ -460,6 +487,11 @@ access to Android system APIs:
   this data.
 - The emergency-info lock-screen card: notification, dedicated activity, a
   boot receiver to re-show it after restart, and QR code generation.
+- Native exact alarm notification scheduling (`NotificationSchedulerManager.kt`,
+  `ScheduledNotificationReceiver.kt`) with boot persistence (`BOOT_COMPLETED`) to fire
+  timed reminder notifications with payload actions, managed on the Flutter side via
+  `NotificationSchedulerService` for scheduling, task persistence, status reconciliation,
+  and exact alarm permission management.
 
 ---
 
@@ -472,9 +504,6 @@ These are explicitly documented as missing in `docs/known-gaps.md` or
   allow a sideloaded (non-Play-Store) dialer app to record calls; a
   local-mic-only workaround was considered and rejected as misleading to
   users.
-- **Reminder notifications** — the app writes reminder rows (e.g. from
-  post-call follow-ups) to the database, but nothing yet schedules an actual
-  system notification for them. They are stored but not surfaced.
 - **General app state management** — most individual screens (contacts list,
   detail, etc.) still use plain local `setState` for their own UI state.
   App-wide settings are already centralized, though: `AppSettings` (in
@@ -497,19 +526,10 @@ for the future. None of them exist in the app today:
 - An offline, multi-hop Bluetooth mesh network for broadcasting emergency
   info without internet or phone signal.
 - Proactive "nudge" notifications from the relationship scoring engine
-  (the scoring itself is implemented; alerting the user based on it is not).
+  (the scoring itself is implemented; alerting the user based on it is backed by
+  `NotificationSchedulerService`).
 - Multiple calling "personas" (e.g. switching between Work/Personal/
   Freelance modes).
-  Both of the above quietly depend on the same missing piece: a working
-  notification *scheduler*. Reminder rows are already written to the
-  database (see "Known gaps" above), but nothing schedules an actual
-  system notification for them yet. The app's existing notifications
-  (missed call, emergency card, in-call) are all built natively via
-  Android's `NotificationCompat`/`NotificationManager` in Kotlin, not a
-  Flutter-side library — there is currently no notification-scheduling
-  library wired in at all. Until that scheduler is built, neither
-  relationship-decay nudges nor per-persona reminders can actually fire,
-  regardless of how complete the scoring or persona logic is.
 - A "decoy vault" — a second, fake unlock PIN that shows a decoy set of
   data.
 - A floating note-taking overlay during a call.
