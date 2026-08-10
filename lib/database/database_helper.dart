@@ -64,7 +64,7 @@ class DatabaseHelper {
     if (!_encryptionEnabled) {
       return await openDatabase(
         path,
-        version: 27,
+        version: 28,
         onConfigure: _onConfigure,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
@@ -76,7 +76,7 @@ class DatabaseHelper {
     return await cipher.openDatabase(
       path,
       password: key,
-      version: 27,
+      version: 28,
       onConfigure: _onConfigure,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
@@ -107,6 +107,7 @@ class DatabaseHelper {
     await _ensureEphemeralColumns(db);
     await _ensureConfirmedMergePhonesTable(db);
     await _ensureCallOutcomeColumn(db);
+    await _ensureOnlineSyncColumns(db);
     if (await staleContactSearchKeyCount(db) > 0) {
       await rebuildContactSearchKeys(db);
     }
@@ -641,6 +642,52 @@ class DatabaseHelper {
     if (oldVersion < 27) {
       await _ensureCallOutcomeColumn(db);
     }
+    // v27 -> v28: remote sync tracking columns on contacts and pending_remote_deletions table.
+    if (oldVersion < 28) {
+      await _ensureOnlineSyncColumns(db);
+    }
+  }
+
+  /// Self-healing helper for online contact sync columns and pending deletion queue.
+  Future<void> _ensureOnlineSyncColumns(DatabaseExecutor db) async {
+    final info = await db.rawQuery('PRAGMA table_info(contacts)');
+    if (info.isEmpty) return;
+    final names = info.map((r) => r['name'] as String).toSet();
+
+    if (!names.contains('remote_sync_id')) {
+      await db.execute('ALTER TABLE contacts ADD COLUMN remote_sync_id TEXT');
+    }
+    if (!names.contains('sync_etag')) {
+      await db.execute('ALTER TABLE contacts ADD COLUMN sync_etag TEXT');
+    }
+    if (!names.contains('last_synced_at')) {
+      await db.execute('ALTER TABLE contacts ADD COLUMN last_synced_at TEXT');
+    }
+    if (!names.contains('sync_provider')) {
+      await db.execute('ALTER TABLE contacts ADD COLUMN sync_provider TEXT');
+    }
+    if (!names.contains('needs_sync')) {
+      await db.execute('ALTER TABLE contacts ADD COLUMN needs_sync INTEGER DEFAULT 0');
+    }
+
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS pending_remote_deletions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        remote_sync_id TEXT NOT NULL,
+        sync_provider TEXT NOT NULL,
+        deleted_at TEXT NOT NULL
+      )
+    ''');
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_contacts_remote_sync_id ON contacts(remote_sync_id)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_contacts_needs_sync ON contacts(needs_sync)',
+    );
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_pending_remote_deletions_provider ON pending_remote_deletions(sync_provider)',
+    );
   }
 
   /// Ensures `call_logs.call_outcome` exists, and seeds it for rows written

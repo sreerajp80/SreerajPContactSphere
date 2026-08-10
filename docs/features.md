@@ -1,9 +1,8 @@
 # ContactSphere — Feature Reference
 
 This file is a reference for another LLM (or a developer) to check what this
-app already does, before implementing a new feature. It is meant to be
-accurate and complete as of the date it was written. If code has changed
-since, trust the code over this file.
+app already does, before implementing a new feature. It is accurate and complete
+as of August 10, 2026. If code has changed since, trust the code over this file.
 
 ## What this app is
 
@@ -13,7 +12,7 @@ All data is stored locally in an encrypted SQLite database (SQLCipher) — there
 is no cloud backend. It can act as the phone's default dialer app, with its
 own in-call UI that supports call waiting and merging a second call, sync
 with the Android system contacts, sync directly with another phone over a
-local network, and back up/restore its data as an encrypted file. It tracks
+local network, opt-in 2-way sync with online providers (Google Contacts, Microsoft Outlook, CardDAV), and back up/restore its data as an encrypted file locally or to cloud storage (Google Drive, OneDrive, Nextcloud/WebDAV). It tracks
 relationships between contacts (with duplicate detection and merge), lets you
 organize contacts into tags and groups, and can block spam calls. It adds a
 security layer of its own — app lock, hidden "secret" contacts, ephemeral
@@ -356,6 +355,8 @@ than what exists.
   summary entry is logged after a restore.
 - Requires passing a biometric/PIN check before it can be opened from
   Settings.
+- **Online Provider Contact Sync**: Opt-in, direct 2-way contact sync with Google Contacts (Google People API v1), Microsoft Outlook Contacts (MS Graph API v1.0), and CardDAV servers (RFC 6352, Nextcloud, Fastmail, Baïkal) without telemetry or intermediary servers. Delta updates use provider sync tokens and tombstone deletion queues (`pending_remote_deletions`). Secret contacts (`is_secret = 1`) are strictly excluded.
+- **Encrypted Cloud Backup & Restore**: Uploads and restores password-encrypted `.csbak` full-app backup packages directly to/from Google Drive (`drive.appdata`), Microsoft OneDrive (`/me/drive/special/approot`), or Nextcloud / WebDAV storage over HTTPS. Encrypted end-to-end with PBKDF2 (300k iterations) + AES-GCM-256 using the user's passphrase before upload.
 
 ## 8. Security / privacy
 
@@ -423,9 +424,11 @@ The Settings hub (`SettingsScreen`) organizes options into dedicated sub-screens
 - **Security** (`SecurityScreen`): App lock mode chooser (Off / Device lock / App PIN with PIN setup), Screenshot Guard toggle (`ScreenshotGuardSettingsScreen`), and Audit Log (`AuditLogScreen`).
 - **Top contacts source**: An inline card on the hub to select the source for the dialer's top contacts strip ("Most recent", "Family & friends", or "Likely to answer now").
 - **Dialpad script**: An inline card on the hub to pick the active T9 dialpad script (Latin, Malayalam, Devanagari, Cyrillic, Arabic, Greek, Auto-detect).
-- **Contacts** (`ContactsSettingsScreen`): Sort order, Name display format, "Hide contacts without a phone number" toggle, Search index health check and rebuild, Secret-contacts export settings, "Add Me" shortcut, device sync actions, blocked numbers management, and relationship names & quiet hours settings (see "Contacts settings" below).
-- **Sync to Another Device** (`SyncHomeScreen`): Gated by biometric/PIN check; direct LAN P2P contact sync hub.
-- **Backup & Restore** (`BackupRestoreScreen`): Gated by biometric/PIN check; AES-GCM encrypted database export and restore.
+- **Contacts** (`ContactsSettingsScreen`): Sort order, Name display format, and "Hide contacts without a phone number" toggle (`ContactDisplaySettingsScreen`), Search index health check and rebuild (`ContactIndexHealthScreen`), Secret-contacts export settings (`SecretContactsExportScreen`), "Add Me" shortcut, device sync actions (`ContactSyncSettingsScreen`), blocked numbers management (`BlockedNumbersScreen`), and custom relationship labels (`RelationshipNamesScreen`) (see "Contacts settings" below).
+- **Sync to Another Device** (`SyncHomeScreen`): Gated by biometric/PIN check; direct LAN P2P contact sync hub (`SendToDeviceScreen`, `ReceiveFromDeviceScreen`).
+- **Online Provider Sync** (`OnlineSyncSettingsScreen`): Account manager and trigger for direct 2-way sync with Google Contacts, Microsoft Outlook Contacts, and CardDAV providers.
+- **Backup & Restore** (`BackupRestoreScreen`): Gated by biometric/PIN check; AES-GCM encrypted local database export and restore.
+- **Encrypted Cloud Backup** (`CloudBackupSettingsScreen`): Password-encrypted `.csbak` cloud package export and restore directly to/from Google Drive (`drive.appdata`), Microsoft OneDrive (`/me/drive/special/approot`), or Nextcloud / WebDAV storage over HTTPS using PBKDF2 + AES-GCM-256 encryption.
 - **SIM & calling** (`SimSettingsScreen`): Default dialer role status card (`DefaultDialerCard`), SIM Cards & Accounts (`SimPreferencesScreen`: default SIM, ask per call, SIM display colors), Identification & Spam (`IdentificationSettingsScreen`: local caller ID heuristics, filter suspected spam), Spoken caller announcements (`SpokenAnnouncementsScreen`), Relationship-tier quiet hours (`RelationshipQuietHoursScreen`), Quick replies (`QuickRepliesScreen`), Post-call options (`PostCallFeedbackScreen`), and Smart Redial & "Reach Me" (`SmartRedialSettingsScreen`).
 - **Ringtone** (`RingtoneSettingsScreen`): Volume & vibration (`RingtoneVolumeVibrationScreen`), Per-SIM ringtones (`PerSimRingtoneScreen`), and Ringtone pickers with in-app audio preview.
 - **Emergency info** (`EmergencyInfoScreen`): ICE profile editor, published lock-screen fields, persistent notification, lock-screen card preview, and high-res PNG / plain text export.
@@ -433,7 +436,7 @@ The Settings hub (`SettingsScreen`) organizes options into dedicated sub-screens
 - **Appearance** (`AppearanceScreen`): Theme Mode (`ThemeModeSettingsScreen`), Typography & Text Size (`TypographySettingsScreen`), and Accent Color (`AccentColorSettingsScreen`).
 - **Features** (`FeaturesScreen`): An in-app showcase screen (note it contains some marketing-style copy that is not fully backed by the code, e.g. it describes a per-contact notes timeline that doesn't exist, so don't treat it as ground truth on its own).
 - **Permissions** (`PermissionsScreen`): Screen listing every permission the app uses, its rationale, and current grant status.
-- **Help** (`HelpHomeScreen`): Separate help pages for backup, biometrics, contact sync, emergency info, P2P sync, and T9 dialing.
+- **Help** (`HelpHomeScreen`): Separate help pages for backup, biometrics, cloud sync, contact sync, emergency info, P2P sync, and T9 dialing.
 - **About** (`AboutScreen`): Version and build number, app description, and dynamic developer details loaded from configuration (`assets/config/app_config.json`).
 
 

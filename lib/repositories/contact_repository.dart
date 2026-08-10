@@ -461,6 +461,7 @@ class ContactRepository {
       contactMap['name_phonetic'] = _namePhonetic(contact);
       contactMap['sort_first'] = sortRoman(contact.firstName);
       contactMap['sort_last'] = sortRoman(contact.lastName ?? '');
+      contactMap['needs_sync'] = contact.isSecret ? 0 : 1;
       final int contactId = await txn.insert('contacts', contactMap);
 
       // "Self" is a singleton — clear the flag on any previous Self record.
@@ -558,6 +559,7 @@ class ContactRepository {
       map['name_phonetic'] = _namePhonetic(contact);
       map['sort_first'] = sortRoman(contact.firstName);
       map['sort_last'] = sortRoman(contact.lastName ?? '');
+      map['needs_sync'] = contact.isSecret ? 0 : 1;
       final count = await txn.update(
         'contacts',
         map,
@@ -608,6 +610,26 @@ class ContactRepository {
     await db.transaction((txn) async {
       final before = await AuditRepository.capture(txn, id);
       if (before == null) return; // nothing there; nothing to log
+
+      // Record tombstone deletion if sync metadata exists
+      final rows = await txn.query(
+        'contacts',
+        columns: ['remote_sync_id', 'sync_provider'],
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      if (rows.isNotEmpty) {
+        final remoteId = rows.first['remote_sync_id'] as String?;
+        final provider = rows.first['sync_provider'] as String?;
+        if (remoteId != null && remoteId.isNotEmpty && provider != null && provider.isNotEmpty) {
+          await txn.insert('pending_remote_deletions', {
+            'remote_sync_id': remoteId,
+            'sync_provider': provider,
+            'deleted_at': DateTime.now().toIso8601String(),
+          });
+        }
+      }
+
       // With foreign_keys ON, child rows cascade automatically.
       await txn.delete('contacts', where: 'id = ?', whereArgs: [id]);
       await AuditRepository.record(

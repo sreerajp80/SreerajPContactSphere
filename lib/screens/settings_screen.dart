@@ -20,6 +20,9 @@ import 'package:smart_contacts_dialer/screens/security_screen.dart';
 import 'package:smart_contacts_dialer/screens/sim_settings_screen.dart';
 import 'package:smart_contacts_dialer/screens/sync/sync_home_screen.dart';
 
+import 'package:smart_contacts_dialer/screens/settings/online_sync_settings_screen.dart';
+import 'package:smart_contacts_dialer/screens/settings/cloud_backup_settings_screen.dart';
+
 /// Settings hub reached from the contacts ⋮ menu.
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -57,10 +60,24 @@ class SettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _SettingsCard(
+            icon: Icons.cloud_sync_outlined,
+            title: 'Online Provider Sync',
+            subtitle: 'Direct 2-way sync with Google, Microsoft & CardDAV',
+            onTap: () => _push(context, const OnlineSyncSettingsScreen()),
+          ),
+          const SizedBox(height: 12),
+          _SettingsCard(
             icon: Icons.backup_outlined,
             title: 'Backup & Restore',
             subtitle: 'Save all your data to a file, or restore it',
             onTap: () => _openBackup(context),
+          ),
+          const SizedBox(height: 12),
+          _SettingsCard(
+            icon: Icons.cloud_upload_outlined,
+            title: 'Encrypted Cloud Backup',
+            subtitle: 'Save .csbak backup to Google Drive, OneDrive or WebDAV',
+            onTap: () => _push(context, const CloudBackupSettingsScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsCard(

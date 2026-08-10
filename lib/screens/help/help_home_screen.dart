@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 import 'package:smart_contacts_dialer/screens/help/backup_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/biometrics_help_screen.dart';
+import 'package:smart_contacts_dialer/screens/help/cloud_sync_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/contact_sync_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/emergency_info_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/p2p_sync_help_screen.dart';
@@ -53,6 +54,16 @@ class HelpHomeScreen extends StatelessWidget {
                 'what destructive sync deletes.',
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const ContactSyncHelpScreen()),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _HelpTopicCard(
+            icon: Icons.cloud_sync_outlined,
+            title: 'Cloud Sync & Backup',
+            subtitle:
+                '2-way online contact sync, encrypted cloud backups, multi-provider setup, and vault privacy.',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const CloudSyncHelpScreen()),
             ),
           ),
           const SizedBox(height: 12),

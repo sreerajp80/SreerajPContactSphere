@@ -1,8 +1,8 @@
 {
   "appName": "ContactSphere",
   "description": "Advanced contacts and dialer app with SQLite.",
-  "version": "15.15.52",
-  "build": "76",
+  "version": "15.16.53",
+  "build": "78",
   "details": {
     "Author": "Sreeraj P",
     "Email": "sreerajp@zohomail.in",
