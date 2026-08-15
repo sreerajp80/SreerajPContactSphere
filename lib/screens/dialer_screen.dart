@@ -1,4 +1,4 @@
-// lib/screens/dialer_screen.dart
+import 'dart:async' show Timer;
 import 'dart:io' show File;
 import 'dart:ui' show ImageFilter;
 
@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:smart_contacts_dialer/repositories/contact_repository.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
+import 'package:smart_contacts_dialer/utils/phone_normalizer.dart';
 import 'package:smart_contacts_dialer/utils/t9_utils.dart';
 import 'package:smart_contacts_dialer/utils/voice_dial_parser.dart';
 import 'package:smart_contacts_dialer/utils/malayalam_transliterator.dart';
@@ -111,12 +112,37 @@ class DialerScreenState extends State<DialerScreen>
     _loadFavorites();
   }
 
+  Timer? _backspaceTimer;
+  Timer? _backspaceDelayTimer;
+
   @override
   void dispose() {
+    _stopContinuousBackspace();
     _numberController.removeListener(_onNumberChanged);
     _numberController.dispose();
     _numberFocusNode.dispose();
     super.dispose();
+  }
+
+  void _startContinuousBackspace() {
+    _stopContinuousBackspace();
+    _backspace();
+    _backspaceDelayTimer = Timer(const Duration(milliseconds: 320), () {
+      _backspaceTimer = Timer.periodic(const Duration(milliseconds: 65), (_) {
+        if (!mounted || _numberController.text.isEmpty) {
+          _stopContinuousBackspace();
+          return;
+        }
+        _backspace();
+      });
+    });
+  }
+
+  void _stopContinuousBackspace() {
+    _backspaceDelayTimer?.cancel();
+    _backspaceDelayTimer = null;
+    _backspaceTimer?.cancel();
+    _backspaceTimer = null;
   }
 
   void _onNumberChanged() {
@@ -539,55 +565,95 @@ class DialerScreenState extends State<DialerScreen>
   }
 
   Widget _numberDisplay(AppColors colors) {
+    final defaultIso = context.watch<AppSettings>().defaultCountryIso;
+    final validation = _number.isNotEmpty
+        ? PhoneNormalizer.validateNumber(_number, defaultIso: defaultIso)
+        : null;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
-      child: SizedBox(
-        height: 48,
-        child: Row(
-          children: [
-            const SizedBox(width: 40),
-            Expanded(
-              child: Center(
-                child: TextField(
-                  controller: _numberController,
-                  focusNode: _numberFocusNode,
-                  keyboardType: TextInputType.none,
-                  showCursor: true,
-                  textAlign: TextAlign.center,
-                  cursorColor: Theme.of(context).colorScheme.primary,
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: 48,
+            child: Row(
+              children: [
+                const SizedBox(width: 40),
+                Expanded(
+                  child: Center(
+                    child: TextField(
+                      controller: _numberController,
+                      focusNode: _numberFocusNode,
+                      keyboardType: TextInputType.none,
+                      showCursor: true,
+                      textAlign: TextAlign.center,
+                      cursorColor: Theme.of(context).colorScheme.primary,
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1,
+                      ),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'[0-9+*#,;]')),
+                      ],
+                      decoration: InputDecoration(
+                        border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
+                        contentPadding: EdgeInsets.zero,
+                        isDense: true,
+                        hintText: 'Start typing to find a contact',
+                        hintStyle: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: colors.mutedText,
+                        ),
+                      ),
+                    ),
                   ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9+*#,;]')),
-                  ],
-                  decoration: InputDecoration(
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                    isDense: true,
-                    hintText: 'Start typing to find a contact',
-                    hintStyle: TextStyle(
-                      fontSize: 15,
+                ),
+                SizedBox(
+                  width: 40,
+                  child: VoiceInputButton(
+                    tooltip: 'Voice dialing',
+                    onWords: _onVoiceWords,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (validation != null &&
+              validation.formatted != null &&
+              validation.formatted != _number)
+            Padding(
+              padding: const EdgeInsets.only(top: 2, bottom: 2),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    validation.isValid
+                        ? Icons.check_circle_outline
+                        : Icons.info_outline,
+                    size: 13,
+                    color: validation.isValid
+                        ? Colors.green
+                        : colors.mutedText,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    validation.formatted!,
+                    style: TextStyle(
+                      fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                       color: colors.mutedText,
                     ),
                   ),
-                ),
+                ],
               ),
             ),
-            SizedBox(
-              width: 40,
-              child: VoiceInputButton(
-                tooltip: 'Voice dialing',
-                onWords: _onVoiceWords,
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -1164,16 +1230,19 @@ class DialerScreenState extends State<DialerScreen>
           SizedBox(
             width: 44,
             child: enabled
-                ? GestureDetector(
-                    onLongPress: _clear,
+                ? Listener(
+                    behavior: HitTestBehavior.opaque,
+                    onPointerDown: (_) => _startContinuousBackspace(),
+                    onPointerUp: (_) => _stopContinuousBackspace(),
+                    onPointerCancel: (_) => _stopContinuousBackspace(),
                     child: IconButton(
                       icon: Icon(
                         Icons.backspace_outlined,
                         color: colors.mutedText,
                         size: 22,
                       ),
-                      onPressed: _backspace,
-                      tooltip: 'Backspace (long-press to clear)',
+                      onPressed: () {},
+                      tooltip: 'Backspace (hold to delete continuously)',
                     ),
                   )
                 : null,

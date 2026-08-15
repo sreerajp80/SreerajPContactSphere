@@ -19,6 +19,7 @@ import 'package:smart_contacts_dialer/models/contact.dart';
 import 'package:smart_contacts_dialer/models/email.dart';
 import 'package:smart_contacts_dialer/models/official_details.dart';
 import 'package:smart_contacts_dialer/models/phone_number.dart';
+import 'package:smart_contacts_dialer/models/relationship.dart';
 import 'package:smart_contacts_dialer/models/social_link.dart';
 import 'package:smart_contacts_dialer/repositories/group_repository.dart';
 import 'package:smart_contacts_dialer/repositories/relationship_repository.dart';
@@ -373,6 +374,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
             contactId: r.contactId,
             name: r.fullName,
             type: r.relationshipType,
+            category: r.category,
           ),
         );
         _originalRelationIds.add(r.contactId);
@@ -440,6 +442,10 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
     }
   }
 
+  void _onPhoneFieldChanged() {
+    if (mounted) setState(() {});
+  }
+
   /// Builds a phone row from a stored/seeded [value], splitting off its country
   /// code (or defaulting to the home country) so the value field holds only the
   /// national number and the chip shows the right dial code. Records the seed so
@@ -452,6 +458,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
       value,
       isPrimary,
     );
+    entry.value.addListener(_onPhoneFieldChanged);
     _applyPhoneSplit(entry, value);
     _phoneSeeds[entry.id] = (raw: value, derived: entry.value.text);
     return entry;
@@ -824,6 +831,9 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
 
   void _addEntry(List<_LabeledEntry> list, String defaultLabel) {
     final entry = _LabeledEntry.preset(_nextId(), defaultLabel);
+    if (identical(list, _phones)) {
+      entry.value.addListener(_onPhoneFieldChanged);
+    }
     setState(() => list.add(entry));
     // Move focus into the new row's value field once it's laid out, so the user
     // can type straight away.
@@ -834,6 +844,9 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
 
   void _removeEntry(List<_LabeledEntry> list, _LabeledEntry entry) {
     setState(() {
+      if (identical(list, _phones)) {
+        entry.value.removeListener(_onPhoneFieldChanged);
+      }
       list.remove(entry);
       entry.dispose();
     });
@@ -929,6 +942,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
           contactId: choice.relatedContactId,
           name: choice.relatedContactName,
           type: choice.type,
+          category: choice.category,
         ),
       );
     });
@@ -958,6 +972,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
           contactId: contactId,
           relatedContactId: rel.contactId,
           type: rel.type,
+          category: rel.category,
         );
       }
     } catch (_) {
@@ -1003,6 +1018,25 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
         ..ephemeralExpiresAt = (_isEphemeral && _ephemeralOption != EphemeralExpiryOption.autoDeleteCall)
             ? DateTime.now().add(_ephemeralOption.duration!)
             : null;
+
+      // Validate phone numbers:
+      for (final p in _phones) {
+        if (p.value.text.trim().isNotEmpty) {
+          final composed = PhoneNormalizer.compose(
+            iso: p.countryIso ?? _homeCountryIso,
+            national: p.value.text,
+          );
+          final res = PhoneNormalizer.validateNumber(
+            composed,
+            defaultIso: p.countryIso ?? _homeCountryIso,
+          );
+          if (!res.isPossible && res.errorReason != null) {
+            _showMessage('Invalid phone number: ${p.value.text} (${res.errorReason})');
+            setState(() => _saving = false);
+            return;
+          }
+        }
+      }
 
       // Primary is positional: the first non-empty entry is primary, the rest
       // are not (isPrimary is true only while the target list is still empty).
@@ -1677,6 +1711,17 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
     required double labelWidth,
     bool showCountryCode = false,
   }) {
+    final String? phoneVal =
+        showCountryCode && entry.value.text.trim().isNotEmpty
+            ? PhoneNormalizer.validateNumber(
+                PhoneNormalizer.compose(
+                  iso: entry.countryIso ?? _homeCountryIso,
+                  national: entry.value.text,
+                ),
+                defaultIso: entry.countryIso ?? _homeCountryIso,
+              ).errorReason
+            : null;
+
     final canRemove = list.length > 1;
     // Primary is positional: row 0 of a section that has a primary concept.
     // Indicated by colour (accent border + soft fill) rather than a star.
@@ -1719,6 +1764,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
           Expanded(
             child: _shell(
               primary: isPrimaryRow,
+              accentBorder: phoneVal != null,
               child: _bareTextField(
                 controller: entry.value,
                 focusNode: entry.valueFocus,
@@ -1758,6 +1804,24 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
           )
         else
           row,
+        if (phoneVal != null)
+          Padding(
+            padding: const EdgeInsets.only(left: 4, top: 4),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline, size: 13, color: Colors.orange),
+                const SizedBox(width: 4),
+                Text(
+                  phoneVal,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.orange,
+                  ),
+                ),
+              ],
+            ),
+          ),
         if (entry.menuOpen && !entry.custom) ...[
           const SizedBox(height: 8),
           _chipWrap([
@@ -2028,7 +2092,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '${r.name} · ${r.type}',
+                      '${r.category.emoji} ${r.name} · ${r.type}',
                       style: TextStyle(
                         color: _t.accentText,
                         fontSize: 12.5,
@@ -2836,10 +2900,16 @@ class _PendingRel {
   final int contactId;
   final String name;
   final String type;
+
+  /// Which of the seven buckets the link belongs to. For a link loaded from the
+  /// DB this is the stored category; for one just added it is the user's pick.
+  final RelationshipCategory category;
+
   _PendingRel({
     required this.contactId,
     required this.name,
     required this.type,
+    required this.category,
   });
 }
 

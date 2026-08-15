@@ -341,4 +341,169 @@ void main() {
       expect(fromA.single.contactId, b);
     },
   );
+
+  group('RelationshipCategory', () {
+    test('categoryFor maps known labels to their bucket', () {
+      expect(
+        RelationshipCategory.categoryFor('Father'),
+        RelationshipCategory.immediateFamily,
+      );
+      expect(
+        RelationshipCategory.categoryFor('cousin brother'),
+        RelationshipCategory.extendedFamily,
+      );
+      expect(
+        RelationshipCategory.categoryFor('Brother-in-law'),
+        RelationshipCategory.familyByMarriage,
+      );
+      expect(
+        RelationshipCategory.categoryFor('Colleague'),
+        RelationshipCategory.professional,
+      );
+      expect(
+        RelationshipCategory.categoryFor('Teacher'),
+        RelationshipCategory.educational,
+      );
+      expect(
+        RelationshipCategory.categoryFor('Neighbour'),
+        RelationshipCategory.social,
+      );
+      expect(
+        RelationshipCategory.categoryFor('Doctor'),
+        RelationshipCategory.service,
+      );
+    });
+
+    test('categoryFor falls back to social for unknown/blank labels', () {
+      expect(
+        RelationshipCategory.categoryFor('Gym buddy'),
+        RelationshipCategory.social,
+      );
+      expect(
+        RelationshipCategory.categoryFor(''),
+        RelationshipCategory.social,
+      );
+      expect(
+        RelationshipCategory.categoryFor(null),
+        RelationshipCategory.social,
+      );
+    });
+
+    test('fromStorageKey round-trips every category', () {
+      for (final c in RelationshipCategory.values) {
+        expect(RelationshipCategory.fromStorageKey(c.storageKey), c);
+      }
+      expect(RelationshipCategory.fromStorageKey('nonsense'), isNull);
+      expect(RelationshipCategory.fromStorageKey(null), isNull);
+    });
+
+    test('every category offers at least one suggested label', () {
+      for (final c in RelationshipCategory.values) {
+        expect(c.suggestedLabels, isNotEmpty, reason: c.displayName);
+      }
+    });
+  });
+
+  test('setRelationship stores the category on both directed rows', () async {
+    final repo = RelationshipRepository();
+    final a = await insertContact('Anil');
+    final b = await insertContact('Bina');
+
+    await repo.setRelationship(
+      contactId: a,
+      relatedContactId: b,
+      type: 'Father',
+      category: RelationshipCategory.immediateFamily,
+    );
+
+    final fromA = await repo.getRelationsOf(a);
+    final fromB = await repo.getRelationsOf(b);
+    expect(fromA.single.category, RelationshipCategory.immediateFamily);
+    // The reverse row ("Child") stays in the same bucket.
+    expect(fromB.single.category, RelationshipCategory.immediateFamily);
+  });
+
+  test('setRelationship derives the category when none is given', () async {
+    final repo = RelationshipRepository();
+    final a = await insertContact('Anil');
+    final b = await insertContact('Bina');
+    final c = await insertContact('Chandran');
+
+    await repo.setRelationship(
+      contactId: a,
+      relatedContactId: b,
+      type: 'Colleague',
+    );
+    // An unknown label falls back to social rather than being left blank.
+    await repo.setRelationship(
+      contactId: a,
+      relatedContactId: c,
+      type: 'Gym buddy',
+    );
+
+    final fromA = await repo.getRelationsOf(a);
+    final colleague = fromA.firstWhere((r) => r.contactId == b);
+    final buddy = fromA.firstWhere((r) => r.contactId == c);
+    expect(colleague.category, RelationshipCategory.professional);
+    expect(buddy.category, RelationshipCategory.social);
+  });
+
+  test('an explicit category overrides what the label would imply', () async {
+    final repo = RelationshipRepository();
+    final a = await insertContact('Anil');
+    final b = await insertContact('Bina');
+
+    // "Uncle" normally means extended family, but the user may file a family
+    // friend called Uncle under Social — their pick wins.
+    await repo.setRelationship(
+      contactId: a,
+      relatedContactId: b,
+      type: 'Uncle',
+      category: RelationshipCategory.social,
+    );
+
+    final fromA = await repo.getRelationsOf(a);
+    expect(fromA.single.category, RelationshipCategory.social);
+  });
+
+  test('the v29 migration backfills categories on old rows', () async {
+    final db = await DatabaseHelper().database;
+    final a = await insertContact('Anil');
+    final b = await insertContact('Bina');
+    final c = await insertContact('Chandran');
+
+    // Rows as a pre-v29 database holds them: a label, no category.
+    Future<void> seed(int owner, int related, String? type) =>
+        db.insert('relationships', {
+          'contact_id': owner,
+          'related_contact_id': related,
+          'relationship_type': type,
+          'relationship_category': null,
+        });
+    await seed(a, b, 'Mother');
+    await seed(a, c, 'Gym buddy');
+    await seed(b, c, null);
+
+    // Reopening runs the self-healing migration in _onOpen.
+    await DatabaseHelper().close();
+    final reopened = await DatabaseHelper().database;
+
+    Future<String?> categoryOf(int owner, int related) async {
+      final rows = await reopened.query(
+        'relationships',
+        columns: ['relationship_category'],
+        where: 'contact_id = ? AND related_contact_id = ?',
+        whereArgs: [owner, related],
+      );
+      return rows.single['relationship_category'] as String?;
+    }
+
+    expect(
+      await categoryOf(a, b),
+      RelationshipCategory.immediateFamily.storageKey,
+    );
+    // Unknown and null labels both land in the safe default.
+    expect(await categoryOf(a, c), RelationshipCategory.social.storageKey);
+    expect(await categoryOf(b, c), RelationshipCategory.social.storageKey);
+  });
 }

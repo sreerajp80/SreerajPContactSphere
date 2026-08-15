@@ -131,4 +131,34 @@ void main() {
       },
     );
   });
+
+  group('PhoneNormalizer.validateNumber & formatForDisplay', () {
+    test('validates standard 10-digit mobile number with default country', () {
+      final res = PhoneNormalizer.validateNumber('9876543210', defaultIso: 'IN');
+      expect(res.isValid, isTrue);
+      expect(res.isPossible, isTrue);
+      expect(res.countryDialCode, '91');
+      expect(res.countryIso, 'IN');
+      expect(res.errorReason, isNull);
+    });
+
+    test('validates international format number with country code', () {
+      final res = PhoneNormalizer.validateNumber('+12025550123', defaultIso: 'IN');
+      expect(res.isValid, isTrue);
+      expect(res.isPossible, isTrue);
+      expect(res.countryDialCode, '1');
+      expect(res.countryIso, 'US');
+    });
+
+    test('detects short numbers as invalid', () {
+      final res = PhoneNormalizer.validateNumber('123', defaultIso: 'IN');
+      expect(res.isValid, isFalse);
+      expect(res.errorReason, isNotNull);
+    });
+
+    test('formats for display', () {
+      final formatted = PhoneNormalizer.formatForDisplay('9876543210', defaultIso: 'IN');
+      expect(formatted, contains('+91'));
+    });
+  });
 }

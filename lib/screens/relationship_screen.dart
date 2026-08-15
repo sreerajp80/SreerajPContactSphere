@@ -35,6 +35,19 @@ class _RelationshipScreenState extends State<RelationshipScreen> {
   Contact? _focus;
   List<RelatedContact> _relations = [];
   bool _loading = true;
+  bool _groupedView = true;
+
+  /// The relations bucketed into the seven fixed categories, in enum order.
+  /// Empty categories are left out, so the ring holds between one and seven
+  /// nodes however many contacts are linked.
+  Map<RelationshipCategory, List<RelatedContact>> get _categoryGroups {
+    final map = <RelationshipCategory, List<RelatedContact>>{};
+    for (final c in RelationshipCategory.values) {
+      final members = _relations.where((r) => r.category == c).toList();
+      if (members.isNotEmpty) map[c] = members;
+    }
+    return map;
+  }
 
   @override
   void initState() {
@@ -79,21 +92,25 @@ class _RelationshipScreenState extends State<RelationshipScreen> {
       contactId: widget.focusContactId,
       relatedContactId: choice.relatedContactId,
       type: choice.type,
+      category: choice.category,
     );
     await _load();
   }
 
   Future<void> _editRelationship(RelatedContact r) async {
-    final newType = await showRelationshipTypePicker(
+    final edit = await showRelationshipTypePicker(
       context,
       personName: r.firstName,
       currentType: r.relationshipType,
+      currentCategory: r.category,
     );
-    if (newType == null || newType == r.relationshipType) return;
+    if (edit == null) return;
+    if (edit.type == r.relationshipType && edit.category == r.category) return;
     await _relationships.setRelationship(
       contactId: widget.focusContactId,
       relatedContactId: r.contactId,
-      type: newType,
+      type: edit.type,
+      category: edit.category,
     );
     await _load();
   }
@@ -114,6 +131,147 @@ class _RelationshipScreenState extends State<RelationshipScreen> {
     );
   }
 
+  Future<void> _showGroupDetailsSheet(
+    RelationshipCategory category,
+    List<RelatedContact> contacts,
+  ) async {
+    final colors = Theme.of(context).extension<AppColors>()!;
+    final accent = Theme.of(context).colorScheme.primary;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: colors.cardSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: colors.mutedText.withValues(alpha: 0.35),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '${category.emoji}  ${category.displayName}',
+                      style: TextStyle(
+                        color: accent,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '(${contacts.length} ${contacts.length == 1 ? 'contact' : 'contacts'})',
+                    style: TextStyle(
+                      color: colors.mutedText,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Divider(height: 1),
+              const SizedBox(height: 8),
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.55,
+                ),
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: contacts.length,
+                  separatorBuilder: (_, index) => const Divider(height: 1),
+                  itemBuilder: (ctx, i) {
+                    final r = contacts[i];
+                    return ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 4,
+                      ),
+                      leading: _NodeAvatar(
+                        initial: _initialOf(r.firstName),
+                        photoPath: r.photoPath,
+                        size: 42,
+                        accent: accent,
+                        highlight: false,
+                      ),
+                      title: Text(
+                        r.fullName,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      subtitle: Text(
+                        r.relationshipType,
+                        style: TextStyle(color: colors.mutedText, fontSize: 12.5),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.hub_outlined, size: 20),
+                            tooltip: 'Centre sphere here',
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              _recenterOn(r.contactId);
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.person_outline, size: 20),
+                            tooltip: 'Open profile',
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              _openProfile(r.contactId);
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.more_vert, size: 20),
+                            tooltip: 'Options',
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              _nodeMenu(r);
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> _nodeMenu(RelatedContact r) async {
     final action = await showModalBottomSheet<String>(
       context: context,
@@ -123,7 +281,9 @@ class _RelationshipScreenState extends State<RelationshipScreen> {
           children: [
             ListTile(
               title: Text(r.fullName),
-              subtitle: Text(r.relationshipType),
+              subtitle: Text(
+                '${r.relationshipType} · ${r.category.displayName}',
+              ),
             ),
             const Divider(height: 1),
             ListTile(
@@ -138,7 +298,7 @@ class _RelationshipScreenState extends State<RelationshipScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.edit_outlined),
-              title: const Text('Edit relationship type'),
+              title: const Text('Edit relationship'),
               onTap: () => Navigator.pop(context, 'edit'),
             ),
             ListTile(
@@ -174,7 +334,21 @@ class _RelationshipScreenState extends State<RelationshipScreen> {
   Widget build(BuildContext context) {
     final focus = _focus;
     return Scaffold(
-      appBar: AppBar(title: Text(focus?.fullName ?? 'Relationships')),
+      appBar: AppBar(
+        title: Text(focus?.fullName ?? 'Relationships'),
+        actions: [
+          if (_relations.isNotEmpty)
+            IconButton(
+              icon: Icon(
+                _groupedView ? Icons.view_comfy_alt_outlined : Icons.workspaces_outlined,
+              ),
+              tooltip: _groupedView
+                  ? 'View individual contacts'
+                  : 'Group by category',
+              onPressed: () => setState(() => _groupedView = !_groupedView),
+            ),
+        ],
+      ),
       floatingActionButton: focus == null
           ? null
           : FloatingActionButton.extended(
@@ -232,94 +406,193 @@ class _RelationshipScreenState extends State<RelationshipScreen> {
           math.min(size.width, size.height) / 2 - orbitRadius - 28,
         );
 
-        // Position each orbit node evenly around the ring, starting at top.
-        final positions = <Offset>[];
-        final n = _relations.length;
-        for (var i = 0; i < n; i++) {
-          final angle = (2 * math.pi * i / n) - math.pi / 2;
-          positions.add(
-            Offset(
-              center.dx + ringRadius * math.cos(angle),
-              center.dy + ringRadius * math.sin(angle),
+        final List<Widget> children = [];
+        final List<Offset> positions = [];
+
+        if (_groupedView) {
+          final groups = _categoryGroups.entries.toList();
+          final n = groups.length;
+          for (var i = 0; i < n; i++) {
+            final angle = (2 * math.pi * i / n) - math.pi / 2;
+            positions.add(
+              Offset(
+                center.dx + ringRadius * math.cos(angle),
+                center.dy + ringRadius * math.sin(angle),
+              ),
+            );
+          }
+
+          children.add(
+            Positioned.fill(
+              child: CustomPaint(
+                painter: _EdgePainter(
+                  center: center,
+                  nodes: positions,
+                  edgeColor: accent.withValues(alpha: 0.45),
+                ),
+              ),
             ),
           );
-        }
 
-        final children = <Widget>[
-          // Edge lines behind the nodes. Type labels are separate tappable
-          // widgets added below so tapping a label edits the relationship type.
-          Positioned.fill(
-            child: CustomPaint(
-              painter: _EdgePainter(
-                center: center,
-                nodes: positions,
-                edgeColor: accent.withValues(alpha: 0.45),
-              ),
-            ),
-          ),
           // Centre node.
-          _positioned(
-            center,
-            centerRadius,
-            GestureDetector(
-              onTap: () => _openProfile(focus.id!),
-              child: _NodeAvatar(
-                initial: _initialOf(focus.firstName),
-                photoPath: focus.photoPath,
-                size: centerRadius * 2,
-                accent: accent,
-                highlight: true,
-              ),
-            ),
-          ),
-        ];
-
-        // Orbit nodes.
-        for (var i = 0; i < n; i++) {
-          final r = _relations[i];
           children.add(
             _positioned(
-              positions[i],
-              orbitRadius,
+              center,
+              centerRadius,
               GestureDetector(
-                onTap: () => _recenterOn(r.contactId),
-                onLongPress: () => _nodeMenu(r),
+                onTap: () => _openProfile(focus.id!),
                 child: _NodeAvatar(
-                  initial: _initialOf(r.firstName),
-                  photoPath: r.photoPath,
-                  size: orbitRadius * 2,
+                  initial: _initialOf(focus.firstName),
+                  photoPath: focus.photoPath,
+                  size: centerRadius * 2,
                   accent: accent,
-                  highlight: false,
+                  highlight: true,
                 ),
               ),
             ),
           );
-        }
 
-        // Type labels at each edge midpoint, on top of the lines and tappable
-        // to edit the relationship type. FractionalTranslation centres each
-        // label on the midpoint without needing its measured size.
-        for (var i = 0; i < n; i++) {
-          final r = _relations[i];
-          final mid = Offset(
-            (center.dx + positions[i].dx) / 2,
-            (center.dy + positions[i].dy) / 2,
-          );
+          // Group orbit nodes.
+          for (var i = 0; i < n; i++) {
+            final group = groups[i];
+            final category = group.key;
+            final members = group.value;
+            final count = members.length;
+            final primaryMember = members.first;
+
+            children.add(
+              _positioned(
+                positions[i],
+                orbitRadius,
+                GestureDetector(
+                  onTap: () => _showGroupDetailsSheet(category, members),
+                  onLongPress: () => _showGroupDetailsSheet(category, members),
+                  child: _GroupNodeAvatar(
+                    initial: _initialOf(primaryMember.firstName),
+                    photoPath: primaryMember.photoPath,
+                    count: count,
+                    size: orbitRadius * 2,
+                    accent: accent,
+                  ),
+                ),
+              ),
+            );
+          }
+
+          // Category labels at each edge midpoint.
+          for (var i = 0; i < n; i++) {
+            final group = groups[i];
+            final category = group.key;
+            final members = group.value;
+
+            final mid = Offset(
+              (center.dx + positions[i].dx) / 2,
+              (center.dy + positions[i].dy) / 2,
+            );
+            children.add(
+              Positioned(
+                left: mid.dx,
+                top: mid.dy,
+                child: FractionalTranslation(
+                  translation: const Offset(-0.5, -0.5),
+                  child: _EdgeLabel(
+                    text: category.displayName,
+                    color: colors.mutedText,
+                    background: colors.cardSurface,
+                    onTap: () => _showGroupDetailsSheet(category, members),
+                  ),
+                ),
+              ),
+            );
+          }
+        } else {
+          // Direct individual flat view.
+          final n = _relations.length;
+          for (var i = 0; i < n; i++) {
+            final angle = (2 * math.pi * i / n) - math.pi / 2;
+            positions.add(
+              Offset(
+                center.dx + ringRadius * math.cos(angle),
+                center.dy + ringRadius * math.sin(angle),
+              ),
+            );
+          }
+
           children.add(
-            Positioned(
-              left: mid.dx,
-              top: mid.dy,
-              child: FractionalTranslation(
-                translation: const Offset(-0.5, -0.5),
-                child: _EdgeLabel(
-                  text: r.relationshipType,
-                  color: colors.mutedText,
-                  background: colors.cardSurface,
-                  onTap: () => _editRelationship(r),
+            Positioned.fill(
+              child: CustomPaint(
+                painter: _EdgePainter(
+                  center: center,
+                  nodes: positions,
+                  edgeColor: accent.withValues(alpha: 0.45),
                 ),
               ),
             ),
           );
+
+          // Centre node.
+          children.add(
+            _positioned(
+              center,
+              centerRadius,
+              GestureDetector(
+                onTap: () => _openProfile(focus.id!),
+                child: _NodeAvatar(
+                  initial: _initialOf(focus.firstName),
+                  photoPath: focus.photoPath,
+                  size: centerRadius * 2,
+                  accent: accent,
+                  highlight: true,
+                ),
+              ),
+            ),
+          );
+
+          // Orbit nodes.
+          for (var i = 0; i < n; i++) {
+            final r = _relations[i];
+            children.add(
+              _positioned(
+                positions[i],
+                orbitRadius,
+                GestureDetector(
+                  onTap: () => _recenterOn(r.contactId),
+                  onLongPress: () => _nodeMenu(r),
+                  child: _NodeAvatar(
+                    initial: _initialOf(r.firstName),
+                    photoPath: r.photoPath,
+                    size: orbitRadius * 2,
+                    accent: accent,
+                    highlight: false,
+                  ),
+                ),
+              ),
+            );
+          }
+
+          // Type labels at each edge midpoint.
+          for (var i = 0; i < n; i++) {
+            final r = _relations[i];
+            final mid = Offset(
+              (center.dx + positions[i].dx) / 2,
+              (center.dy + positions[i].dy) / 2,
+            );
+            children.add(
+              Positioned(
+                left: mid.dx,
+                top: mid.dy,
+                child: FractionalTranslation(
+                  translation: const Offset(-0.5, -0.5),
+                  child: _EdgeLabel(
+                    text: r.relationshipType,
+                    color: colors.mutedText,
+                    background: colors.cardSurface,
+                    onTap: () => _editRelationship(r),
+                  ),
+                ),
+              ),
+            );
+          }
         }
 
         return Stack(children: children);
@@ -389,17 +662,24 @@ class _EdgeLabel extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
         decoration: BoxDecoration(
           color: background,
           borderRadius: BorderRadius.circular(8),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
         ),
         child: Text(
           text,
           style: TextStyle(
             color: color,
             fontSize: 11,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -468,6 +748,67 @@ class _NodeAvatar extends StatelessWidget {
                 ),
               ),
             ),
+    );
+  }
+}
+
+/// A grouped relationship node. When count == 1, renders the individual's avatar;
+/// when count > 1, renders the count number as the avatar in the sphere node.
+class _GroupNodeAvatar extends StatelessWidget {
+  final String initial;
+  final String? photoPath;
+  final int count;
+  final double size;
+  final Color accent;
+
+  const _GroupNodeAvatar({
+    required this.initial,
+    required this.photoPath,
+    required this.count,
+    required this.size,
+    required this.accent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (count == 1) {
+      return _NodeAvatar(
+        initial: initial,
+        photoPath: photoPath,
+        size: size,
+        accent: accent,
+        highlight: false,
+      );
+    }
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: accent.withValues(alpha: 0.16),
+        border: Border.all(
+          color: accent.withValues(alpha: 0.7),
+          width: 2.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: 0.25),
+            blurRadius: 14,
+            spreadRadius: -3,
+          ),
+        ],
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        '$count',
+        style: TextStyle(
+          color: accent,
+          fontSize: size * 0.42,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
+        ),
+      ),
     );
   }
 }

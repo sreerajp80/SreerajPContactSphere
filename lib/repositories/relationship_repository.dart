@@ -18,14 +18,21 @@ class RelationshipRepository {
   final DatabaseHelper _dbHelper = DatabaseHelper();
 
   /// Creates or updates the link between [contactId] and [relatedContactId],
-  /// storing both directions. [type] is from [contactId]'s perspective. A link
-  /// to oneself is ignored. Replaces any existing link between the pair.
+  /// storing both directions. [type] is the free-text label from [contactId]'s
+  /// perspective; [category] is the bucket the sphere view groups by. When
+  /// [category] is omitted it is derived from [type]
+  /// ([RelationshipCategory.categoryFor]). Both directed rows get the same
+  /// category — a reverse label stays inside the same bucket (a Father's reverse
+  /// "Son" is still immediate family). A link to oneself is ignored. Replaces
+  /// any existing link between the pair.
   Future<void> setRelationship({
     required int contactId,
     required int relatedContactId,
     required String type,
+    RelationshipCategory? category,
   }) async {
     if (contactId == relatedContactId) return;
+    final resolved = category ?? RelationshipCategory.categoryFor(type);
     final db = await _dbHelper.database;
     await db.transaction((txn) async {
       // The reverse row describes [contactId] (the owner), so its label is
@@ -41,11 +48,13 @@ class RelationshipRepository {
         'contact_id': contactId,
         'related_contact_id': relatedContactId,
         'relationship_type': type.trim(),
+        'relationship_category': resolved.storageKey,
       });
       await txn.insert('relationships', {
         'contact_id': relatedContactId,
         'related_contact_id': contactId,
         'relationship_type': reverse,
+        'relationship_category': resolved.storageKey,
       });
     });
     unawaited(QuietHoursService().syncQuietHoursMirror());
@@ -100,6 +109,7 @@ class RelationshipRepository {
     final rows = await db.rawQuery(
       '''
       SELECT MIN(r.relationship_type) AS relationship_type,
+             MIN(r.relationship_category) AS relationship_category,
              c.id AS id,
              c.first_name AS first_name,
              c.middle_name AS middle_name,
@@ -130,6 +140,7 @@ class RelationshipRepository {
         photoPath: row['photo_path'] as String?,
         relationshipScore: (row['relationship_score'] as num?)?.toDouble() ?? 0,
         relationshipType: (row['relationship_type'] as String?) ?? 'Relative',
+        categoryKey: row['relationship_category'] as String?,
       );
     }).toList();
   }

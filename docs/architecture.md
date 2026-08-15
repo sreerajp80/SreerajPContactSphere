@@ -33,9 +33,10 @@ Layered, with a clear dependency direction:
   summary), `groups_screen`, and `duplicates_screen`. Placing a call from the detail screen logs a
   provisional `call_logs`/`interactions` row, then reconciles the real duration/type from the
   device call log on resume and recomputes the relationship score. `relationship_screen.dart`
-  is the ego-centric "relationship sphere": the focused contact at the centre with its related
-  contacts orbiting on a labelled ring (`CustomPaint` edges + tappable node widgets); tapping an
-  orbit node pushes a new sphere focused on it. Reached from the contact list overflow menu, the
+  is the ego-centric "relationship sphere": the focused contact at the centre with its relations
+  bucketed into at most seven `RelationshipCategory` nodes on a labelled ring (`CustomPaint`
+  edges + tappable node widgets); tapping a category node opens a sheet listing everyone in it
+  with their own label, and a toggle switches to the flat one-node-per-contact view. Reached from the contact list overflow menu, the
   detail screen's Relationships section, and the add/edit form (which stages links and persists
   them after the contact id exists). The add-a-link flow is the shared
   `widgets/relationship_editor.dart` bottom sheet.
@@ -205,6 +206,15 @@ captured. See engineering standard §4.5 (init sequence) and §11.1 (error bound
 `type CHECK IN ('personal','official')`. `contacts.is_secret` gates visibility (secret contacts
 are intended to sit behind biometric auth — `local_auth` is a dependency). `relationship_score`
 is denormalized onto `contacts` and recomputed by `RelationshipScoringService`.
+
+`relationships` stores each link twice (A→B and B→A) and splits it into two facts:
+`relationship_type` is the free-text **label** ("Father", "Cousin Brother"), and
+`relationship_category` is one of the seven fixed `RelationshipCategory` storage keys
+(`immediate_family`, `extended_family`, `family_by_marriage`, `professional`, `educational`,
+`social`, `service`) that the sphere view groups by. Both directed rows share the category.
+Rows written before v29 are backfilled from their label by
+`_ensureRelationshipCategoryColumn` (unknown labels → `social`), which is PRAGMA-checked and
+re-runs on every open.
 
 `call_logs` splits a call into two facts: `call_type` (`incoming`/`outgoing`/`missed`/`blocked`)
 is the **direction**, and `call_outcome` (`answered`, `no_answer`, `busy`, `declined`,

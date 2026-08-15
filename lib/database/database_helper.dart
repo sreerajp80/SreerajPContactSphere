@@ -64,7 +64,7 @@ class DatabaseHelper {
     if (!_encryptionEnabled) {
       return await openDatabase(
         path,
-        version: 28,
+        version: 29,
         onConfigure: _onConfigure,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
@@ -76,7 +76,7 @@ class DatabaseHelper {
     return await cipher.openDatabase(
       path,
       password: key,
-      version: 28,
+      version: 29,
       onConfigure: _onConfigure,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
@@ -108,6 +108,7 @@ class DatabaseHelper {
     await _ensureConfirmedMergePhonesTable(db);
     await _ensureCallOutcomeColumn(db);
     await _ensureOnlineSyncColumns(db);
+    await _ensureRelationshipCategoryColumn(db);
     if (await staleContactSearchKeyCount(db) > 0) {
       await rebuildContactSearchKeys(db);
     }
@@ -242,6 +243,7 @@ class DatabaseHelper {
         contact_id INTEGER,
         related_contact_id INTEGER,
         relationship_type TEXT,
+        relationship_category TEXT,
         FOREIGN KEY (contact_id) REFERENCES contacts (id) ON DELETE CASCADE,
         FOREIGN KEY (related_contact_id) REFERENCES contacts (id) ON DELETE CASCADE
       )
@@ -645,6 +647,59 @@ class DatabaseHelper {
     // v27 -> v28: remote sync tracking columns on contacts and pending_remote_deletions table.
     if (oldVersion < 28) {
       await _ensureOnlineSyncColumns(db);
+    }
+    // v28 -> v29: relationship_category — the seven fixed buckets the sphere
+    // view draws, alongside the free-text relationship_type label. Existence-
+    // checked (like the columns above) so it self-heals a DB that was
+    // version-bumped during development before this migration existed.
+    if (oldVersion < 29) {
+      await _ensureRelationshipCategoryColumn(db);
+    }
+  }
+
+  /// Self-healing helper for `relationships.relationship_category`.
+  ///
+  /// Adds the column when missing, then backfills every row that has no
+  /// category by mapping its `relationship_type` label through
+  /// [RelationshipCategory.categoryFor] (unknown labels land in `social`). Runs
+  /// on upgrade and again on every open, so a DB whose version was bumped
+  /// before this migration existed still gets the column. The backfill is
+  /// driven by the distinct labels actually present, so it is a handful of
+  /// UPDATEs regardless of how many rows there are.
+  Future<void> _ensureRelationshipCategoryColumn(DatabaseExecutor db) async {
+    final info = await db.rawQuery('PRAGMA table_info(relationships)');
+    if (info.isEmpty) return; // table not created yet
+    final names = info.map((r) => r['name'] as String).toSet();
+    if (!names.contains('relationship_category')) {
+      await db.execute(
+        'ALTER TABLE relationships ADD COLUMN relationship_category TEXT',
+      );
+    }
+
+    // Rows still waiting for a category: never set, or set to blank.
+    const uncategorised =
+        "(relationship_category IS NULL OR relationship_category = '')";
+
+    final pending = await db.rawQuery(
+      'SELECT DISTINCT relationship_type FROM relationships '
+      'WHERE $uncategorised',
+    );
+    for (final row in pending) {
+      final label = row['relationship_type'] as String?;
+      final category = RelationshipCategory.categoryFor(label);
+      if (label == null) {
+        await db.rawUpdate(
+          'UPDATE relationships SET relationship_category = ? '
+          'WHERE relationship_type IS NULL AND $uncategorised',
+          [category.storageKey],
+        );
+      } else {
+        await db.rawUpdate(
+          'UPDATE relationships SET relationship_category = ? '
+          'WHERE relationship_type = ? AND $uncategorised',
+          [category.storageKey, label],
+        );
+      }
     }
   }
 

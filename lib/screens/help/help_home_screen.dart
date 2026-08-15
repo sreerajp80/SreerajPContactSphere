@@ -13,6 +13,7 @@ import 'package:smart_contacts_dialer/screens/help/cloud_sync_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/contact_sync_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/emergency_info_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/p2p_sync_help_screen.dart';
+import 'package:smart_contacts_dialer/screens/help/relationship_categories_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/t9_dialing_help_screen.dart';
 
 class HelpHomeScreen extends StatelessWidget {
@@ -33,6 +34,19 @@ class HelpHomeScreen extends StatelessWidget {
                 '(അ to അഃ) are mapped.',
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const T9DialingHelpScreen()),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _HelpTopicCard(
+            icon: Icons.hub_outlined,
+            title: 'Relationship categories',
+            subtitle:
+                'The seven buckets the sphere groups by, and how the label '
+                'you type fits inside one.',
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => const RelationshipCategoriesHelpScreen(),
+              ),
             ),
           ),
           const SizedBox(height: 12),

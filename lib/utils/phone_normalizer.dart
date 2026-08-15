@@ -151,5 +151,75 @@ class PhoneNormalizer {
     return out;
   }
 
+  /// Validates a phone number, checking whether it matches valid format
+  /// and expected length under the given or detected country code.
+  static ({
+    bool isValid,
+    bool isPossible,
+    String? formatted,
+    String? countryIso,
+    String? countryDialCode,
+    String? errorReason,
+  }) validateNumber(String raw, {String? defaultIso}) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) {
+      return (
+        isValid: false,
+        isPossible: false,
+        formatted: null,
+        countryIso: null,
+        countryDialCode: null,
+        errorReason: 'Empty number',
+      );
+    }
+    final fallbackIso = isoFromString(defaultIso) ?? IsoCode.US;
+    try {
+      final parsed = trimmed.startsWith('+')
+          ? PhoneNumber.parse(trimmed)
+          : PhoneNumber.parse(
+              trimmed,
+              callerCountry: fallbackIso,
+              destinationCountry: fallbackIso,
+            );
+
+      final valid = parsed.isValid();
+      final nsnLength = parsed.nsn.length;
+      String? error;
+      if (!valid) {
+        if (nsnLength < 4) {
+          error = 'Number is too short';
+        } else if (nsnLength > 15) {
+          error = 'Number is too long';
+        } else {
+          error = 'Invalid number format for +${parsed.countryCode}';
+        }
+      }
+      return (
+        isValid: valid,
+        isPossible: nsnLength >= 4 && nsnLength <= 15,
+        formatted: parsed.international,
+        countryIso: parsed.isoCode.name,
+        countryDialCode: parsed.countryCode,
+        errorReason: error,
+      );
+    } catch (_) {
+      final digitsOnly = _digits(trimmed);
+      return (
+        isValid: false,
+        isPossible: digitsOnly.length >= 7 && digitsOnly.length <= 15,
+        formatted: null,
+        countryIso: null,
+        countryDialCode: null,
+        errorReason: 'Invalid number format',
+      );
+    }
+  }
+
+  /// Formats a phone number for clean UI display (e.g. "+91 98765 43210").
+  static String formatForDisplay(String raw, {String? defaultIso}) {
+    final res = validateNumber(raw, defaultIso: defaultIso);
+    return res.formatted ?? raw;
+  }
+
   static String _digits(String s) => s.replaceAll(RegExp(r'\D'), '');
 }

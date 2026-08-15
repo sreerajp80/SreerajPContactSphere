@@ -396,6 +396,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
       contactId: widget.contactId,
       relatedContactId: choice.relatedContactId,
       type: choice.type,
+      category: choice.category,
     );
     _load();
   }
@@ -409,16 +410,19 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
   }
 
   Future<void> _editRelationship(RelatedContact r) async {
-    final newType = await showRelationshipTypePicker(
+    final edit = await showRelationshipTypePicker(
       context,
       personName: r.firstName,
       currentType: r.relationshipType,
+      currentCategory: r.category,
     );
-    if (newType == null || newType == r.relationshipType) return;
+    if (edit == null) return;
+    if (edit.type == r.relationshipType && edit.category == r.category) return;
     await _relationships.setRelationship(
       contactId: widget.contactId,
       relatedContactId: r.contactId,
-      type: newType,
+      type: edit.type,
+      category: edit.category,
     );
     _load();
   }

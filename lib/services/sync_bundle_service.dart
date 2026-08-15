@@ -30,6 +30,7 @@ import 'package:sqflite/sqflite.dart';
 
 import 'package:smart_contacts_dialer/database/database_helper.dart';
 import 'package:smart_contacts_dialer/models/audit_entry.dart';
+import 'package:smart_contacts_dialer/models/relationship.dart';
 import 'package:smart_contacts_dialer/repositories/audit_repository.dart';
 import 'package:smart_contacts_dialer/repositories/emergency_info_repository.dart';
 import 'package:smart_contacts_dialer/utils/malayalam_transliterator.dart';
@@ -561,10 +562,20 @@ class SyncBundleService {
           final type = raw['relationship_type'];
           final key = '$rcid:$rrid:$type';
           if (!existingRel.add(key)) continue;
+          // Older senders carry no category; derive it from the label so the
+          // row lands in the right sphere bucket instead of staying blank.
+          final category =
+              (raw['relationship_category'] as String?)?.trim().isNotEmpty ==
+                  true
+              ? raw['relationship_category'] as String
+              : RelationshipCategory.categoryFor(
+                  type is String ? type : null,
+                ).storageKey;
           await txn.insert('relationships', {
             'contact_id': rcid,
             'related_contact_id': rrid,
             'relationship_type': type,
+            'relationship_category': category,
           });
         }
       }

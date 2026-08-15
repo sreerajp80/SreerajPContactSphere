@@ -2,13 +2,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:smart_contacts_dialer/models/relationship.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
-/// Relationship-name management, reached from Settings → Contacts. These names
-/// are the chips offered when linking two contacts (e.g. "Father", "Friend").
-/// The list is fully editable and seeded from the built-in defaults; "Reset to
-/// defaults" restores them.
+/// Relationship-label management, reached from Settings → Contacts. These names
+/// are extra label chips offered when linking two contacts (e.g. "Father",
+/// "Friend"). Each name is filed under one of the seven relationship categories
+/// by its wording, and shows up as a chip once that category is chosen — a name
+/// the app does not recognise appears under Social. The list is fully editable
+/// and seeded from the built-in defaults; "Reset to defaults" restores them.
 class RelationshipNamesScreen extends StatefulWidget {
   const RelationshipNamesScreen({super.key});
 
@@ -152,9 +155,10 @@ class _RelationshipNamesScreenState extends State<RelationshipNamesScreen> {
             const SizedBox(width: 14),
             Expanded(
               child: Text(
-                'These names appear when you link a relationship between two '
-                'contacts. Editing them here does not change relationships you '
-                'have already saved.',
+                'These labels appear as chips when you link two contacts, under '
+                'whichever of the seven categories they belong to. You can '
+                'still type any label you like. Editing them here does not '
+                'change relationships you have already saved.',
                 style: TextStyle(color: colors.mutedText, fontSize: 13.5),
               ),
             ),
@@ -252,6 +256,7 @@ class _RelationshipNamesScreenState extends State<RelationshipNamesScreen> {
 
   Widget _nameTile(AppColors colors, int index, String name) {
     final accent = Theme.of(context).colorScheme.primary;
+    final category = RelationshipCategory.categoryFor(name);
     return InkWell(
       borderRadius: BorderRadius.circular(12),
       onTap: () => _editName(index: index),
@@ -262,12 +267,21 @@ class _RelationshipNamesScreenState extends State<RelationshipNamesScreen> {
             Icon(Icons.people_alt_outlined, color: accent, size: 22),
             const SizedBox(width: 14),
             Expanded(
-              child: Text(
-                name,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    '${category.emoji} ${category.displayName}',
+                    style: TextStyle(color: colors.mutedText, fontSize: 12),
+                  ),
+                ],
               ),
             ),
             IconButton(
