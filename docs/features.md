@@ -2,7 +2,7 @@
 
 This file is a reference for another LLM (or a developer) to check what this
 app already does, before implementing a new feature. It is accurate and complete
-as of August 10, 2026. If code has changed since, trust the code over this file.
+as of August 16, 2026. If code has changed since, trust the code over this file.
 
 ## What this app is
 
@@ -436,7 +436,7 @@ The Settings hub (`SettingsScreen`) organizes options into dedicated sub-screens
 - **Appearance** (`AppearanceScreen`): Theme Mode (`ThemeModeSettingsScreen`), Typography & Text Size (`TypographySettingsScreen`), and Accent Color (`AccentColorSettingsScreen`).
 - **Features** (`FeaturesScreen`): An in-app showcase screen (note it contains some marketing-style copy that is not fully backed by the code, e.g. it describes a per-contact notes timeline that doesn't exist, so don't treat it as ground truth on its own).
 - **Permissions** (`PermissionsScreen`): Screen listing every permission the app uses, its rationale, and current grant status.
-- **Help** (`HelpHomeScreen`): Separate help pages for backup, biometrics, cloud sync, contact sync, emergency info, P2P sync, and T9 dialing.
+- **Help** (`HelpHomeScreen`): Separate help pages for backup, biometrics, cloud sync, contact sync, emergency info, P2P sync, relationship categories, and T9 dialing.
 - **About** (`AboutScreen`): Version and build number, app description, and dynamic developer details loaded from configuration (`assets/config/app_config.json`).
 
 
@@ -490,11 +490,6 @@ access to Android system APIs:
   this data.
 - The emergency-info lock-screen card: notification, dedicated activity, a
   boot receiver to re-show it after restart, and QR code generation.
-- Native exact alarm notification scheduling (`NotificationSchedulerManager.kt`,
-  `ScheduledNotificationReceiver.kt`) with boot persistence (`BOOT_COMPLETED`) to fire
-  timed reminder notifications with payload actions, managed on the Flutter side via
-  `NotificationSchedulerService` for scheduling, task persistence, status reconciliation,
-  and exact alarm permission management.
 
 ---
 
@@ -503,6 +498,14 @@ access to Android system APIs:
 These are explicitly documented as missing in `docs/known-gaps.md` or
 `docs/security.md` — do not assume they exist:
 
+- **Scheduled reminder notifications** — no notification is ever scheduled or
+  fired today. The post-call feedback flow can save a follow-up reminder, but it
+  is stored only; nothing turns it into a notification. The plumbing for this
+  does exist and is unused: a native exact-alarm scheduler
+  (`NotificationSchedulerManager.kt`, `ScheduledNotificationReceiver.kt`, with
+  `BOOT_COMPLETED` re-arming) and a Dart wrapper
+  (`lib/services/notification_scheduler_service.dart`). No Dart file in the app
+  calls that wrapper, so treat this as unfinished groundwork, not a feature.
 - **Call recording** — not implemented, and not planned. Android does not
   allow a sideloaded (non-Play-Store) dialer app to record calls; a
   local-mic-only workaround was considered and rejected as misleading to
@@ -528,9 +531,9 @@ for the future. None of them exist in the app today:
 
 - An offline, multi-hop Bluetooth mesh network for broadcasting emergency
   info without internet or phone signal.
-- Proactive "nudge" notifications from the relationship scoring engine
-  (the scoring itself is implemented; alerting the user based on it is backed by
-  `NotificationSchedulerService`).
+- Proactive "nudge" notifications from the relationship scoring engine. The
+  scoring itself is implemented, but nothing alerts the user based on it — see
+  the scheduled-notification entry under "Known gaps" above.
 - Multiple calling "personas" (e.g. switching between Work/Personal/
   Freelance modes).
 - A "decoy vault" — a second, fake unlock PIN that shows a decoy set of
