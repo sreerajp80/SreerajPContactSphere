@@ -80,12 +80,12 @@ android {
             dimension = "env"
             applicationIdSuffix = ".dev"      // -> in.sreerajp.contact_sphere.dev
             versionNameSuffix = "-dev"
-            resValue("string", "app_name", "ContactSphere Dev")
+            resValue("string", "app_name", "SreerajP Contacts Sphere Dev")
         }
         create("prod") {
             dimension = "env"
             // keeps applicationId = in.sreerajp.contact_sphere
-            resValue("string", "app_name", "ContactSphere")
+            resValue("string", "app_name", "SreerajP Contacts Sphere")
         }
     }
 }

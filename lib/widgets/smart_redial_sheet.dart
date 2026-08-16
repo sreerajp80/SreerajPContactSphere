@@ -65,8 +65,9 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
     super.initState();
     final settings = Provider.of<AppSettings>(context, listen: false);
     _selectedDelayMinutes = settings.smartRedialDelayMinutes;
-    _messageController =
-        TextEditingController(text: settings.presetReachMeMessage);
+    _messageController = TextEditingController(
+      text: settings.presetReachMeMessage,
+    );
     _loadSims();
   }
 
@@ -187,7 +188,7 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
         content: const Text(
           'Auto-Retry needs the "Alarms & reminders" permission so it can '
           'call back on schedule even if this app is closed. Enable it for '
-          'ContactSphere in the settings screen that opens next.',
+          'SreerajP Contacts Sphere in the settings screen that opens next.',
         ),
         actions: [
           TextButton(
@@ -398,10 +399,7 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
                     ),
                     child: Text(
                       _messageController.text,
-                      style: const TextStyle(
-                        fontSize: 13.5,
-                        height: 1.35,
-                      ),
+                      style: const TextStyle(fontSize: 13.5, height: 1.35),
                     ),
                   ),
                 const SizedBox(height: 12),
@@ -449,10 +447,7 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
     );
   }
 
-  Widget _sectionHeader({
-    required String title,
-    required AppColors colors,
-  }) {
+  Widget _sectionHeader({required String title, required AppColors colors}) {
     return Text(
       title,
       style: TextStyle(
@@ -501,9 +496,7 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
       decoration: BoxDecoration(
         color: colors.searchFill,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: colors.mutedText.withValues(alpha: 0.15),
-        ),
+        border: Border.all(color: colors.mutedText.withValues(alpha: 0.15)),
       ),
       child: Row(
         children: [
@@ -570,7 +563,10 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
                 leading: const Icon(Icons.sim_card),
                 title: Text(sim.displayLabel),
                 trailing: _selectedSim?.phoneAccountId == sim.phoneAccountId
-                    ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
+                    ? Icon(
+                        Icons.check,
+                        color: Theme.of(context).colorScheme.primary,
+                      )
                     : null,
                 onTap: () {
                   setState(() => _selectedSim = sim);

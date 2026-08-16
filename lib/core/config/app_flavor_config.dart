@@ -58,7 +58,8 @@ class AppFlavorConfig {
 
   // Matches the resValue("string", "app_name", ...) values in
   // android/app/build.gradle.kts so the Dart and native names stay aligned.
-  String get appName => isDev ? 'ContactSphere Dev' : 'ContactSphere';
+  String get appName =>
+      isDev ? 'SreerajP Contacts Sphere Dev' : 'SreerajP Contacts Sphere';
   bool get showEnvironmentBanner => isDev;
   bool get enableVerboseLogging => isDev;
 }
