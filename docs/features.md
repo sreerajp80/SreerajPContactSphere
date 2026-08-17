@@ -276,6 +276,12 @@ than what exists.
   Text" (name and numbers as a plain-text share) and "Copy Name & Phone" to
   the clipboard.
 - Share a contact as a static QR code; scan a QR code to import a contact.
+- Scan a paper business card into a new contact: photograph the card (or pick a
+  photo of one), the text is read on-device with ML Kit, and the name, phone,
+  email, designation, company and work address are guessed from the layout. A
+  review sheet shows every guessed field with a tick box plus the full scanned
+  text, then the normal Add contact form opens prefilled — nothing is saved
+  until the user saves it. The image and its text never leave the phone.
 - AirQR optical fountain QR stream: high-performance optical fountain & systematic
   stream decoder/encoder engine for sharing large vCards and multi-contact payloads using
   animated QR code sequences (LT Fountain parity frames + systematic frames with CRC32

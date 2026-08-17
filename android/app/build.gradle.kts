@@ -70,6 +70,13 @@ android {
             } else {
                 signingConfigs.getByName("debug")
             }
+            // R8 needs proguard-rules.pro: the ML Kit text recognizer plugin
+            // references script recognizers this app does not bundle, which
+            // otherwise fails the release build.
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 

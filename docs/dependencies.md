@@ -5,6 +5,9 @@ Heavy packages declared in `pubspec.yaml`. Most are declared but **not yet integ
 - **Telephony / dialer** — `flutter_phone_direct_caller`, `call_log`, `flutter_ringtone_player`
 - **Device contacts sync** — `flutter_contacts`
 - **QR** — `qr_flutter` (render/share a contact QR), `mobile_scanner` (camera scan → import)
+- **Business card OCR** — `google_mlkit_text_recognition` (on-device Latin text recognition
+  behind the business card scanner; the photo and the recognized text never leave the phone.
+  The bundled ML Kit model is what makes the release APK noticeably larger)
 - **BLE** — `flutter_blue_plus` (receiver side of BLE contact exchange: scan + GATT reads;
   the sender/peripheral side is native Kotlin — `BleShareServer.kt`)
 - **Biometrics** — `local_auth` (intended to gate `is_secret` contacts)

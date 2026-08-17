@@ -25,6 +25,7 @@ import 'package:smart_contacts_dialer/widgets/number_picker_sheet.dart';
 import 'package:smart_contacts_dialer/widgets/voice_input_button.dart';
 import 'package:smart_contacts_dialer/screens/add_edit_contact_screen.dart';
 import 'package:smart_contacts_dialer/screens/ble_receive_screen.dart';
+import 'package:smart_contacts_dialer/screens/business_card_scan_screen.dart';
 import 'package:smart_contacts_dialer/screens/contact_detail_screen.dart';
 import 'package:smart_contacts_dialer/screens/duplicates_screen.dart';
 import 'package:smart_contacts_dialer/screens/groups_screen.dart';
@@ -782,6 +783,12 @@ class _ContactListScreenState extends State<ContactListScreen>
         ).push<bool>(MaterialPageRoute(builder: (_) => const QrScanScreen()));
         if (saved == true) _reload();
         break;
+      case 'scan_card':
+        final added = await Navigator.of(context).push<bool>(
+          MaterialPageRoute(builder: (_) => const BusinessCardScanScreen()),
+        );
+        if (added == true) _reload();
+        break;
       case 'receive_ble':
         final received = await Navigator.of(context).push<bool>(
           MaterialPageRoute(builder: (_) => const BleReceiveScreen()),
@@ -985,6 +992,10 @@ class _ContactListScreenState extends State<ContactListScreen>
                 child: Text('Bluetooth transfer'),
               ),
               PopupMenuItem(value: 'scan_qr', child: Text('Scan QR code')),
+              PopupMenuItem(
+                value: 'scan_card',
+                child: Text('Scan business card'),
+              ),
               PopupMenuItem(
                 value: 'duplicates',
                 child: Text('Find Duplicates'),

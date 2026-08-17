@@ -5,7 +5,7 @@ description: Advanced contacts and dialer app with SQLite
 # Drives flutter.versionName/versionCode (android/app/build.gradle.kts) and
 # PackageInfo.fromPlatform(). Keep in sync with assets/config/app_config.json
 # (version/build); ConfigService.loadAndVerify() logs a debug drift note if they differ.
-version: 15.16.57+82
+version: 15.17.0+83
 
 environment:
   sdk: '^3.12.0'
@@ -39,6 +39,7 @@ dependencies:
   phone_numbers_parser: ^9.0.24
   qr_flutter: ^4.1.0
   mobile_scanner: ^7.0.1
+  google_mlkit_text_recognition: ^0.15.0  # on-device OCR for the business card scanner (no image or text leaves the phone)
   url_launcher: ^6.3.0
   flutter_slidable: ^4.0.3
   cryptography: ^2.9.0

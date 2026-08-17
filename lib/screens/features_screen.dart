@@ -192,6 +192,13 @@ class FeaturesScreen extends StatelessWidget {
           highlights: ['Instant vCard QR', 'Built-in scanner', 'Direct import'],
         ),
         _AppFeature(
+          title: 'Business Card Scanner',
+          description:
+              'Photograph a paper business card and get a prefilled new contact, read entirely on this phone.',
+          icon: Icons.badge_outlined,
+          highlights: ['On-device OCR', 'Tick what to keep', 'No cloud upload'],
+        ),
+        _AppFeature(
           title: 'Bluetooth LE Share',
           description:
               'Discover nearby ContactSphere devices and send contacts over Bluetooth Low Energy.',
