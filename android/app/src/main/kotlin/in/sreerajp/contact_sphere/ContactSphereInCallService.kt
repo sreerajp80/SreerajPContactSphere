@@ -118,7 +118,9 @@ class ContactSphereInCallService : InCallService(), CallRegistry.RingController 
         hasCall = true
         showingOngoing = false
         registerScreenOnReceiver()
-        postCallNotification(buildCallNotification(currentNumber, currentName, ongoing = false))
+        // Start as quiet because launchInCallUi() immediately brings the full-screen
+        // in-call screen to the front, avoiding a heads-up banner above our own screen.
+        postCallNotification(buildCallNotification(currentNumber, currentName, ongoing = false, forceQuiet = true))
         if (ringer == null) ringer = IncomingCallRinger(this)
         if (callWaiting) {
             // A second call while one is already active: a short call-waiting beep
@@ -161,6 +163,12 @@ class ContactSphereInCallService : InCallService(), CallRegistry.RingController 
         // Only the ringing shape is visibility-sensitive; a CallStyle ongoing notification
         // renders as a persistent entry (never a heads-up), so it needs no re-post here.
         if (!hasCall || showingOngoing) return
+        val uiVisible = CallRegistry.isInCallUiVisible()
+        if (uiVisible) {
+            // When returning to the full-screen call UI, cancel any active heads-up
+            // banner before re-posting the quiet notification so the banner immediately disappears.
+            getSystemService(NotificationManager::class.java)?.cancel(CALL_NOTIFICATION_ID)
+        }
         postCallNotification(buildCallNotification(currentNumber, currentName, ongoing = false))
     }
 
@@ -490,7 +498,12 @@ class ContactSphereInCallService : InCallService(), CallRegistry.RingController 
         }
     }
 
-    private fun buildCallNotification(number: String?, name: String?, ongoing: Boolean): Notification {
+    private fun buildCallNotification(
+        number: String?,
+        name: String?,
+        ongoing: Boolean,
+        forceQuiet: Boolean = false,
+    ): Notification {
         createChannel()
         val caller = when {
             !name.isNullOrBlank() -> name
@@ -498,10 +511,11 @@ class ContactSphereInCallService : InCallService(), CallRegistry.RingController 
             else -> "Unknown"
         }
         val contentPi = activityIntent()
+        val uiVisible = forceQuiet || CallRegistry.isInCallUiVisible()
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            buildCallStyleNotification(caller, contentPi, ongoing)
+            buildCallStyleNotification(caller, contentPi, ongoing, uiVisible)
         } else {
-            buildLegacyNotification(caller, contentPi, ongoing)
+            buildLegacyNotification(caller, contentPi, ongoing, uiVisible)
         }
     }
 
@@ -510,6 +524,7 @@ class ContactSphereInCallService : InCallService(), CallRegistry.RingController 
         caller: String,
         contentPi: PendingIntent,
         ongoing: Boolean,
+        uiVisible: Boolean,
     ): Notification {
         val person = Person.Builder().setName(caller).setImportant(true).build()
         val style = if (ongoing) {
@@ -526,7 +541,6 @@ class ContactSphereInCallService : InCallService(), CallRegistry.RingController 
         currentLabel?.let { style.setVerificationText(it) }
         // With our in-call UI already in front, the ringing notification goes on the
         // quiet channel with no full-screen intent so no heads-up banner covers it.
-        val uiVisible = CallRegistry.isInCallUiVisible()
         val channelId = when {
             ongoing -> ONGOING_CHANNEL_ID
             uiVisible -> QUIET_INCOMING_CHANNEL_ID
@@ -556,8 +570,8 @@ class ContactSphereInCallService : InCallService(), CallRegistry.RingController 
         caller: String,
         contentPi: PendingIntent,
         ongoing: Boolean,
+        uiVisible: Boolean,
     ): Notification {
-        val uiVisible = CallRegistry.isInCallUiVisible()
         val channelId = when {
             ongoing -> ONGOING_CHANNEL_ID
             uiVisible -> QUIET_INCOMING_CHANNEL_ID

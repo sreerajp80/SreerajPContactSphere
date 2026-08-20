@@ -113,6 +113,9 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (intent?.action == ContactSphereInCallService.ACTION_SHOW_IN_CALL) {
+            applyShowWhenLocked(true)
+        }
         handleVCardIntent(intent)
         handleDialIntent(intent)
         handleTrustedCallbackIntent(intent)
@@ -124,6 +127,9 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        if (intent.action == ContactSphereInCallService.ACTION_SHOW_IN_CALL) {
+            applyShowWhenLocked(true)
+        }
         handleVCardIntent(intent)
         handleDialIntent(intent)
         handleTrustedCallbackIntent(intent)
