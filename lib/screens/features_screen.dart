@@ -201,7 +201,7 @@ class FeaturesScreen extends StatelessWidget {
         _AppFeature(
           title: 'Bluetooth LE Share',
           description:
-              'Discover nearby ContactSphere devices and send contacts over Bluetooth Low Energy.',
+              'Discover nearby SreerajP Contacts Sphere devices and send contacts over Bluetooth Low Energy.',
           icon: Icons.bluetooth_outlined,
           highlights: ['BLE discovery', 'Zero pairing hassle', 'Secure payload'],
         ),
@@ -307,7 +307,7 @@ class FeaturesScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'ContactSphere Features',
+                    'SreerajP Contacts Sphere Features',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),

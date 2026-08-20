@@ -163,7 +163,7 @@ class _BlockedNumbersScreenState extends State<BlockedNumbersScreen> {
             Expanded(
               child: Text(
                 'Blocked numbers never ring. Blocking works while '
-                'ContactSphere is your default phone app and matches the '
+                'SreerajP Contacts Sphere is your default phone app and matches the '
                 'exact number.',
                 style: TextStyle(color: colors.mutedText, fontSize: 13.5),
               ),

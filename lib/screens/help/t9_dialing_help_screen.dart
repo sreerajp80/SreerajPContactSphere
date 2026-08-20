@@ -17,7 +17,7 @@ class T9DialingHelpScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
         children: const [
           _Intro(
-            'ContactSphere features a smart multi-script T9 dialpad. You can '
+            'SreerajP Contacts Sphere features a smart multi-script T9 dialpad. You can '
             'search your contacts seamlessly using English or regional script '
             'key presses (Malayalam, Devanagari, etc.).',
           ),

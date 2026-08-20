@@ -43,7 +43,7 @@ class EmergencyInfoHelpScreen extends StatelessWidget {
                 'Android keeps its own "Emergency information" page behind the '
                 'lock screen Emergency button. That page belongs to the phone '
                 'maker, and no app can write into it — which is why '
-                'ContactSphere uses its own notification instead.',
+                'SreerajP Contacts Sphere uses its own notification instead.',
               ),
             ],
           ),
@@ -102,7 +102,7 @@ class EmergencyInfoHelpScreen extends StatelessWidget {
                 'override that choice.',
               ),
               _Bullet(
-                'Also check that notifications for ContactSphere are on, and '
+                'Also check that notifications for SreerajP Contacts Sphere are on, and '
                 'that the "Emergency info" notification is not turned down to '
                 'silent. The edit screen warns you when either is the case, and '
                 'the button there opens the right settings page.',
@@ -134,7 +134,7 @@ class EmergencyInfoHelpScreen extends StatelessWidget {
                 'cannot read it, and it is left out of phone backups.',
               ),
               _Bullet(
-                'The card is saved inside a password-protected ContactSphere '
+                'The card is saved inside a password-protected SreerajP Contacts Sphere '
                 'backup, so a restore on a new phone brings it back.',
               ),
               _Bullet(

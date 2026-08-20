@@ -19,7 +19,7 @@ class CloudSyncHelpScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
         children: const [
           _Intro(
-            'ContactSphere connects with Google, Microsoft, and CardDAV/WebDAV '
+            'SreerajP Contacts Sphere connects with Google, Microsoft, and CardDAV/WebDAV '
             'servers. You can use a single provider or decouple them — syncing live '
             'contacts with one service while backing up your encrypted database to another.',
           ),
@@ -66,7 +66,7 @@ class CloudSyncHelpScreen extends StatelessWidget {
             title: 'Privacy & Security',
             children: [
               _Bullet(
-                'Secret Vault Contacts: contacts saved as Secret in ContactSphere are app-only and '
+                'Secret Vault Contacts: contacts saved as Secret in SreerajP Contacts Sphere are app-only and '
                 'are NEVER uploaded or synced to online contact providers (Google Contacts, Outlook, or CardDAV).',
               ),
               _Bullet(

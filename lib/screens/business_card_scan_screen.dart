@@ -57,7 +57,7 @@ class _BusinessCardScanScreenState extends State<BusinessCardScanScreen> {
         _stage = _Stage.failed;
         _message =
             'Camera access is needed to photograph a card. Allow Camera for '
-            'ContactSphere in system settings, or pick a photo instead.';
+            'SreerajP Contacts Sphere in system settings, or pick a photo instead.';
       });
       return;
     }

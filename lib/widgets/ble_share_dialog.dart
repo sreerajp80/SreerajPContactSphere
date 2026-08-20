@@ -263,7 +263,7 @@ class _BleShareDialogState extends State<BleShareDialog> {
           if (_phase == _Phase.waiting) ...[
             const SizedBox(height: 8),
             Text(
-              'On the other phone, open ContactSphere and choose '
+              'On the other phone, open SreerajP Contacts Sphere and choose '
               '"Receive via Bluetooth" from the contacts menu.',
               style: theme.textTheme.bodySmall,
               textAlign: TextAlign.center,
@@ -371,7 +371,7 @@ class _BleShareDialogState extends State<BleShareDialog> {
       _Phase.sent => 'Sent.',
       _Phase.permissionDenied =>
         'Bluetooth permission is needed to share. Allow Nearby devices for '
-            'ContactSphere and try again.',
+            'SreerajP Contacts Sphere and try again.',
       _Phase.timedOut =>
         'No phone connected. Try again when the receiver is ready.',
       _Phase.error => _errorMessage ?? 'Bluetooth sharing failed.',

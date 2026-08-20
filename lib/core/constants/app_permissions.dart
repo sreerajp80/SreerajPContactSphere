@@ -57,7 +57,7 @@ const List<AppPermission> kAppPermissions = <AppPermission>[
   AppPermission(
     title: 'Default phone app',
     reason:
-        'Become the system dialer so ContactSphere shows its own in-call '
+        'Become the system dialer so SreerajP Contacts Sphere shows its own in-call '
         'screen and call screening controls.',
     icon: Icons.dialpad,
     group: PermissionGroup.explicit,

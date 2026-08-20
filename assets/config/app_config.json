@@ -1,8 +1,8 @@
 {
   "appName": "SreerajP Contacts Sphere",
   "description": "Advanced contacts and dialer app with SQLite.",
-  "version": "15.17.1",
-  "build": "84",
+  "version": "15.17.2",
+  "build": "85",
   "details": {
     "Author": "Sreeraj P",
     "Email": "sreerajp@zohomail.in",

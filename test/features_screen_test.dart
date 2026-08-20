@@ -15,7 +15,7 @@ void main() {
     );
 
     expect(find.text('Features'), findsOneWidget);
-    expect(find.text('ContactSphere Features'), findsOneWidget);
+    expect(find.text('SreerajP Contacts Sphere Features'), findsOneWidget);
     expect(find.text('Smart Redial & "Reach Me" Mode'), findsOneWidget);
     expect(find.text('Editable Dialer & Precision Editing'), findsOneWidget);
 

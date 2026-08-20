@@ -294,7 +294,7 @@ class _SyncQrScanScreenState extends State<_SyncQrScanScreen> {
     if (parsed == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Not a ContactSphere pairing code')),
+          const SnackBar(content: Text('Not a SreerajP Contacts Sphere pairing code')),
         );
       }
       try {

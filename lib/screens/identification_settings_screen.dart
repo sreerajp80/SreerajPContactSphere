@@ -100,13 +100,13 @@ class IdentificationSettingsScreen extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               'Identification happens on your phone — nothing is sent '
-              'anywhere. ContactSphere recognises registered telemarketing '
+              'anywhere. SreerajP Contacts Sphere recognises registered telemarketing '
               '(140…) and service (160…) number series, numbers you have '
               'marked as spam from Recents, and shows a warning when your '
               'network reports that a caller’s number could not be verified.\n\n'
               'Mobile networks only deliver the caller’s number, not a name, '
               'so callers outside your contacts can’t be identified by name. '
-              'Spam filtering needs ContactSphere to be your default phone '
+              'Spam filtering needs SreerajP Contacts Sphere to be your default phone '
               'app.',
               style: TextStyle(
                 color: colors.mutedText,

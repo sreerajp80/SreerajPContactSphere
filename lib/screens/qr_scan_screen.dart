@@ -380,7 +380,7 @@ class _ScannerError extends StatelessWidget {
               Text(
                 denied
                     ? 'Camera access is needed to scan QR codes.\n'
-                          'Allow Camera for ContactSphere in system settings '
+                          'Allow Camera for SreerajP Contacts Sphere in system settings '
                           'and come back.'
                     : 'The camera could not be started.\n'
                           '${error.errorDetails?.message ?? ''}',

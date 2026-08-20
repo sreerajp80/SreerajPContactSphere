@@ -118,7 +118,7 @@ class SettingsScreen extends StatelessWidget {
           _SettingsCard(
             icon: Icons.stars_outlined,
             title: 'Features',
-            subtitle: 'Explore all features of ContactSphere',
+            subtitle: 'Explore all features of SreerajP Contacts Sphere',
             onTap: () => _push(context, const FeaturesScreen()),
           ),
           const SizedBox(height: 12),

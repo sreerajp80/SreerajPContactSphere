@@ -270,7 +270,7 @@ class _SmartContactsAppState extends State<SmartContactsApp>
             ),
           );
         } else {
-          _showSnack('Contact details not found in ContactSphere.');
+          _showSnack('Contact details not found in SreerajP Contacts Sphere.');
         }
         break;
       case ContactIntentAction.edit:
@@ -543,7 +543,7 @@ class _SmartContactsAppState extends State<SmartContactsApp>
         title: const Text('Import contacts'),
         content: Text(
           'This vCard file contains ${parsed.length} contacts. Import them '
-          'into ContactSphere and your phone contacts?',
+          'into SreerajP Contacts Sphere and your phone contacts?',
         ),
         actions: [
           TextButton(

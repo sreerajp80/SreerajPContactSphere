@@ -138,7 +138,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
     // A permissive type group: some Android file providers do not filter by our
     // custom .csbak extension, so we accept any file and validate the bytes.
     const typeGroup = XTypeGroup(
-      label: 'ContactSphere backup',
+      label: 'SreerajP Contacts Sphere backup',
       extensions: ['csbak'],
     );
     final XFile? picked = await openFile(acceptedTypeGroups: [typeGroup]);

@@ -207,7 +207,7 @@ class _BleReceiveScreenState extends State<BleReceiveScreen> {
         title: const Text('Import contacts'),
         content: Text(
           'This transfer contains ${parsed.length} contacts. Import them '
-          'into ContactSphere and your phone contacts?',
+          'into SreerajP Contacts Sphere and your phone contacts?',
         ),
         actions: [
           TextButton(
@@ -272,7 +272,7 @@ class _BleReceiveScreenState extends State<BleReceiveScreen> {
           icon: Icons.bluetooth_disabled,
           message:
               'Bluetooth permission is needed to receive a contact. Allow '
-              'Nearby devices for ContactSphere and try again.',
+              'Nearby devices for SreerajP Contacts Sphere and try again.',
           actionLabel: 'Try again',
           onAction: _init,
         ),

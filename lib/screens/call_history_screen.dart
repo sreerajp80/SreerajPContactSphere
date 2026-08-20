@@ -167,7 +167,7 @@ class CallHistoryScreenState extends State<CallHistoryScreen>
       builder: (ctx) => AlertDialog(
         title: const Text('Clear call history?'),
         content: const Text(
-          'This removes all logged calls from ContactSphere.',
+          'This removes all logged calls from SreerajP Contacts Sphere.',
         ),
         actions: [
           TextButton(

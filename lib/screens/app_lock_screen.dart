@@ -81,7 +81,7 @@ class _DeviceUnlockState extends State<_DeviceUnlock> {
   Future<void> _unlock() async {
     if (_authenticating) return;
     setState(() => _authenticating = true);
-    final ok = await _auth.authenticate(reason: 'Unlock ContactSphere');
+    final ok = await _auth.authenticate(reason: 'Unlock SreerajP Contacts Sphere');
     if (!mounted) return;
     if (ok) {
       Navigator.of(context).pop(true);
@@ -105,7 +105,7 @@ class _DeviceUnlockState extends State<_DeviceUnlock> {
             _LockBadge(accent: accent),
             const SizedBox(height: 24),
             const Text(
-              'ContactSphere is locked',
+              'SreerajP Contacts Sphere is locked',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
@@ -214,7 +214,7 @@ class _PinUnlockState extends State<_PinUnlock> {
           _LockBadge(accent: accent),
           const SizedBox(height: 20),
           const Text(
-            'ContactSphere is locked',
+            'SreerajP Contacts Sphere is locked',
             style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),

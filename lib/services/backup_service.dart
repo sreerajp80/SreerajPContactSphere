@@ -142,7 +142,7 @@ class BackupService {
         !_startsWith(bytes, _magic) ||
         bytes[4] != _formatVersion) {
       throw const BackupException(
-        'This is not a ContactSphere backup file (or it was made by a newer '
+        'This is not a SreerajP Contacts Sphere backup file (or it was made by a newer '
         'app version).',
       );
     }

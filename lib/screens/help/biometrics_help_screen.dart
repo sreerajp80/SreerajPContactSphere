@@ -20,7 +20,7 @@ class BiometricsHelpScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
         children: const [
           _Intro(
-            'ContactSphere can ask for your fingerprint or face before it shows '
+            'SreerajP Contacts Sphere can ask for your fingerprint or face before it shows '
             'or moves your most private data. It uses your phone\'s own lock — '
             'the app never sees or stores your fingerprint or face.',
           ),
@@ -65,7 +65,7 @@ class BiometricsHelpScreen extends StatelessWidget {
             title: 'Your privacy',
             children: [
               _Bullet(
-                'The check is handled by Android, not by ContactSphere. The '
+                'The check is handled by Android, not by SreerajP Contacts Sphere. The '
                 'app only learns whether the unlock passed or failed.',
               ),
               _Bullet(

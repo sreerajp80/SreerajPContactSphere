@@ -81,8 +81,8 @@ class _DefaultDialerCardState extends State<DefaultDialerCard> {
                     const SizedBox(height: 2),
                     Text(
                       _isDefault
-                          ? 'ContactSphere handles your calls'
-                          : 'Set ContactSphere as your default dialer',
+                          ? 'SreerajP Contacts Sphere handles your calls'
+                          : 'Set SreerajP Contacts Sphere as your default dialer',
                       style: TextStyle(color: colors.mutedText, fontSize: 13),
                     ),
                   ],

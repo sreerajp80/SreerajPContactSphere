@@ -92,7 +92,7 @@ class _StartView extends StatelessWidget {
         const SyncInfoCard(
           icon: Icons.info_outline,
           text:
-              'Share this phone\'s ContactSphere data with another phone on '
+              'Share this phone\'s SreerajP Contacts Sphere data with another phone on '
               'the same Wi-Fi. Start below, then scan the QR (or type the code) '
               'on the other phone. After it connects, pick what to send.',
         ),
