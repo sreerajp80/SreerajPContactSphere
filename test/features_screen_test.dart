@@ -19,7 +19,7 @@ void main() {
     expect(find.text('Smart Redial & "Reach Me" Mode'), findsOneWidget);
     expect(find.text('Editable Dialer & Precision Editing'), findsOneWidget);
 
-    await tester.drag(find.byType(ListView), const Offset(0, -500));
+    await tester.drag(find.byType(ListView), const Offset(0, -1000));
     await tester.pump();
 
     expect(find.text('Relationship Context Cards'), findsOneWidget);

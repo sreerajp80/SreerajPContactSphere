@@ -39,199 +39,289 @@ class FeaturesScreen extends StatelessWidget {
 
   static const List<_FeatureCategory> _categories = [
     _FeatureCategory(
-      name: 'Smart Dialer & Call Management',
-      subtitle: 'Effortless calling and intelligent keypad search',
+      name: 'Smart Dialer & Calling',
+      subtitle: 'Fast T9 search, dual-SIM controls, and intelligent calling tools',
       icon: Icons.dialpad_outlined,
       features: [
         _AppFeature(
-          title: 'T9 Keypad Search',
+          title: 'Multi-Script T9 Keypad Search',
           description:
-              'Instantly search contacts by name or number using standard T9 '
-              'keypad text spelling.',
+              'Search contacts in milliseconds by typing numbers or letters on the dialpad. Fully supports English, Malayalam (including vowels & chillu letters), Devanagari, and more.',
           icon: Icons.grid_3x3_outlined,
-          highlights: ['Malayalam support', 'Smart stem matching', 'Speed dial'],
-        ),
-        _AppFeature(
-          title: 'Smart Redial & "Reach Me" Mode',
-          description:
-              'Automatically schedule retry timers or send a preset "trying to reach you" SMS when calls go unanswered.',
-          icon: Icons.replay_outlined,
-          highlights: ['Auto-retry timer', '1-tap SMS prompt', 'Custom delay picker'],
-        ),
-        _AppFeature(
-          title: 'In-Call UI & Controls',
-          description:
-              'Full-featured custom in-call interface with mute, speaker, '
-              'keypad, hold, call swap, and conference call capabilities.',
-          icon: Icons.call_end_outlined,
-          highlights: [
-            'System role integration',
-            'Conference call hub',
-            'Full-screen incoming alert'
-          ],
+          highlights: ['English & Malayalam', 'Multi-script transliteration', 'Speed dial shortcuts'],
         ),
         _AppFeature(
           title: 'Editable Dialer & Precision Editing',
           description:
-              'Select, copy, paste numbers directly in dialer input with full cursor control and clear history safeguards.',
+              'Freely tap anywhere on the typed number to move your cursor, select digits, copy, or paste phone numbers with ease.',
           icon: Icons.edit_note_outlined,
-          highlights: ['Text selection', 'Copy/paste support', 'Clear history safety'],
+          highlights: ['Cursor positioning', 'Paste numbers', 'Clear dialer safeguard'],
         ),
         _AppFeature(
-          title: 'Top Dialer Contacts',
+          title: 'Top Contacts Quick Access',
           description:
-              'Customize your top dialer contacts row with either your most '
-              'frequent recents or linked family & friends.',
+              'A handy row right above the dialer showing either your most frequently called contacts or favorite family and friends for 1-tap calling.',
           icon: Icons.star_outline,
-          highlights: ['Recency scoring', 'Family & friends filter'],
+          highlights: ['Frequency scoring', 'Family & friends filter', '1-tap call'],
+        ),
+        _AppFeature(
+          title: 'Dual-SIM Calling Controls',
+          description:
+              'Effortlessly choose between SIM 1 and SIM 2 for each call, or set a preferred default SIM for individual contacts.',
+          icon: Icons.sim_card_outlined,
+          highlights: ['SIM 1 / SIM 2 picker', 'Per-contact default SIM', 'SIM usage history'],
+        ),
+        _AppFeature(
+          title: 'Smart Redial & "Reach Me" Mode',
+          description:
+              'When a call goes unanswered or busy, schedule automated redial reminders or send a friendly 1-tap "trying to reach you" SMS text.',
+          icon: Icons.replay_outlined,
+          highlights: ['Auto-retry timer', '1-tap SMS prompt', 'Custom retry intervals'],
+        ),
+        _AppFeature(
+          title: 'Spoken Caller Announcements',
+          description:
+              'Hear the caller\'s name or phone number spoken out loud when your phone rings, perfect when driving or wearing headphones.',
+          icon: Icons.record_voice_over_outlined,
+          highlights: ['Voice caller ID', 'Custom prefix/suffix', 'Headset-only option'],
+        ),
+        _AppFeature(
+          title: 'Quick Reject SMS Replies',
+          description:
+              'Decline incoming calls politely with preset one-tap SMS messages like "In a meeting, will call back soon."',
+          icon: Icons.sms_outlined,
+          highlights: ['1-tap decline SMS', 'Custom quick templates', 'Instant dispatch'],
         ),
       ],
     ),
     _FeatureCategory(
-      name: 'Caller Context & Notes',
-      subtitle: 'Know who is calling before and during every call',
+      name: 'In-Call & Caller Intelligence',
+      subtitle: 'Know who is calling with rich context and seamless call controls',
       icon: Icons.person_search_outlined,
       features: [
         _AppFeature(
+          title: 'Modern In-Call Screen & Conference Calling',
+          description:
+              'A beautiful call screen with mute, loud speaker, call hold, numeric keypad, active call swapping, and merging multi-party conference calls.',
+          icon: Icons.call_end_outlined,
+          highlights: ['Speaker & mute', 'Call hold & swap', 'Conference merge', 'Full-screen incoming alert'],
+        ),
+        _AppFeature(
           title: 'Relationship Context Cards',
           description:
-              'Displays live caller relationships, last contact time, notes, '
-              'and upcoming events right on incoming and in-call screens.',
+              'See the caller\'s relationship badge, how long since you last spoke, personal notes, and upcoming birthdays right as the phone rings.',
           icon: Icons.badge_outlined,
-          highlights: ['Relationship badges', 'Last contact time', 'Pending follow-ups'],
+          highlights: ['Relationship badge', 'Last spoken days', 'Instant notes preview'],
         ),
         _AppFeature(
-          title: 'Pre-Call & Caller Intelligence',
+          title: 'Pre-Call Intelligence & Reminders',
           description:
-              'Smart caller profile scoring with interaction stats, call frequency, and automated follow-up prompts.',
+              'Helpful reminders and statistics about how often you stay in touch, prompting you to follow up with loved ones and colleagues.',
           icon: Icons.analytics_outlined,
-          highlights: ['Caller scoring', 'Interaction history', 'Follow-up alerts'],
+          highlights: ['Catch-up reminders', 'Interaction statistics', 'Call history trends'],
         ),
         _AppFeature(
-          title: 'Contact Notes & Voice Input',
+          title: 'Post-Call Notes & Voice Transcribing',
           description:
-              'Attach detailed text or voice-transcribed notes to any contact for quick recall.',
+              'Quickly jot down what you discussed right after hanging up using your keyboard or speaking aloud with automatic voice-to-text.',
           icon: Icons.note_alt_outlined,
-          highlights: ['Voice-to-text input', 'Quick notes timeline'],
+          highlights: ['Voice-to-text input', 'Post-call prompt', 'Interaction timeline'],
         ),
       ],
     ),
     _FeatureCategory(
-      name: 'Contact Sync & Privacy',
-      subtitle: 'Complete control over your contacts and privacy',
-      icon: Icons.security_outlined,
+      name: 'Contact Management & Relations',
+      subtitle: 'Organize your network into meaningful spheres and circles',
+      icon: Icons.people_alt_outlined,
       features: [
         _AppFeature(
-          title: 'Device Book & Call Log Sync',
+          title: 'Rich Contact Profiles',
           description:
-              'Bi-directional synchronization between local SQLite storage, system Android contacts, and device call logs.',
-          icon: Icons.sync,
-          highlights: ['Auto sync', 'Duplicate linking', 'Call log import'],
+              'Store multiple phone numbers, emails, home/work addresses, birthdays, anniversaries, social links, phonetic names, and custom fields.',
+          icon: Icons.account_circle_outlined,
+          highlights: ['Multi-phone & email', 'Birthday reminders', 'Custom labels & fields'],
         ),
         _AppFeature(
-          title: 'Secret Contacts & App Lock',
+          title: '7 Relationship Spheres',
           description:
-              'Hide sensitive contacts behind biometric (fingerprint/face) or custom app PIN protection.',
-          icon: Icons.lock_outline,
-          highlights: ['Biometric unlock', 'Custom app PIN', 'Encrypted local DB'],
+              'Group your contacts into 7 intuitive spheres: Family, Close Friends, Friends, Work, Professional, Acquaintance, and Services.',
+          icon: Icons.hub_outlined,
+          highlights: ['Sphere grouping', 'Custom kinship labels', 'Visual sphere badges'],
         ),
         _AppFeature(
-          title: 'Emergency Info Card',
+          title: 'Relationship Quiet Hours (DND Filter)',
           description:
-              'Blood group, allergies and people to call, readable on the lock screen without your PIN. Off by default, with a separate switch for every line.',
-          icon: Icons.medical_information_outlined,
-          highlights: ['No unlock needed', 'Per-field opt-in', 'Call from lock screen'],
+              'Silence calls during sleep or work hours while allowing vital circles (like immediate Family or Close Friends) to ring through.',
+          icon: Icons.bedtime_outlined,
+          highlights: ['Custom quiet schedules', 'VIP circle bypass', 'Per-sphere quiet rules'],
+        ),
+        _AppFeature(
+          title: 'Color Tags & Custom Groups',
+          description:
+              'Assign colorful tags and create custom groups (like "Project Team" or "Book Club") for quick filtering and bulk actions.',
+          icon: Icons.label_outline,
+          highlights: ['Color-coded tags', 'Custom groups', 'Tag cloud explorer'],
+        ),
+        _AppFeature(
+          title: 'Duplicate Contact Finder & Smart Merge',
+          description:
+              'Automatically detect duplicate contacts by matching names, phone numbers, or emails, and merge them cleanly without losing any data.',
+          icon: Icons.merge_type_outlined,
+          highlights: ['Smart match detection', 'Safe data merge', 'Preview before merging'],
         ),
       ],
     ),
     _FeatureCategory(
-      name: 'Sync & Backup',
-      subtitle: 'Keep your data safe and connected across devices',
-      icon: Icons.cloud_sync_outlined,
-      features: [
-        _AppFeature(
-          title: 'Local Wi-Fi P2P Sync',
-          description:
-              'Sync contacts directly device-to-device over encrypted local Wi-Fi without cloud servers.',
-          icon: Icons.wifi_tethering,
-          highlights: ['End-to-end encryption', 'QR pairing', 'No cloud dependency'],
-        ),
-        _AppFeature(
-          title: 'Offline Backup & Restore',
-          description:
-              'Export full database backups to protected files and restore anytime.',
-          icon: Icons.backup_outlined,
-          highlights: ['Encrypted backups', 'JSON format', 'Biometric protected'],
-        ),
-      ],
-    ),
-    _FeatureCategory(
-      name: 'Call Screening & Defense',
-      subtitle: 'Protection against unwanted callers and spam',
+      name: 'Privacy, Security & Vault',
+      subtitle: 'Protect your sensitive contacts and private conversations',
       icon: Icons.shield_outlined,
       features: [
         _AppFeature(
-          title: 'Native Call Screening & Blocking',
+          title: 'Secret Contacts Vault',
           description:
-              'Automatic background call screening service filtering blocked numbers and unknown callers before ringing.',
-          icon: Icons.block_outlined,
-          highlights: ['Background screening', 'Spam detection', 'Blocked list manager'],
+              'Hide sensitive personal or business contacts in a protected vault. They are completely invisible in the main list until unlocked.',
+          icon: Icons.lock_outline,
+          highlights: ['Biometric / PIN unlock', 'Hidden from main list', 'Encrypted database'],
+        ),
+        _AppFeature(
+          title: 'Biometric & App PIN Lock',
+          description:
+              'Lock the entire app or private sections using your phone\'s fingerprint, face unlock, or a custom app security PIN.',
+          icon: Icons.fingerprint,
+          highlights: ['Fingerprint & Face unlock', 'App PIN fallback', 'Automatic re-lock'],
+        ),
+        _AppFeature(
+          title: 'Screenshot Guard',
+          description:
+              'Prevents other apps or users from taking screenshots or recording video while viewing secret contacts and security settings.',
+          icon: Icons.screenshot_outlined,
+          highlights: ['Screenshot blocking', 'Screen recording defense', 'Privacy toggle'],
+        ),
+        _AppFeature(
+          title: 'Security Audit Log',
+          description:
+              'Keeps a private, tamper-proof history of every time secret contacts, exports, or security settings were accessed.',
+          icon: Icons.history_edu_outlined,
+          highlights: ['Access timestamps', 'Action breakdown', 'Full transparency'],
         ),
       ],
     ),
     _FeatureCategory(
-      name: 'Contact Exchange',
-      subtitle: 'Share contact information easily',
+      name: 'Instant Contact Sharing & Scanning',
+      subtitle: 'Exchange contact cards quickly without typing',
       icon: Icons.qr_code_scanner_outlined,
       features: [
         _AppFeature(
-          title: 'QR Code Sharing & Scanner',
+          title: 'vCard QR Code Generator & Scanner',
           description:
-              'Generate vCard QR codes for quick sharing and scan codes with built-in camera scanner.',
+              'Create a QR code of your contact card for others to scan in seconds, or use the camera to scan and save anyone\'s QR contact card.',
           icon: Icons.qr_code_2_outlined,
-          highlights: ['Instant vCard QR', 'Built-in scanner', 'Direct import'],
+          highlights: ['Instant QR vCard', 'Built-in camera scanner', '1-tap address book import'],
         ),
         _AppFeature(
-          title: 'Business Card Scanner',
+          title: 'On-Device Business Card Scanner',
           description:
-              'Photograph a paper business card and get a prefilled new contact, read entirely on this phone.',
-          icon: Icons.badge_outlined,
-          highlights: ['On-device OCR', 'Tick what to keep', 'No cloud upload'],
+              'Snap a photo of any physical business card to extract name, phone, email, and company details instantly—all processed 100% on your phone without cloud upload.',
+          icon: Icons.document_scanner_outlined,
+          highlights: ['On-device AI OCR', 'Zero cloud upload', 'Selectable field import'],
         ),
         _AppFeature(
-          title: 'Bluetooth LE Share',
+          title: 'Offline Bluetooth LE Share',
           description:
-              'Discover nearby SreerajP Contacts Sphere devices and send contacts over Bluetooth Low Energy.',
+              'Discover nearby ContactSphere devices and send contacts directly over Bluetooth Low Energy without needing internet or pairing codes.',
           icon: Icons.bluetooth_outlined,
-          highlights: ['BLE discovery', 'Zero pairing hassle', 'Secure payload'],
+          highlights: ['Zero internet required', 'Auto device discovery', 'Fast encrypted transfer'],
         ),
       ],
     ),
     _FeatureCategory(
-      name: 'Personalization & Settings',
-      subtitle: 'Tailor the app look, ringtones, permissions and calling options',
+      name: 'Data Sync & Backup',
+      subtitle: 'Keep your contacts safe, synchronized, and recoverable anywhere',
+      icon: Icons.cloud_sync_outlined,
+      features: [
+        _AppFeature(
+          title: 'Device Contacts & Call Log Sync',
+          description:
+              'Two-way synchronization between ContactSphere\'s local database, your phone\'s system contacts, and Android call history.',
+          icon: Icons.sync,
+          highlights: ['Two-way live sync', 'Call history import', 'Conflict resolution'],
+        ),
+        _AppFeature(
+          title: 'Local Wi-Fi Direct (P2P) Device Sync',
+          description:
+              'Transfer contacts between two phones on the same Wi-Fi network with end-to-end encryption and zero cloud servers.',
+          icon: Icons.wifi_tethering,
+          highlights: ['Direct P2P transfer', 'End-to-end encrypted', 'No cloud needed'],
+        ),
+        _AppFeature(
+          title: 'Encrypted Cloud Sync & Google Drive',
+          description:
+              'Optionally sync contacts and backups to your personal Google Drive or WebDAV cloud storage with password-protected encryption.',
+          icon: Icons.cloud_outlined,
+          highlights: ['Google Drive & WebDAV', 'Password-encrypted vault', 'Automatic backups'],
+        ),
+        _AppFeature(
+          title: 'Offline Backup & Restore Files',
+          description:
+              'Export full database backups to protected files and restore them anytime on a new device with password or biometric verification.',
+          icon: Icons.backup_outlined,
+          highlights: ['Export to file', 'Safe encrypted format', 'One-tap restore'],
+        ),
+      ],
+    ),
+    _FeatureCategory(
+      name: 'Call Defense & Spam Blocking',
+      subtitle: 'Shield yourself from spam calls and unwanted numbers',
+      icon: Icons.shield_outlined,
+      features: [
+        _AppFeature(
+          title: 'Automatic Call Screening & Spam Defense',
+          description:
+              'Built-in call screening service that inspects incoming calls in real-time to silence or drop known spam and blacklisted numbers.',
+          icon: Icons.phone_disabled_outlined,
+          highlights: ['Real-time screening', 'Silent spam reject', 'Default dialer integration'],
+        ),
+        _AppFeature(
+          title: 'Blocked Numbers Manager',
+          description:
+              'Easily block any number directly from call history or contact details, and manage your full blocklist in one convenient place.',
+          icon: Icons.block_outlined,
+          highlights: ['1-tap number blocking', 'Blocklist manager', 'Unblock anytime'],
+        ),
+      ],
+    ),
+    _FeatureCategory(
+      name: 'Personalization & Accessibility',
+      subtitle: 'Customize the appearance, audio, and regional settings to your taste',
       icon: Icons.palette_outlined,
       features: [
         _AppFeature(
-          title: 'Theme & Font Engine',
+          title: 'Theme & Accent Color Engine',
           description:
-              'Dynamic light and dark themes with custom accent color palette and typography selection.',
+              'Switch between Light, Dark, or System mode with curated vibrant accent colors and modern glassmorphic visual cards.',
           icon: Icons.color_lens_outlined,
-          highlights: ['Dark mode', 'Custom accent color', 'Glassmorphic design'],
+          highlights: ['Dark & Light mode', 'Curated color palettes', 'Modern glass styling'],
         ),
         _AppFeature(
-          title: 'SIM & Ringtone Controls',
+          title: 'Per-SIM & Group Ringtones',
           description:
-              'Multi-SIM selection, custom ringtones per contact group, and granular audio controls.',
-          icon: Icons.sim_card_outlined,
-          highlights: ['Dual-SIM routing', 'Group ringtones', 'Volume & vibration'],
+              'Assign distinctive ringtones and vibration patterns to SIM 1 vs SIM 2, or set special melodies for family and close friends.',
+          icon: Icons.notifications_active_outlined,
+          highlights: ['Distinct ringtone per SIM', 'Group ringtones', 'Custom vibration styles'],
         ),
         _AppFeature(
-          title: 'Permissions & Features Explorer',
+          title: 'Emergency Info Lock-Screen Card',
           description:
-              'Transparent management of system permissions and quick access to feature guides.',
-          icon: Icons.admin_panel_settings_outlined,
-          highlights: ['Permission status', 'Feature discovery', 'Granular control'],
+              'Set vital medical info (blood group, allergies, emergency contacts) visible on your lock screen for first responders without unlocking.',
+          icon: Icons.medical_information_outlined,
+          highlights: ['Lock-screen access', 'Per-field privacy toggle', 'Direct emergency dial'],
+        ),
+        _AppFeature(
+          title: 'Default Country Dialing Code',
+          description:
+              'Automatically format local and international phone numbers with your selected default country code for seamless dialing.',
+          icon: Icons.public_outlined,
+          highlights: ['Auto country prefix', 'International format', 'Smart carrier detection'],
         ),
       ],
     ),
@@ -314,7 +404,7 @@ class FeaturesScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Explore the powerful capabilities built into your intelligent dialer & contacts assistant.',
+                    'Explore every intelligent tool, privacy safeguard, and calling feature designed for you.',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colors.mutedText,
                       height: 1.35,
