@@ -1,5 +1,6 @@
 package `in`.sreerajp.contact_sphere
 
+import android.app.NotificationManager
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
@@ -11,9 +12,11 @@ import android.net.Uri
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.VibrationAttributes
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import org.json.JSONObject
 import java.io.File
@@ -32,10 +35,12 @@ import java.util.Locale
  * remains as a late correction for a stale mirror; it applies only when it
  * upgrades the playing tone's tier (default < SIM < contact) or corrects a
  * different tone at the same tier, so it never restarts a matching ring and a
- * racing SIM push can't override a contact tone. Everything is gated by the
- * device ringer mode:
- * silent → nothing, vibrate → vibrate only, normal → sound + vibrate. Best-effort
- * throughout: a failure to play a tone must never crash call handling.
+ * racing SIM push can't override a contact tone. Whether we may ring and/or
+ * vibrate at all is decided by [RingerPolicy] from the device ringer mode, Do Not
+ * Disturb, the user's system-wide "Vibrate for calls" setting and the app's own
+ * vibration toggle. Best-effort throughout: a failure to play a tone must never
+ * crash call handling, and every unreadable input falls back to the permissive
+ * value so we ring rather than silently swallow a call.
  */
 class IncomingCallRinger(private val context: Context) {
 
@@ -96,29 +101,71 @@ class IncomingCallRinger(private val context: Context) {
         .build()
 
     /**
+     * What [start] decided this call is allowed to do. Starts fully suppressed so a
+     * [setCustomTone] push arriving before (or after) a ring can never start sound
+     * the policy hasn't allowed. Reset by [stop].
+     */
+    private var decision = RingerPolicy.Decision(playSound = false, vibrate = false)
+
+    /**
      * Start ringing + vibration for a call from [number] on the SIM identified by
-     * [phoneAccountId], gated by the ringer mode. The tone is resolved from the
+     * [phoneAccountId], gated by [RingerPolicy]. The tone is resolved from the
      * mirrored maps (contact tone → SIM tone → system default) so the right tone
      * plays from the first note.
      */
     fun start(number: String?, phoneAccountId: String?) {
-        when (audioManager.ringerMode) {
-            AudioManager.RINGER_MODE_SILENT -> return
-            AudioManager.RINGER_MODE_VIBRATE -> startVibration()
-            else -> {
-                startVibration()
-                requestFocus()
-                startAnnouncement(number)
-                // A mirrored tone can be stale (backing file deleted/moved); fall
-                // through to the next tier so the call still rings audibly.
-                val contactUri = contactTonePath(number)?.let { safeUri(it) }
-                val simUri = simTonePath(phoneAccountId)?.let { safeUri(it) }
-                if (!playUri(contactUri, TIER_CONTACT) && !playUri(simUri, TIER_SIM)) {
-                    playUri(defaultRingtoneUri(), TIER_DEFAULT)
-                }
-            }
+        decision = RingerPolicy.decide(
+            ringerMode = audioManager.ringerMode,
+            interruptionFilter = currentInterruptionFilter(),
+            vibrateWhenRinging = vibrateWhenRinging(),
+            appVibrateEnabled = vibrateEnabled,
+        )
+        if (decision.vibrate) startVibration()
+        if (!decision.playSound) return
+        requestFocus()
+        startAnnouncement(number)
+        // A mirrored tone can be stale (backing file deleted/moved); fall through to
+        // the next tier so the call still rings audibly.
+        val contactUri = contactTonePath(number)?.let { safeUri(it) }
+        val simUri = simTonePath(phoneAccountId)?.let { safeUri(it) }
+        if (!playUri(contactUri, TIER_CONTACT) && !playUri(simUri, TIER_SIM)) {
+            playUri(defaultRingtoneUri(), TIER_DEFAULT)
         }
     }
+
+    /**
+     * The current Do Not Disturb state. Reading it needs no permission (unlike
+     * `getNotificationPolicy`, which is why DND "Priority only" still rings — see
+     * [RingerPolicy]). Falls back to [RingerPolicy.FILTER_ALL] so an unreadable
+     * filter rings rather than silencing the call.
+     */
+    private fun currentInterruptionFilter(): Int =
+        try {
+            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE)
+                as? NotificationManager
+            nm?.currentInterruptionFilter ?: RingerPolicy.FILTER_ALL
+        } catch (e: Exception) {
+            RingerPolicy.FILTER_ALL
+        }
+
+    /**
+     * The user's system-wide "Vibrate for calls" setting. Deprecated on paper but
+     * still the setting every Settings app writes, and readable without a
+     * permission. Some OEMs never populate the key; a missing or unreadable value
+     * falls back to `true`, which keeps this app's long-standing behaviour on those
+     * devices instead of silently dropping vibration.
+     */
+    private fun vibrateWhenRinging(): Boolean =
+        try {
+            @Suppress("DEPRECATION")
+            Settings.System.getInt(
+                context.contentResolver,
+                Settings.System.VIBRATE_WHEN_RINGING,
+                1,
+            ) != 0
+        } catch (e: Exception) {
+            true
+        }
 
     /**
      * Play a call-waiting beep for a second call that arrives while another call
@@ -152,12 +199,14 @@ class IncomingCallRinger(private val context: Context) {
      * corrects a genuinely different tone at the same tier (stale mirror). Anything
      * else no-ops, so a push matching what [start] already resolved never restarts
      * the ring, and a racing SIM push can never override a contact tone. Also no-op
-     * when the ringer isn't in normal mode (silent/vibrate) or the path can't be
-     * resolved.
+     * when [RingerPolicy] suppressed sound for this call (silent/vibrate mode, Do
+     * Not Disturb) or the path can't be resolved — checking the recorded decision
+     * rather than re-reading the ringer mode keeps a late push from starting a tone
+     * DND had already ruled out.
      */
     fun setCustomTone(path: String?, source: String?) {
         if (path.isNullOrBlank()) return
-        if (audioManager.ringerMode != AudioManager.RINGER_MODE_NORMAL) return
+        if (!decision.playSound) return
         val tier = if (source == SOURCE_CONTACT) TIER_CONTACT else TIER_SIM
         val uri = safeUri(path) ?: return
         if (uri == playingUri) {
@@ -183,6 +232,8 @@ class IncomingCallRinger(private val context: Context) {
         player = null
         playingUri = null
         playingTier = TIER_DEFAULT
+        // Back to fully suppressed, so a late tone push after the call can't ring.
+        decision = RingerPolicy.Decision(playSound = false, vibrate = false)
         stopCallWaiting()
         stopAnnouncement()
         abandonFocus()
@@ -335,17 +386,32 @@ class IncomingCallRinger(private val context: Context) {
             context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
         }
 
+    /**
+     * Buzz until [stopVibration]. Whether we're allowed to at all is [RingerPolicy]'s
+     * call — by the time we're here that's already been decided.
+     *
+     * The vibration is tagged with a *ringtone* usage on every supported API level.
+     * Without attributes Android treats it as `USAGE_UNKNOWN`, and many devices then
+     * scale it by the touch-feedback intensity slider instead of the ring-vibration
+     * one, so the user's own haptic strength setting had no effect on incoming calls.
+     */
     private fun startVibration() {
-        if (!vibrateEnabled) return
         val v = vibrator() ?: return
         if (!v.hasVibrator()) return
         // wait, buzz, gap — repeats from index 0.
         val pattern = longArrayOf(0, 1000, 1000)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            v.vibrate(VibrationEffect.createWaveform(pattern, 0))
-        } else {
-            @Suppress("DEPRECATION")
-            v.vibrate(pattern, 0)
+        when {
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
+                v.vibrate(
+                    VibrationEffect.createWaveform(pattern, 0),
+                    VibrationAttributes.createForUsage(VibrationAttributes.USAGE_RINGTONE),
+                )
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ->
+                v.vibrate(VibrationEffect.createWaveform(pattern, 0), ringtoneAttributes)
+            else -> {
+                @Suppress("DEPRECATION")
+                v.vibrate(pattern, 0, ringtoneAttributes)
+            }
         }
         vibrating = true
     }
@@ -552,13 +618,27 @@ class CallerAnnouncer(private val context: Context) : TextToSpeech.OnInitListene
         }
 
         fun isInQuietHours(startStr: String, endStr: String): Boolean {
+            val now = Calendar.getInstance()
+            return isInQuietHours(
+                startStr,
+                endStr,
+                now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE),
+            )
+        }
+
+        /**
+         * [isInQuietHours] with the clock passed in as minutes since midnight, so the
+         * window logic — in particular a window that wraps past midnight, which is the
+         * default 22:00→07:00 — can be unit tested without depending on the time the
+         * test happens to run. A malformed time on either side means "not quiet", so a
+         * bad setting never suppresses an announcement silently.
+         */
+        fun isInQuietHours(startStr: String, endStr: String, currentMinutes: Int): Boolean {
             try {
                 val startParts = startStr.split(":").map { it.toInt() }
                 val endParts = endStr.split(":").map { it.toInt() }
                 if (startParts.size < 2 || endParts.size < 2) return false
 
-                val now = Calendar.getInstance()
-                val currentMinutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
                 val startMinutes = startParts[0] * 60 + startParts[1]
                 val endMinutes = endParts[0] * 60 + endParts[1]
 

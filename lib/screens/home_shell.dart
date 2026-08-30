@@ -26,11 +26,7 @@ class HomeShell extends StatefulWidget {
   final bool addCallMode;
   final int initialIndex;
 
-  const HomeShell({
-    super.key,
-    this.addCallMode = false,
-    this.initialIndex = 0,
-  });
+  const HomeShell({super.key, this.addCallMode = false, this.initialIndex = 0});
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -193,6 +189,13 @@ class _HomeShellState extends State<HomeShell> {
         color: colors.cardSurface,
         child: SafeArea(
           top: false,
+          // Keep the system inset reserved even while the keyboard is up, when
+          // MediaQuery.padding.bottom drops to zero, and never let the labels sit
+          // flush on the screen edge if the inset is reported as zero — the bar has
+          // been seen hiding under the phone's own navigation bar, and this bar has
+          // no other margin to spare (see the 2026-08-29 plan).
+          maintainBottomViewPadding: true,
+          minimum: const EdgeInsets.only(bottom: 8),
           // Small, even padding above the icons and below the labels (the extra
           // bottom pad also gives the labels breathing room over the gesture
           // pill).

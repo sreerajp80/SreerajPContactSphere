@@ -44,8 +44,10 @@ class _RingtoneVolumeVibrationScreenState
                   const SizedBox(height: 2),
                   Text(
                     value == 0
-                        ? 'Muted — the ringtone won’t sound'
-                        : 'Plays incoming-call ringtones at $value%',
+                        ? 'Muted — the ringtone won’t sound, but the phone still '
+                              'vibrates if vibration is on below'
+                        : 'Plays incoming-call ringtones at $value% of your '
+                              'phone’s ring volume',
                     style: TextStyle(color: colors.mutedText, fontSize: 13),
                   ),
                   Row(
@@ -102,7 +104,8 @@ class _RingtoneVolumeVibrationScreenState
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
               subtitle: Text(
-                'Silent mode still overrides this and suppresses vibration',
+                'Your phone comes first: silent mode, Do Not Disturb and the '
+                'phone’s own “Vibrate for calls” setting all override this',
                 style: TextStyle(color: colors.mutedText, fontSize: 13),
               ),
             ),

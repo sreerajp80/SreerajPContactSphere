@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'package:smart_contacts_dialer/core/config/app_config.dart';
 import 'package:smart_contacts_dialer/core/config/config_service.dart';
+import 'package:smart_contacts_dialer/core/constants/build_date.g.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
 /// Shows app metadata driven by `assets/config/app_config.json` (loaded through
@@ -42,13 +43,19 @@ class _AboutView extends StatelessWidget {
     final colors = theme.extension<AppColors>()!;
     final scheme = theme.colorScheme;
 
-    // Fixed top row (version/build) plus one row per details entry (skip empties).
+    // Fixed top rows (version/build, build date) plus one row per details entry (skip empties).
     final rows = <Widget>[
       _row(
         colors: colors,
         scheme: scheme,
         label: 'Version',
         value: '${config.version} (build ${config.build})',
+      ),
+      _row(
+        colors: colors,
+        scheme: scheme,
+        label: 'Build Date',
+        value: kBuildDate,
       ),
     ];
     for (final entry in config.details.entries) {

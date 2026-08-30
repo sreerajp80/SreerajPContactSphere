@@ -215,7 +215,38 @@ features, not bugs.
   playback (incoming-call ringing, in-app preview) is handled natively through
   `IncomingCallRinger.kt` and `MainActivity.previewRingtone`. Removed.
 
+## Resolved (2026-08-29 ringer policy + first native tests)
+- **The ringer ignored the phone's own sound rules.** Because the manifest declares
+  `IN_CALL_SERVICE_RINGING` the platform does not ring for us, so the app is also
+  responsible for the rules the platform would normally apply. It honoured silent and
+  vibrate ringer modes but ignored (a) the user's system-wide "Vibrate for calls"
+  setting, so it buzzed even when the phone said not to, and (b) Do Not Disturb, so it
+  rang at full volume through "Alarms only" and "Total silence" (both of which leave the
+  ringer mode at NORMAL). Vibration was also fired with no usage attributes, landing as
+  `USAGE_UNKNOWN`, so many devices scaled it by the touch-feedback intensity slider
+  instead of the ring-vibration one. All three now go through `RingerPolicy` — a pure,
+  Android-free object that turns ringer mode + interruption filter + both vibration
+  switches into one `Decision(playSound, vibrate)`.
+- **The native call layer had no tests at all.** `android/app/src/test/` now exists with a
+  JUnit dependency and 35 tests over the pure logic: `RingerPolicyTest` (every policy
+  branch), `MatchKeyTest` (the trailing-10-digit number key that the ringtone mirror and
+  the missed-call notification both rely on), `QuietHoursTest` (the announcement window,
+  including the default 22:00→07:00 wrap past midnight). Run with
+  `cd android && ./gradlew :app:testDevDebugUnitTest`. Pure functions only — no
+  Robolectric, no instrumentation.
+
 ## Still not integrated (intentional, out of current scope)
+- **Do Not Disturb "Priority only"** — `INTERRUPTION_FILTER_PRIORITY` still rings for every
+  caller. Honouring it means reading `NotificationManager.getNotificationPolicy()` to see
+  whether calls and repeat callers are allowed, which throws without the user granting
+  `ACCESS_NOTIFICATION_POLICY` — a new permission and a new prompt. For a dialer the safe
+  default is to fail open (ring rather than silently miss a call), so this is deferred
+  rather than guessed at. "Total silence" and "Alarms only" *are* honoured.
+- **Per-SIM / per-group vibration patterns** — the ringer uses one hardcoded pattern
+  (`[0, 1000, 1000]`) with a single global on/off switch. Per-SIM, per-group and
+  per-contact *ringtones* are all real; vibration is not yet differentiated. The Features
+  screen used to claim "vibration patterns" and "Custom vibration styles"; that copy was
+  corrected on 2026-08-29 to describe what actually ships.
 - **Notifications / reminders** — the post-call feedback flow now *writes* follow-up rows to the
   `reminders` table (`ReminderRepository`), but nothing schedules notifications for them yet, so
   they are persisted-only. No notification-scheduling library is wired in; existing app
