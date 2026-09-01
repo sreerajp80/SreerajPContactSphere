@@ -40,6 +40,7 @@ import 'package:smart_contacts_dialer/services/vcard_service.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
 import 'package:smart_contacts_dialer/state/call_log_events.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
+import 'package:smart_contacts_dialer/widgets/keyboard_inset_guard.dart';
 import 'package:smart_contacts_dialer/widgets/sim_picker_sheet.dart';
 
 Future<void> main() async {
@@ -590,6 +591,13 @@ class _SmartContactsAppState extends State<SmartContactsApp>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) {
+      // Leaving the foreground: never keep the keyboard alive behind whatever
+      // took over (a call, the lock screen, another app). Besides being the
+      // right thing on its own, an IME dismissed by the system while we are
+      // paused is what strands the stale bottom inset — see [KeyboardInsetGuard].
+      _dismissKeyboard();
+    }
     if (state == AppLifecycleState.resumed) {
       // Returning to the foreground: show the lock if it's due.
       _maybeLock();
@@ -677,7 +685,16 @@ class _SmartContactsAppState extends State<SmartContactsApp>
     );
   }
 
+  /// Drops focus so the on-screen keyboard goes away. Safe to call at any time.
+  void _dismissKeyboard() {
+    final focus = FocusManager.instance.primaryFocus;
+    if (focus != null && focus.hasFocus) focus.unfocus();
+  }
+
   void _onCall(CallState state) {
+    // A call takes the screen; a search field must not hold the keyboard open
+    // behind it (see [didChangeAppLifecycleState]).
+    _dismissKeyboard();
     _reconcileCallbackIfEnded(state);
     _syncRedialsWithCall(state);
 
@@ -860,10 +877,16 @@ class _SmartContactsAppState extends State<SmartContactsApp>
                 data: media.copyWith(
                   textScaler: TextScaler.linear(settings.textScaleFactor),
                 ),
-                child: GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onHorizontalDragEnd: _onBackSwipe,
-                  child: child!,
+                // Above the Navigator so every route is covered: ignores a
+                // keyboard inset left behind after the IME was dismissed out
+                // from under us (a call arriving mid-search), which otherwise
+                // leaves every screen cropped until the app restarts.
+                child: KeyboardInsetGuard(
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.translucent,
+                    onHorizontalDragEnd: _onBackSwipe,
+                    child: child!,
+                  ),
                 ),
               );
             },

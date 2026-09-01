@@ -579,6 +579,11 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
         // UI is in front; the registry re-posts it if this changes mid-ring.
         CallRegistry.setInCallUiVisible(true)
         registerCallLogObserver()
+        // Coming back to the front: the window may have been resized (or the IME
+        // dismissed) while we were paused, and that update can be missed. Ask for
+        // a fresh dispatch so Flutter's view insets match reality. See
+        // [requestInsetRefresh].
+        requestInsetRefresh()
     }
 
     override fun onPause() {
@@ -627,6 +632,9 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
             // intent); drop the flag once there's no call so normal launches
             // don't bypass the keyguard.
             applyShowWhenLocked(hasCall)
+            // Changing those window flags relayouts the window; make sure Flutter
+            // hears the resulting insets (see [requestInsetRefresh]).
+            requestInsetRefresh()
 
             // Blank the screen while the call is connected on the earpiece so an
             // ear/cheek can't tap the controls. Not while ringing (the user needs
@@ -655,6 +663,34 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
                 setRecentsScreenshotEnabled(snapshot == null)
             }
             eventSink?.success(snapshot)
+        }
+    }
+
+    /**
+     * Asks Android to dispatch the current window insets again.
+     *
+     * A call arriving while the keyboard is open changes this window underneath
+     * the IME: [applyShowWhenLocked] flips the show-when-locked flags, an incoming
+     * call may raise us over the keyguard through a full-screen intent, and the
+     * task is moved to the back when the call ends. The IME is dismissed during
+     * that transition while the activity is paused, and the resulting
+     * `WindowInsets` (IME height back to zero) can fail to reach `FlutterView` --
+     * Flutter then keeps the stale keyboard height in `MediaQuery.viewInsets`, so
+     * every Scaffold body stays short by one keyboard until the app is restarted.
+     *
+     * Posting the request lets the window settle first. Guarded: a failed inset
+     * refresh must never disturb call handling.
+     */
+    private fun requestInsetRefresh() {
+        try {
+            val decor = window?.decorView ?: return
+            decor.post {
+                try {
+                    decor.requestApplyInsets()
+                } catch (_: Throwable) {
+                }
+            }
+        } catch (_: Throwable) {
         }
     }
 
