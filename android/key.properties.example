@@ -18,7 +18,8 @@ keyPassword=
 # Alias of the key inside the keystore.
 keyAlias=
 
-# Path to the keystore file, RELATIVE TO android/app (so `../../` is the repo
-# root, where keystore.jks currently lives). An absolute path also works and is
-# a good option if you keep the keystore outside the repository.
-storeFile=../../keystore.jks
+# Path to the keystore file, RELATIVE TO android/app:
+# - Use `../keystore.jks` if keystore.jks is in the `android/` directory.
+# - Use `../../keystore.jks` if keystore.jks is in the project root directory.
+# An absolute path also works.
+storeFile=../keystore.jks

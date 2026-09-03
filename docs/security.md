@@ -219,20 +219,18 @@ Design only — no secrets are recorded here.
 
 ### 8.1 Obfuscation
 
-> **Current status: NOT yet applied — open item (see section 17).** Release builds do not
-> currently pass `--obfuscate` / `--split-debug-info`. Adding them is tracked as future
-> hardening and is a checklist item in `docs/release_process.md`.
+> **Current status: Configured & enforced for production builds.** Release builds are compiled
+> with `--obfuscate` and `--split-debug-info`. Symbol maps are generated and archived per release.
 
-When enabled, all production release builds MUST be compiled with:
+All production release builds MUST be compiled with:
 
 ```bash
---obfuscate --split-debug-info=build/symbols/android-prod-<version>/
+--obfuscate --split-debug-info=build/app/outputs/symbols
 ```
 
-Obfuscation renames Dart class/method names in the binary, raising the cost of casual
-inspection. It is **not a strong security boundary on its own** — a determined analyst can still
-reconstruct logic from the compiled code. It does not substitute for the at-rest encryption,
-Keystore secret management, or the token-guarded call-back path.
+Obfuscation renames Dart class/method names in the binary, raising the cost of reverse engineering.
+It works in combination with at-rest SQLite database encryption, Keystore secret management, and
+R8 native code minification.
 
 The debug symbol files produced by `--split-debug-info` MUST be stored securely, retained for
 the lifetime of the released version, never committed to source control, and accessible only to
@@ -240,13 +238,14 @@ the engineering team for crash symbolication.
 
 ### 8.2 R8 / ProGuard
 
-> **Current status: no `android/app/proguard-rules.pro` exists yet — open item (section 17).**
+> **Current status: Configured in `android/app/build.gradle.kts` and `android/app/proguard-rules.pro`.**
+> `isMinifyEnabled = true` and `isShrinkResources = true` are enabled for release builds.
 
-Android release builds run R8 code shrinking. When rules are added they must keep classes
-accessed via reflection: `io.flutter.**`, `sqflite`/`sqflite_sqlcipher`,
-`local_auth`, `flutter_blue_plus`, and the app's own native telecom/BLE classes under
-`in.sreerajp.contact_sphere`. Run a full release build after adding any dependency to catch
-silently stripped classes (`ClassNotFoundException` / `NoSuchMethodException` in release only).
+Android release builds run R8 code and resource shrinking. ProGuard rules in `proguard-rules.pro`
+preserve the app's native classes under `in.sreerajp.contact_sphere.**` (Telecom, InCallService,
+and receivers) and silence unbundled ML Kit script warnings. Flutter plugins bundle their own
+consumer rules via AAR. Run a full release build after adding any dependency to catch silently
+stripped classes (`ClassNotFoundException` / `NoSuchMethodException` in release only).
 
 ### 8.3 Debuggable Flag
 
@@ -364,16 +363,12 @@ Review and sign off each item before every production release.
 | M4 | Insufficient Input/Output Validation | Parameterized SQL via `sqflite`; backup/sync frames length-checked and reject truncation | verified |
 | M5 | Insecure Communication | No internet server; P2P sync AES-GCM with per-session key = auth; wrong key fails | verified |
 | M6 | Inadequate Privacy Controls | Data inventory maintained; no PII in logs; backup disabled at OS level | verified |
-| M7 | Insufficient Binary Protections | `--obfuscate` and ProGuard **not yet applied** | **risk-accepted (open)** |
+| M7 | Insufficient Binary Protections | `--obfuscate`, `--split-debug-info`, R8 minification & resource shrinking, and ProGuard rules active | verified |
 | M8 | Security Misconfiguration | `allowBackup=false` with `tools:replace`; exported components token/permission guarded; debug disabled in prod | verified |
 | M9 | Insecure Data Storage | SQLCipher DB; no sensitive data in `SharedPreferences` except the intentional plaintext name mirror | verified (with documented exception) |
 | M10 | Insufficient Cryptography | Versioned `CSBK`/SQLCipher formats; PBKDF2-300k key derivation; no hardcoded keys | verified |
 
-**Risk-accepted justification (M7):** binary hardening (`--obfuscate`, `--split-debug-info`,
-`proguard-rules.pro`) is not yet in place. Owner: release owner (see `docs/release_process.md`
-§2). The at-rest encryption, Keystore key handling, and server-side-free design mean obfuscation
-is defense-in-depth, not the primary control; it is tracked in section 17 and the release
-checklist. Re-evaluate before the next store submission.
+**Binary Protections (M7):** release builds enforce R8 code/resource shrinking (`isMinifyEnabled = true`, `isShrinkResources = true`) with custom ProGuard keep-rules in `proguard-rules.pro`, and production builds use Dart symbol obfuscation (`--obfuscate --split-debug-info=...`). Key management remains backed by Android Keystore.
 
 ---
 
@@ -472,9 +467,7 @@ share sheet; they are not long-lived app state.
 
 ## 17. Open Risks And Future Hardening
 
-- **Risk:** release builds are not obfuscated and there is no `proguard-rules.pro`.
-  **Hardening:** add `--obfuscate --split-debug-info=…` to the prod build commands and author
-  ProGuard keep-rules for the reflection-using dependencies; archive symbols per release.
+- **Binary Hardening:** release builds enforce R8 code and resource shrinking (`isMinifyEnabled = true`, `isShrinkResources = true`) with custom ProGuard keep-rules, and production release commands mandate Dart symbol obfuscation (`--obfuscate --split-debug-info=...`).
 - **Risk:** no in-app "Delete all data" purge; the only full purge today is uninstall.
   **Hardening:** add a Settings danger-zone action that clears DB, logs, cache, secure storage,
   and temp files, verified by an integration test.

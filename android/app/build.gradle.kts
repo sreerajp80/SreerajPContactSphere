@@ -130,10 +130,23 @@ android {
             // fall back to the shared debug key so `flutter run --release` still
             // works for anyone without the production keystore.
             signingConfig = if (keystorePropertiesFile.exists()) {
-                signingConfigs.getByName("release")
+                val releaseConfig = signingConfigs.getByName("release")
+                val resolvedStore = releaseConfig.storeFile
+                if (resolvedStore == null || !resolvedStore.exists()) {
+                    throw GradleException(
+                        "Release signing error: keystore file not found at ${resolvedStore?.absolutePath ?: "unspecified"}. " +
+                            "Check storeFile in android/key.properties."
+                    )
+                }
+                releaseConfig
             } else {
                 signingConfigs.getByName("debug")
             }
+
+            // R8 code minification and resource shrinking for hardened release builds:
+            isMinifyEnabled = true
+            isShrinkResources = true
+
             // R8 needs proguard-rules.pro: the ML Kit text recognizer plugin
             // references script recognizers this app does not bundle, which
             // otherwise fails the release build.

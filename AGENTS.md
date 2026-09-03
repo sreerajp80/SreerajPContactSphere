@@ -21,7 +21,8 @@ flutter analyze                      # static analysis / lint (stock flutter_lin
 flutter test                         # run all tests
 flutter test test/widget_test.dart   # run a single test file
 flutter test --plain-name "name"     # run tests matching a name
-flutter build apk                    # release APK (release uses debug signing — android/app/build.gradle.kts)
+flutter build apk --flavor prod --release --obfuscate --split-debug-info=build/app/outputs/symbols  # production release APK
+flutter build appbundle --flavor prod --release --obfuscate --split-debug-info=build/app/outputs/symbols  # production release AAB
 ```
 
 Everything goes through the `flutter` CLI — no separate package manager or Makefile.

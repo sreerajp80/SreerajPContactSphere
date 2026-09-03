@@ -9,3 +9,8 @@
 -dontwarn com.google.mlkit.vision.text.devanagari.**
 -dontwarn com.google.mlkit.vision.text.japanese.**
 -dontwarn com.google.mlkit.vision.text.korean.**
+
+# Keep app's native classes and entrypoints (Telecom, InCallService, Receivers, Managers)
+-keep class in.sreerajp.contact_sphere.** { *; }
+-keepclassmembers class in.sreerajp.contact_sphere.** { *; }
+

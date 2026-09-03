@@ -93,28 +93,28 @@ Flavors are defined in `android/app/build.gradle.kts` under `flavorDimensions "e
 
 ### 6.1 Obfuscation And Debug Symbols
 
-> **Current status: NOT yet applied — a known open item (see `docs/security.md` §17).**
-> Adopt before treating M7 (binary protections) as closed.
+> **Current status: Configured & enforced for production builds.**
+> Every prod release build includes `--obfuscate` and `--split-debug-info`.
 
-When adopted, every prod release build MUST include:
+Every prod release build MUST include:
 
 ```bash
 --obfuscate
---split-debug-info=build/symbols/android-prod-<version>/
+--split-debug-info=build/app/outputs/symbols
 ```
 
 Symbol archive policy: archive the symbols directory securely after every prod build, retain for
-the lifetime of the released version, never commit it (add to `.gitignore`), and store it
+the lifetime of the released version, never commit it (already covered by `.gitignore`), and store it
 alongside the artifact (e.g. `releases/v15.8.9/symbols/`). Without the symbols, stack traces
 from that version are permanently unreadable.
 
 ### 6.2 ProGuard / R8 (Android)
 
-> **Current status: no `android/app/proguard-rules.pro` exists yet — open item.**
+> **Current status: Configured in `android/app/build.gradle.kts` and `android/app/proguard-rules.pro`.**
 
-Android release builds run R8. When rules are added, keep classes accessed via reflection:
-`io.flutter.**`, `sqflite` / `sqflite_sqlcipher`, `local_auth`,
-`flutter_blue_plus`, and the app's native classes under `in.sreerajp.contact_sphere`. Always run
+Android release builds run R8 with `isMinifyEnabled = true` and `isShrinkResources = true`.
+ProGuard rules in `proguard-rules.pro` preserve the app's native classes under `in.sreerajp.contact_sphere.**`
+(InCallService, Telecom, Receivers, and Managers) and silence unbundled ML Kit warnings. Always run
 a full release build test after adding a dependency — R8 can silently strip reflection-only
 classes (symptom: `ClassNotFoundException` / `NoSuchMethodException` in release only).
 
@@ -250,24 +250,24 @@ flutter pub get
 flutter analyze
 flutter test   # run sqlite-backed test files individually
 
-# Split APKs for direct distribution (add --obfuscate + --split-debug-info once adopted)
+# Split APKs for direct distribution (hardened with obfuscation)
 flutter build apk \
   --flavor prod \
   --release \
-  --split-per-abi
+  --split-per-abi \
+  --obfuscate \
+  --split-debug-info=build/app/outputs/symbols
 
-# App Bundle for a store channel
+# App Bundle for a store channel (hardened with obfuscation)
 flutter build appbundle \
   --flavor prod \
-  --release
+  --release \
+  --obfuscate \
+  --split-debug-info=build/app/outputs/symbols
 
 # Size analysis
 flutter build apk --flavor prod --release --analyze-size
 ```
-
-> Once binary hardening is adopted (section 6.1 / `docs/security.md` §17), append to the APK and
-> AAB commands:
-> `--obfuscate --split-debug-info=build/symbols/android-prod-<version>/`
 
 ---
 
