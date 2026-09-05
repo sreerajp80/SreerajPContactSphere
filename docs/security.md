@@ -1,7 +1,7 @@
 # Security
 
 This is ContactSphere's filled-in copy of the master security blueprint
-(`l:\Android\Flutter_Guidelines\security.md`). Per the manifest rule, this local copy is the
+(`docs/guidelines/security.md`). Per the manifest rule, this local copy is the
 source of truth for this app. Keep it current — review it before every production release
 (see section 18) and whenever a sensitive-data flow changes.
 

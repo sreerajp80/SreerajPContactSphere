@@ -5,6 +5,7 @@ import 'package:smart_contacts_dialer/core/utils/call_log_write_lock.dart';
 import 'package:smart_contacts_dialer/models/call_state.dart';
 import 'package:smart_contacts_dialer/repositories/call_log_repository.dart';
 import 'package:smart_contacts_dialer/repositories/contact_repository.dart';
+import 'package:smart_contacts_dialer/repositories/flagged_number_repository.dart';
 import 'package:smart_contacts_dialer/repositories/interaction_repository.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
 import 'package:smart_contacts_dialer/state/call_log_events.dart';
@@ -33,12 +34,14 @@ class CallEventLogger {
     RelationshipScoringService? scoring,
     SimService? sims,
     CallLogRepository? callLogs,
+    FlaggedNumberRepository? flagged,
   }) : _telecom = telecom ?? TelecomService(),
        _interactions = interactions ?? InteractionRepository(),
        _contacts = contacts ?? ContactRepository(),
        _scoring = scoring ?? RelationshipScoringService(),
        _sims = sims ?? SimService(),
-       _callLogs = callLogs ?? CallLogRepository();
+       _callLogs = callLogs ?? CallLogRepository(),
+       _flagged = flagged ?? FlaggedNumberRepository();
 
   final TelecomService _telecom;
   final InteractionRepository _interactions;
@@ -46,6 +49,7 @@ class CallEventLogger {
   final CallLogRepository _callLogs;
   final RelationshipScoringService _scoring;
   final SimService _sims;
+  final FlaggedNumberRepository _flagged;
 
   StreamSubscription<CallState>? _sub;
 
@@ -347,14 +351,19 @@ class CallEventLogger {
     required String? phoneAccountId,
   }) async {
     try {
-      // Answered (ever active) → 'incoming'; never connected → 'missed'.
-      final callType = wasActive ? 'incoming' : 'missed';
-      // The same signal, recorded on its own axis so the outgoing side can
-      // carry an outcome too (call_type has no room to say it there).
-      final callOutcome = wasActive
-          ? AppCallOutcome.answered
-          : AppCallOutcome.noAnswer;
-      final duration = (wasActive && connectTimeMillis > 0)
+      final isBlocked = await _flagged.isFlagged(
+        number,
+        kind: FlaggedNumberRepository.kindBlocked,
+      );
+      // Blocked caller → 'blocked'; answered (ever active) → 'incoming';
+      // never connected → 'missed'.
+      final callType = isBlocked
+          ? 'blocked'
+          : (wasActive ? 'incoming' : 'missed');
+      final callOutcome = isBlocked
+          ? AppCallOutcome.noAnswer
+          : (wasActive ? AppCallOutcome.answered : AppCallOutcome.noAnswer);
+      final duration = (!isBlocked && wasActive && connectTimeMillis > 0)
           ? ((DateTime.now().millisecondsSinceEpoch - connectTimeMillis) ~/
                     1000)
                 .clamp(0, 359999)

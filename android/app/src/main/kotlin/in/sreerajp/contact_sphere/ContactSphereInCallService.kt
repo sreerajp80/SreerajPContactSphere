@@ -76,6 +76,39 @@ class ContactSphereInCallService : InCallService(), CallRegistry.RingController 
 
     override fun onCallAdded(call: Call) {
         super.onCallAdded(call)
+
+        // Defensive call screening: if CallScreeningService was bypassed by the OS,
+        // intercept blocked or blocked-unknown incoming calls immediately before
+        // ringing or showing UI.
+        val prefs = getSharedPreferences(
+            ContactSphereCallScreeningService.SCREENING_PREFS,
+            Context.MODE_PRIVATE,
+        )
+        val number = call.details?.handle?.schemeSpecificPart
+        val digits = number?.filter { it.isDigit() } ?: ""
+        val blockUnknown = prefs.getBoolean(
+            ContactSphereCallScreeningService.KEY_BLOCK_UNKNOWN,
+            false,
+        )
+        val isBlocked = if (digits.isEmpty()) {
+            blockUnknown
+        } else {
+            val blockedList = ContactSphereCallScreeningService.readList(
+                prefs,
+                ContactSphereCallScreeningService.KEY_BLOCKED,
+            )
+            ContactSphereCallScreeningService.matchesList(digits, blockedList)
+        }
+
+        if (isBlocked && call.state == Call.STATE_RINGING) {
+            ContactSphereCallScreeningService.recordBlockedCall(
+                prefs,
+                number?.takeIf { it.isNotBlank() } ?: "Unknown",
+            )
+            call.reject(false, null)
+            return
+        }
+
         CallRegistry.attachService(this)
         CallRegistry.setRingController(this)
         CallRegistry.onCallAdded(call)

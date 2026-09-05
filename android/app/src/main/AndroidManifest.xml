@@ -90,6 +90,8 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"
+        android:usesCleartextTraffic="false"
+        android:networkSecurityConfig="@xml/network_security_config"
         tools:replace="android:allowBackup"><!-- The contact DB holds "secret" contacts;
              never let adb backup / cloud auto-backup sweep it off-device.
              tools:replace makes our "false" win the manifest merge unconditionally,

@@ -1024,7 +1024,7 @@ class _InCallScreenState extends State<InCallScreen>
     final number = _state.number;
     if (number == null || number.isEmpty) return;
     final unblocking = _isBlocked;
-    final ringing = _state.phase == CallPhase.ringing;
+    final hasRunningCall = _state.hasCall;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -1033,7 +1033,7 @@ class _InCallScreenState extends State<InCallScreen>
           unblocking
               ? 'Calls from $number will ring normally again.'
               : 'Future calls from $number will be rejected before your phone '
-                    'rings.${ringing ? ' This call will be declined now.' : ''}\n\n'
+                    'rings.${hasRunningCall ? ' This call will be disconnected immediately.' : ''}\n\n'
                     'You can manage blocked numbers in Settings → Contacts → '
                     'Blocked numbers.',
         ),
@@ -1059,9 +1059,9 @@ class _InCallScreenState extends State<InCallScreen>
     } else {
       await _flagged.add(number, kind: FlaggedNumberRepository.kindBlocked);
       if (mounted) setState(() => _isBlocked = true);
-      // Decline the ringing call from the newly blocked caller; the screening
-      // service takes over from the next call on.
-      if (_state.phase == CallPhase.ringing) unawaited(_telecom.disconnect());
+      // Disconnect the running call from the newly blocked caller immediately;
+      // the screening service takes over from the next call on.
+      if (_state.hasCall) unawaited(_telecom.disconnect());
     }
   }
 

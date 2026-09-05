@@ -158,6 +158,43 @@ Expected: **no** `application-debuggable` line. If it appears, investigate
 `buildTypes.release.isDebuggable` in `build.gradle.kts`. Alternatively, Android Studio →
 Build → Analyze APK → AndroidManifest.xml.
 
+### 6.5 Network Security Configuration And Cleartext Traffic
+
+Verify that cleartext HTTP traffic is disabled for production builds:
+- Ensure `android:usesCleartextTraffic="false"` in the merged manifest (enforced by default on Android 9+ / API 28+).
+- In `res/xml/network_security_config.xml`, verify:
+  - `<base-config cleartextTrafficPermitted="false">` is in place.
+  - In production builds, no `<trust-anchors>` allow user-installed certificates (which would enable easy MITM proxy inspection via tools like Charles, Proxyman, or Burp Suite).
+
+### 6.6 Pre-Release Asset And Secret Leak Audit
+
+While `--obfuscate` scrambles compiled Dart logic in `libapp.so`, **files in the APK's `assets/` and `res/` directories remain completely unencrypted**. Any party with access to the APK can inspect its contents with `unzip` or `apktool`.
+
+Before releasing, audit the bundled assets in the APK:
+
+```bash
+# bash / zsh
+unzip -l build/app/outputs/apk/prod/release/app-arm64-v8a-prod-release.apk "assets/*"
+```
+
+```powershell
+# PowerShell (Windows)
+tar -tf build\app\outputs\apk\prod\release\app-arm64-v8a-prod-release.apk | Select-String "assets/"
+```
+
+**Audit checklist:**
+- [ ] No `.env`, `.env.production`, or secret credentials files are packaged in `assets/`.
+- [ ] No private keys, `.pem`, `.p12`, or test keystores exist in assets.
+- [ ] No raw database files containing seed customer or internal test data are bundled.
+- [ ] Only declared runtime config (e.g., `assets/config/app_config.json`) is included.
+
+### 6.7 Exported Component Audit
+
+Inspect all declared activities, services, and broadcast receivers in the merged manifest:
+- Every component with an `<intent-filter>` automatically requires an explicit `android:exported` attribute.
+- Components intended strictly for internal app usage MUST specify `android:exported="false"`.
+- If an activity or receiver must be exported (e.g., deep linking or Telecom `InCallService`), ensure it enforces proper input validation and permission controls.
+
 ---
 
 ## 7. Signing And Secret Handling
@@ -188,8 +225,7 @@ Complete before every release.
 ### Code And Quality
 
 - [ ] `flutter analyze` passed with zero warnings.
-- [ ] `flutter test` passed. **Note:** sqlite-backed tests must be run one file per invocation
-      (a `sqlite3.dll` double-copy crash otherwise) — run those individually.
+- [ ] `flutter test` passed.
 - [ ] No critical / release-blocking bugs open.
 - [ ] `pubspec.yaml` version and `assets/config/app_config.json` version/build **match**.
 
@@ -199,14 +235,19 @@ Complete before every release.
 - [ ] App size analyzed and within budget (section 6.3).
 - [ ] Startup verified acceptable on a mid-range device (dev target: moto g54).
 
-### Security
+### Security & Hardening
 
-- [ ] `--obfuscate` / `--split-debug-info` status re-evaluated (open item — `docs/security.md` §17).
+- [ ] `--obfuscate` and `--split-debug-info` applied to all release builds.
+- [ ] Debug symbols archived securely for this version.
+- [ ] ProGuard / R8 rules verified (`proguard-rules.pro`).
 - [ ] `android:debuggable=false` confirmed in the merged manifest (section 6.4).
+- [ ] `android:allowBackup=false` (with `tools:replace`) verified in merged manifest.
+- [ ] Cleartext traffic disabled (`usesCleartextTraffic=false`) and network security config verified (§6.5).
+- [ ] Pre-release asset audit passed — no `.env`, keys, or seed data bundled in APK `assets/` (§6.6).
+- [ ] Manifest component export audit completed — no accidental `android:exported="true"` (§6.7).
 - [ ] Manifest and permission review done — no unnecessary permissions; `INTERNET` still LAN-only.
 - [ ] OWASP Mobile Top 10 table reviewed (`docs/security.md` §12).
 - [ ] Artifact signed with the **release** key, not the debug fallback (section 7).
-- [ ] `allowBackup=false` (with `tools:replace`) still present.
 - [ ] Backup restore and vCard/CSV import paths revalidated.
 
 ### Product And Documentation
@@ -221,8 +262,7 @@ Complete before every release.
       the APK-lookup step — see section 5).
 - [ ] Artifact installs and launches on a clean device.
 - [ ] Correct flavor confirmed (prod shows app name "ContactSphere", **no** "-dev" suffix / id
-      suffix). Confirm the install actually replaced the old build — `flutter run` can fail at the
-      APK step and leave the previous build on the device.
+      suffix). Confirm the install actually replaced the old build.
 - [ ] Version name and build number correct in the installed app (About screen).
 - [ ] Tested end-to-end on the **release** build, not just debug.
 
@@ -234,21 +274,25 @@ Complete before every release.
 2. Verify the version in `pubspec.yaml` and that `app_config.json` matches.
 3. Confirm `android/key.properties` is present (release key, not debug fallback).
 4. Fetch dependencies: `flutter pub get`.
-5. Run analyze and tests (sqlite tests one file at a time).
-6. Build the prod artifact(s) with the hardening flags (once obfuscation is adopted).
+5. Run analyze and tests: `flutter analyze` and `flutter test`.
+6. Build the prod artifact(s) with the hardening flags (`--release`, `--obfuscate`, `--split-debug-info`, `--split-per-abi`).
 7. Run size analysis and record the output.
-8. Verify `android:debuggable=false` in the merged manifest.
-9. Verify naming, signing, installability, and flavor on a physical device.
-10. Archive debug symbols from `build/symbols/` (once obfuscation is adopted).
-11. Distribute the artifact.
-12. Tag the release: `git tag v<version>` and push.
+8. Verify `android:debuggable=false` and `android:allowBackup=false` in the merged manifest (§6.4).
+9. Perform pre-release asset extraction audit to ensure no secrets were packaged in `assets/` (§6.6).
+10. Verify naming, signing, installability, and flavor on a physical device.
+11. Archive debug symbols from `build/symbols/` or `build/app/outputs/symbols`.
+12. Distribute the artifact.
+13. Tag the release: `git tag v<version>` and push.
 
 ### Android Build Commands
 
+**Bash / macOS / Linux:**
 ```bash
 flutter pub get
 flutter analyze
-flutter test   # run sqlite-backed test files individually
+flutter test
+
+VERSION=$(grep '^version:' pubspec.yaml | cut -d' ' -f2)
 
 # Split APKs for direct distribution (hardened with obfuscation)
 flutter build apk \
@@ -256,17 +300,55 @@ flutter build apk \
   --release \
   --split-per-abi \
   --obfuscate \
-  --split-debug-info=build/app/outputs/symbols
+  --split-debug-info=build/symbols/android-prod-$VERSION/
 
-# App Bundle for a store channel (hardened with obfuscation)
+# App Bundle for Google Play Store (hardened with obfuscation)
 flutter build appbundle \
   --flavor prod \
   --release \
   --obfuscate \
-  --split-debug-info=build/app/outputs/symbols
+  --split-debug-info=build/symbols/android-prod-$VERSION/
 
 # Size analysis
 flutter build apk --flavor prod --release --analyze-size
+```
+
+**PowerShell (Windows):**
+```powershell
+flutter pub get
+flutter analyze
+flutter test
+
+$VERSION = (Get-Content pubspec.yaml | Select-String '^version:').ToString().Split(' ')[1].Trim()
+
+# Split APKs for direct distribution
+flutter build apk `
+  --flavor prod `
+  --release `
+  --split-per-abi `
+  --obfuscate `
+  --split-debug-info="build/symbols/android-prod-$VERSION/"
+
+# App Bundle for Google Play Store
+flutter build appbundle `
+  --flavor prod `
+  --release `
+  --obfuscate `
+  --split-debug-info="build/symbols/android-prod-$VERSION/"
+
+# Size analysis
+flutter build apk --flavor prod --release --analyze-size
+```
+
+### Post-Build APK Verification Commands
+
+```bash
+# Verify no debuggable flag and verify allowBackup=false
+aapt2 dump badging build/app/outputs/apk/prod/release/app-arm64-v8a-prod-release.apk | grep -i debuggable
+aapt2 dump xmltree build/app/outputs/apk/prod/release/app-arm64-v8a-prod-release.apk --file AndroidManifest.xml | grep -i allowBackup
+
+# Audit asset bundle for unencrypted secrets
+unzip -l build/app/outputs/apk/prod/release/app-arm64-v8a-prod-release.apk "assets/*"
 ```
 
 ---

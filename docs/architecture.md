@@ -3,9 +3,10 @@
 Layered, with a clear dependency direction:
 **screens → repositories/services → database → models**.
 
-- `lib/main.dart` — entry point. Requests permissions via `PermissionService`, then runs
-  `SmartContactsApp` whose home is `ContactListScreen`. `provider` is a dependency but no
-  `ChangeNotifierProvider`/state wiring exists yet — state is currently local `setState`.
+- `lib/main.dart` — entry point. Requests permissions via `PermissionService`, sets up
+  `ChangeNotifierProvider` for `AppSettings` (persisted preferences), then runs `SmartContactsApp`
+  whose home is `HomeShell` (`ContactListScreen`, `DialerScreen`, `CallHistoryScreen`). Local
+  screen-specific UI state uses `setState`.
 - `lib/database/database_helper.dart` — singleton wrapper over `sqflite`. Owns the full schema
   (`smart_contacts.db`, **version 2**; the v1→v2 migration in `_onUpgrade` adds the foreign-key
   indexes). All persistence funnels through `DatabaseHelper().database`. **Bump the version number

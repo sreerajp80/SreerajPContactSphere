@@ -1312,6 +1312,15 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
             }
             apply()
         }
+        val currentBlocked = ContactSphereCallScreeningService.readList(
+            prefs,
+            ContactSphereCallScreeningService.KEY_BLOCKED,
+        )
+        val currentBlockUnknown = prefs.getBoolean(
+            ContactSphereCallScreeningService.KEY_BLOCK_UNKNOWN,
+            false,
+        )
+        CallRegistry.disconnectBlockedCalls(currentBlocked, currentBlockUnknown)
     }
 
     /**

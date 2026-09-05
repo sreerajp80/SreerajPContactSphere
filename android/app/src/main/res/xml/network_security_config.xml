@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Master engineering standard & release process (§6.5):
+         Cleartext HTTP traffic is strictly prohibited for production builds.
+         Only pre-installed system certificates are trusted (no user-installed
+         CAs, blocking MITM proxy interception). -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

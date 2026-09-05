@@ -134,6 +134,7 @@ class _SmartContactsAppState extends State<SmartContactsApp>
         await _collectPendingDial();
       } else if (call.method == 'onCallLogChanged') {
         unawaited(CallLogImportService().syncFromDevice(force: true));
+        unawaited(CallEventLogger().drainBlockedCalls());
       }
       return null;
     });

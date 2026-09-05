@@ -68,7 +68,12 @@ class ContactSphereCallScreeningService : CallScreeningService() {
         }
 
         if (digits.isEmpty()) {
-            return if (prefs.getBoolean(KEY_BLOCK_UNKNOWN, false)) reject() else allow()
+            return if (prefs.getBoolean(KEY_BLOCK_UNKNOWN, false)) {
+                recordBlockedCall(prefs, number?.takeIf { it.isNotBlank() } ?: "Unknown")
+                reject()
+            } else {
+                allow()
+            }
         }
         if (matchesList(digits, readList(prefs, KEY_BLOCKED))) {
             recordBlockedCall(prefs, number ?: digits)
@@ -116,28 +121,6 @@ class ContactSphereCallScreeningService : CallScreeningService() {
 
     // ---- Matching ----
 
-    private fun readList(prefs: SharedPreferences, key: String): List<String> {
-        val raw = prefs.getString(key, null) ?: return emptyList()
-        return try {
-            val arr = JSONArray(raw)
-            List(arr.length()) { arr.optString(it) }.filter { it.isNotBlank() }
-        } catch (e: Exception) {
-            emptyList()
-        }
-    }
-
-    private fun matchesList(digits: String, list: List<String>): Boolean =
-        list.any { sameNumber(digits, it) }
-
-    /** Exact digit equality, or a ≥[MIN_SUFFIX_DIGITS]-digit suffix match — so
-     *  country-code variants ("+91…" vs national) of one number still agree,
-     *  while short codes only ever match exactly. */
-    private fun sameNumber(a: String, b: String): Boolean {
-        if (a == b) return true
-        val (shorter, longer) = if (a.length < b.length) a to b else b to a
-        return shorter.length >= MIN_SUFFIX_DIGITS && longer.endsWith(shorter)
-    }
-
     /** India's TRAI telemarketing series: a 10-digit national number starting
      *  `140`, tolerating a leading country code (91) or trunk zero. Mirrors the
      *  Dart-side CallerIdService.identifyBySeries. */
@@ -170,36 +153,6 @@ class ContactSphereCallScreeningService : CallScreeningService() {
             }
         } catch (e: Exception) {
             false
-        }
-    }
-
-    // ---- Blocked-call journal (drained into Recents by the Flutter side) ----
-
-    /** Appends `{number, at}` to the parked blocked-call events, capped at
-     *  [MAX_EVENTS] (oldest dropped) so the prefs entry can't grow unbounded
-     *  if the app isn't opened for a long time. */
-    private fun recordBlockedCall(prefs: SharedPreferences, number: String) {
-        try {
-            val arr = prefs.getString(KEY_BLOCKED_EVENTS, null)?.let {
-                try { JSONArray(it) } catch (e: Exception) { JSONArray() }
-            } ?: JSONArray()
-            arr.put(
-                JSONObject()
-                    .put("number", number)
-                    .put("at", System.currentTimeMillis()),
-            )
-            val trimmed = if (arr.length() > MAX_EVENTS) {
-                JSONArray().also { out ->
-                    for (i in arr.length() - MAX_EVENTS until arr.length()) {
-                        out.put(arr.get(i))
-                    }
-                }
-            } else {
-                arr
-            }
-            prefs.edit().putString(KEY_BLOCKED_EVENTS, trimmed.toString()).apply()
-        } catch (e: Exception) {
-            // Journal is best-effort; blocking itself already succeeded.
         }
     }
 
@@ -236,8 +189,58 @@ class ContactSphereCallScreeningService : CallScreeningService() {
         const val KEY_BLOCKED_EVENTS = "blocked_events"
 
         /** Minimum overlap for a suffix match (below this: exact only). */
-        private const val MIN_SUFFIX_DIGITS = 9
+        const val MIN_SUFFIX_DIGITS = 9
 
         private const val MAX_EVENTS = 200
+
+        fun readList(prefs: SharedPreferences, key: String): List<String> {
+            val raw = prefs.getString(key, null) ?: return emptyList()
+            return try {
+                val arr = JSONArray(raw)
+                List(arr.length()) { arr.optString(it) }.filter { it.isNotBlank() }
+            } catch (e: Exception) {
+                emptyList()
+            }
+        }
+
+        fun matchesList(digits: String, list: List<String>): Boolean =
+            list.any { sameNumber(digits, it) }
+
+        /** Exact digit equality, or a ≥[MIN_SUFFIX_DIGITS]-digit suffix match — so
+         *  country-code variants ("+91…" vs national) of one number still agree,
+         *  while short codes only ever match exactly. */
+        fun sameNumber(a: String, b: String): Boolean {
+            if (a == b) return true
+            val (shorter, longer) = if (a.length < b.length) a to b else b to a
+            return shorter.length >= MIN_SUFFIX_DIGITS && longer.endsWith(shorter)
+        }
+
+        /** Appends `{number, at}` to the parked blocked-call events, capped at
+         *  [MAX_EVENTS] (oldest dropped) so the prefs entry can't grow unbounded
+         *  if the app isn't opened for a long time. */
+        fun recordBlockedCall(prefs: SharedPreferences, number: String) {
+            try {
+                val arr = prefs.getString(KEY_BLOCKED_EVENTS, null)?.let {
+                    try { JSONArray(it) } catch (e: Exception) { JSONArray() }
+                } ?: JSONArray()
+                arr.put(
+                    JSONObject()
+                        .put("number", number)
+                        .put("at", System.currentTimeMillis()),
+                )
+                val trimmed = if (arr.length() > MAX_EVENTS) {
+                    JSONArray().also { out ->
+                        for (i in arr.length() - MAX_EVENTS until arr.length()) {
+                            out.put(arr.get(i))
+                        }
+                    }
+                } else {
+                    arr
+                }
+                prefs.edit().putString(KEY_BLOCKED_EVENTS, trimmed.toString()).apply()
+            } catch (e: Exception) {
+                // Journal is best-effort; blocking itself already succeeded.
+            }
+        }
     }
 }

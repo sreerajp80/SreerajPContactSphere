@@ -90,7 +90,30 @@ class FlaggedNumberRepository {
       [number.trim(), key, kind, DateTime.now().toIso8601String()],
     );
     unawaited(pushScreeningMirror());
+    if (kind == kindBlocked) {
+      await _disconnectIfRunning(key);
+    }
     return true;
+  }
+
+  /// If a call is currently running and matches [key], disconnects it immediately.
+  Future<void> _disconnectIfRunning(String key) async {
+    try {
+      final active = await _telecom.activeCall();
+      if (!active.hasCall) return;
+      final activeNum = active.number;
+      if (activeNum == null || activeNum.isEmpty) return;
+      final activeDigits = activeNum.replaceAll(RegExp(r'\D'), '');
+      final keyDigits = key.replaceAll(RegExp(r'\D'), '');
+      if (keyDigits.isNotEmpty &&
+          (keyDigits == activeDigits ||
+              (keyDigits.length >= 7 && activeDigits.endsWith(keyDigits)) ||
+              (activeDigits.length >= 7 && keyDigits.endsWith(activeDigits)))) {
+        await _telecom.disconnect();
+      }
+    } catch (_) {
+      // Best-effort: native mirror also disconnects matching live calls.
+    }
   }
 
   /// Removes one flagged entry by row id.

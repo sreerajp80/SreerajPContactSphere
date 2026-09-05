@@ -521,7 +521,35 @@ object CallRegistry {
     }
 
     fun disconnect() {
-        primaryCall()?.disconnect()
+        val call = primaryCall() ?: return
+        if (stateOf(call) == Call.STATE_RINGING) {
+            call.reject(false, null)
+        } else {
+            call.disconnect()
+        }
+    }
+
+    /**
+     * Checks all top-level live calls; any call whose number is in [blockedList]
+     * or is unknown while [blockUnknown] is true is disconnected/rejected immediately.
+     */
+    fun disconnectBlockedCalls(blockedList: List<String>, blockUnknown: Boolean) {
+        for (call in topLevel()) {
+            val number = call.details?.handle?.schemeSpecificPart
+            val digits = number?.filter { it.isDigit() } ?: ""
+            val shouldDisconnect = if (digits.isEmpty()) {
+                blockUnknown
+            } else {
+                ContactSphereCallScreeningService.matchesList(digits, blockedList)
+            }
+            if (shouldDisconnect) {
+                if (stateOf(call) == Call.STATE_RINGING) {
+                    call.reject(false, null)
+                } else {
+                    call.disconnect()
+                }
+            }
+        }
     }
 
     /** The top-level call currently ringing — the waiting call in a call-waiting
