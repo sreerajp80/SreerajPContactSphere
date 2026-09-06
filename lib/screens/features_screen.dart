@@ -52,7 +52,29 @@ class FeaturesScreen extends StatelessWidget {
           highlights: [
             'English & Malayalam',
             'Multi-script transliteration',
-            'Speed dial shortcuts',
+            'Matches names either way',
+          ],
+        ),
+        _AppFeature(
+          title: 'Speed Dial',
+          description:
+              'Save a person on keypad keys 1 to 9, then hold that key to call them. Holding works when the number box is empty; assigned keys carry a small dot. Secret contacts can never be put on a key.',
+          icon: Icons.touch_app_outlined,
+          highlights: [
+            'Keys 1-9',
+            'Hold a key to call',
+            'Assign from the keypad or Settings',
+          ],
+        ),
+        _AppFeature(
+          title: 'Voice Dial',
+          description:
+              'Tap the microphone on the dialpad and say a number or a name. Speech is turned into text on your phone, in English or Malayalam, and lead-in words like "call" are dropped automatically.',
+          icon: Icons.mic_none_outlined,
+          highlights: [
+            'Speak a number or a name',
+            'English & Malayalam',
+            'On-device speech',
           ],
         ),
         _AppFeature(
@@ -63,51 +85,52 @@ class FeaturesScreen extends StatelessWidget {
           highlights: [
             'Cursor positioning',
             'Paste numbers',
-            'Clear dialer safeguard',
+            'Backspace at the cursor',
           ],
         ),
         _AppFeature(
           title: 'Top Contacts Quick Access',
           description:
-              'A handy row right above the dialer showing either your most frequently called contacts or favorite family and friends for 1-tap calling.',
+              'A row right above the dialpad for one-tap calling. Choose what fills it: your most contacted people, the family and friends you have linked, or whoever usually answers at this time of day.',
           icon: Icons.star_outline,
           highlights: [
-            'Frequency scoring',
+            'Favorites row',
             'Family & friends filter',
-            '1-tap call',
+            'Likely to answer now',
           ],
         ),
         _AppFeature(
           title: 'Dual-SIM Calling Controls',
           description:
-              'Effortlessly choose between SIM 1 and SIM 2 for each call, or set a preferred default SIM for individual contacts.',
+              'Choose between SIM 1 and SIM 2 for each call, or set a default SIM so you are not asked every time. A contact can also keep its own preferred SIM, which is used ahead of the default. Each SIM gets its own colour, and Recents shows which one a call used.',
           icon: Icons.sim_card_outlined,
           highlights: [
             'SIM 1 / SIM 2 picker',
-            'Per-contact default SIM',
-            'SIM usage history',
+            'Default SIM or ask each time',
+            'Per-contact preferred SIM',
+            'SIM shown in Recents',
           ],
         ),
         _AppFeature(
           title: 'Smart Redial & "Reach Me" Mode',
           description:
-              'When a call goes unanswered or busy, schedule automated redial reminders or send a friendly 1-tap "trying to reach you" SMS text.',
+              'When a call goes unanswered or busy, schedule a redial after a delay you choose, or send a preset "trying to reach you" text in one tap.',
           icon: Icons.replay_outlined,
           highlights: [
-            'Auto-retry timer',
+            'Redial after your delay',
             '1-tap SMS prompt',
-            'Custom retry intervals',
+            'Cancel a waiting redial',
           ],
         ),
         _AppFeature(
           title: 'Spoken Caller Announcements',
           description:
-              'Hear the caller\'s name or phone number spoken out loud when your phone rings, perfect when driving or wearing headphones.',
+              'Hear a saved caller\'s name spoken out loud when your phone rings, perfect when driving or wearing headphones. A Malayalam name is announced in Malayalam.',
           icon: Icons.record_voice_over_outlined,
           highlights: [
             'Voice caller ID',
-            'Custom prefix/suffix',
-            'Headset-only option',
+            'Malayalam announcements',
+            'Quiet-hours exception',
           ],
         ),
         _AppFeature(
@@ -153,14 +176,14 @@ class FeaturesScreen extends StatelessWidget {
           ],
         ),
         _AppFeature(
-          title: 'Pre-Call Intelligence & Reminders',
+          title: 'Pre-Call Summary',
           description:
-              'Helpful reminders and statistics about how often you stay in touch, prompting you to follow up with loved ones and colleagues.',
+              'Before you ring someone, see when you last spoke, how long that call lasted, what you noted, and the local time in their city if you saved an address.',
           icon: Icons.analytics_outlined,
           highlights: [
             'Catch-up reminders',
-            'Interaction statistics',
-            'Call history trends',
+            'Their local time',
+            'Interaction timeline',
           ],
         ),
         _AppFeature(
@@ -171,7 +194,7 @@ class FeaturesScreen extends StatelessWidget {
           highlights: [
             'Voice-to-text input',
             'Post-call prompt',
-            'Interaction timeline',
+            'Follow-up reminder',
           ],
         ),
       ],
@@ -184,56 +207,78 @@ class FeaturesScreen extends StatelessWidget {
         _AppFeature(
           title: 'Rich Contact Profiles',
           description:
-              'Store multiple phone numbers, emails, home/work addresses, birthdays, anniversaries, social links, phonetic names, and custom fields.',
+              'Store multiple phone numbers, emails, home/work addresses, birthdays, anniversaries, social links, official details, and phonetic names.',
           icon: Icons.account_circle_outlined,
           highlights: [
             'Multi-phone & email',
             'Birthday reminders',
-            'Custom labels & fields',
+            'Custom labels',
           ],
         ),
         _AppFeature(
           title: '7 Relationship Spheres',
           description:
-              'Group your contacts into 7 intuitive spheres: Family, Close Friends, Friends, Work, Professional, Acquaintance, and Services.',
+              'Every link you save sits in one of seven categories: Immediate Family, Extended Family, Family by Marriage, Professional, Educational, Social, and Service. The label inside it — "Father", "Manager" — is whatever you type.',
           icon: Icons.hub_outlined,
           highlights: [
-            'Sphere grouping',
-            'Custom kinship labels',
-            'Visual sphere badges',
+            'Seven fixed categories',
+            'Your own kinship labels',
+            'Saved on both contacts',
           ],
         ),
         _AppFeature(
           title: 'Relationship Quiet Hours (DND Filter)',
           description:
-              'Silence calls during sleep or work hours while allowing vital circles (like immediate Family or Close Friends) to ring through.',
+              'Silence calls between the times you set, and list who should still get through — starred contacts, whole relationship categories, a tag, or named individuals. Everyone else stays quiet.',
           icon: Icons.bedtime_outlined,
           highlights: [
-            'Custom quiet schedules',
-            'VIP circle bypass',
-            'Per-sphere quiet rules',
+            'Set your quiet window',
+            'Allow list, not a block list',
+            'By category, tag or person',
           ],
         ),
         _AppFeature(
-          title: 'Color Tags & Custom Groups',
+          title: 'Tags & Custom Groups',
           description:
-              'Assign colorful tags and create custom groups (like "Project Team" or "Book Club") for quick filtering and bulk actions.',
+              'Tag contacts with short words of your own, and build groups (like "Project Team" or "Book Club") that can carry their own ringtone.',
           icon: Icons.label_outline,
           highlights: [
-            'Color-coded tags',
-            'Custom groups',
             'Tag cloud explorer',
+            'Custom groups',
+            'Group ringtones',
           ],
         ),
         _AppFeature(
           title: 'Duplicate Contact Finder & Smart Merge',
           description:
-              'Automatically detect duplicate contacts by matching names, phone numbers, or emails, and merge them cleanly without losing any data.',
+              'Find duplicates by phone number and by name — including names written in another script — then merge them cleanly without losing any detail.',
           icon: Icons.merge_type_outlined,
           highlights: [
-            'Smart match detection',
+            'Name & number matching',
             'Safe data merge',
-            'Preview before merging',
+            'Review before merging',
+          ],
+        ),
+        _AppFeature(
+          title: 'Temporary (Ephemeral) Contacts',
+          description:
+              'Save a delivery driver or a one-off seller as a temporary contact and it deletes itself — after 2 hours, 24 hours, 7 days, or a single call.',
+          icon: Icons.timer_outlined,
+          highlights: [
+            'Self-deleting entry',
+            'Countdown banner',
+            'Keep it permanently',
+          ],
+        ),
+        _AppFeature(
+          title: 'Connected Messaging Apps',
+          description:
+              'A contact shows the messengers they can be reached on — WhatsApp, Telegram, Arattai and others — read from your phone\'s own address book. Tap one to open the chat there.',
+          icon: Icons.apps_outlined,
+          highlights: [
+            'Open chat directly',
+            'Read from your phone',
+            'No account needed',
           ],
         ),
       ],
@@ -255,36 +300,36 @@ class FeaturesScreen extends StatelessWidget {
           ],
         ),
         _AppFeature(
-          title: 'Biometric & App PIN Lock',
+          title: 'App Lock: Off, Device Lock or App PIN',
           description:
-              'Lock the entire app or private sections using your phone\'s fingerprint, face unlock, or a custom app security PIN.',
+              'Lock the whole app behind your phone\'s fingerprint and face, or behind a separate 4–6 digit App PIN with a one-time recovery code. Secret contacts, backups and sync ask again on top of it.',
           icon: Icons.fingerprint,
           highlights: [
             'Fingerprint & Face unlock',
-            'App PIN fallback',
-            'Automatic re-lock',
+            'Separate App PIN',
+            'One-time recovery code',
           ],
         ),
         _AppFeature(
           title: 'Screenshot Guard',
           description:
-              'Prevents other apps or users from taking screenshots or recording video while viewing secret contacts and security settings.',
+              'Blocks screenshots, screen recording, and the Recents preview while you are on a screen holding private data — contact details, a call in progress, the lock screen, secret contacts, and the audit log.',
           icon: Icons.screenshot_outlined,
           highlights: [
             'Screenshot blocking',
             'Screen recording defense',
-            'Privacy toggle',
+            'Recents preview hidden',
           ],
         ),
         _AppFeature(
-          title: 'Security Audit Log',
+          title: 'Contact Change Audit Log',
           description:
-              'Keeps a private, tamper-proof history of every time secret contacts, exports, or security settings were accessed.',
+              'A private, tamper-evident history of every contact created, edited or deleted, with what it looked like before and after — so an accidental change can be undone.',
           icon: Icons.history_edu_outlined,
           highlights: [
-            'Access timestamps',
-            'Action breakdown',
-            'Full transparency',
+            'Before & after snapshots',
+            'Undo a change',
+            'Signed export',
           ],
         ),
       ],
@@ -306,6 +351,17 @@ class FeaturesScreen extends StatelessWidget {
           ],
         ),
         _AppFeature(
+          title: 'AirQR Animated Code Streaming',
+          description:
+              'A photo or a long contact card will not fit in one QR code. AirQR splits it across many frames and plays them as an animation for the other phone\'s camera to read — no Bluetooth, no network, no pairing.',
+          icon: Icons.sensors,
+          highlights: [
+            'Sends photos & full cards',
+            'Camera-only transfer',
+            'Live progress while it streams',
+          ],
+        ),
+        _AppFeature(
           title: 'On-Device Business Card Scanner',
           description:
               'Snap a photo of any physical business card to extract name, phone, email, and company details instantly—all processed 100% on your phone without cloud upload.',
@@ -324,7 +380,18 @@ class FeaturesScreen extends StatelessWidget {
           highlights: [
             'Zero internet required',
             'Auto device discovery',
-            'Fast encrypted transfer',
+            'Receiver must confirm',
+          ],
+        ),
+        _AppFeature(
+          title: 'CSV & vCard Import / Export',
+          description:
+              'Bring contacts in from a CSV or vCard (.vcf) file, or write your address book out as one, then choose where it goes through the system share sheet.',
+          icon: Icons.import_export_outlined,
+          highlights: [
+            'CSV in and out',
+            'vCard (.vcf) in and out',
+            'Secret contacts left out',
           ],
         ),
       ],
@@ -338,45 +405,45 @@ class FeaturesScreen extends StatelessWidget {
         _AppFeature(
           title: 'Device Contacts & Call Log Sync',
           description:
-              'Two-way synchronization between ContactSphere\'s local database, your phone\'s system contacts, and Android call history.',
+              'Copy contacts between the app and your phone\'s address book in whichever direction you choose — you run each one yourself. The phone\'s call log flows into Recents on its own.',
           icon: Icons.sync,
           highlights: [
-            'Two-way live sync',
-            'Call history import',
-            'Conflict resolution',
+            'Either direction, on demand',
+            'Adds and updates, never deletes',
+            'Call log arrives automatically',
           ],
         ),
         _AppFeature(
-          title: 'Local Wi-Fi Direct (P2P) Device Sync',
+          title: 'Local Wi-Fi Device-to-Device Sync',
           description:
-              'Transfer contacts between two phones on the same Wi-Fi network with end-to-end encryption and zero cloud servers.',
+              'Transfer contacts between two phones on the same Wi-Fi network, encrypted with a pairing code that never leaves the screen. Nothing is uploaded, and nothing on the receiving phone is deleted.',
           icon: Icons.wifi_tethering,
           highlights: [
-            'Direct P2P transfer',
-            'End-to-end encrypted',
+            'Direct phone to phone',
+            'Encrypted with a QR pairing code',
             'No cloud needed',
           ],
         ),
         _AppFeature(
-          title: 'Encrypted Cloud Sync & Google Drive',
+          title: 'Online Provider Sync & Encrypted Cloud Backup',
           description:
-              'Optionally sync contacts and backups to your personal Google Drive or WebDAV cloud storage with password-protected encryption.',
+              'Optionally sync contacts with Google, Microsoft or a CardDAV server, and upload a password-encrypted backup file to Google Drive, OneDrive or your own WebDAV storage.',
           icon: Icons.cloud_outlined,
           highlights: [
-            'Google Drive & WebDAV',
-            'Password-encrypted vault',
-            'Automatic backups',
+            'Google, Microsoft & WebDAV',
+            'Password-encrypted file',
+            'Secret contacts never uploaded',
           ],
         ),
         _AppFeature(
           title: 'Offline Backup & Restore Files',
           description:
-              'Export full database backups to protected files and restore them anytime on a new device with password or biometric verification.',
+              'Save everything — contacts, call history, photos, settings and the emergency card — into one password-locked file, and restore it on any phone. The password is the only key; the app never stores it.',
           icon: Icons.backup_outlined,
           highlights: [
             'Export to file',
             'Safe encrypted format',
-            'One-tap restore',
+            'Restore replaces everything',
           ],
         ),
       ],
@@ -387,25 +454,47 @@ class FeaturesScreen extends StatelessWidget {
       icon: Icons.shield_outlined,
       features: [
         _AppFeature(
-          title: 'Automatic Call Screening & Spam Defense',
+          title: 'Automatic Call Screening',
           description:
-              'Built-in call screening service that inspects incoming calls in real-time to silence or drop known spam and blacklisted numbers.',
+              'A built-in screening service inspects every incoming number before your phone rings and turns away anything on your blocked list — checked entirely on this phone, against your own list.',
           icon: Icons.phone_disabled_outlined,
           highlights: [
-            'Real-time screening',
-            'Silent spam reject',
+            'Rejected before it rings',
+            'Nothing looked up online',
             'Default dialer integration',
           ],
         ),
         _AppFeature(
           title: 'Blocked Numbers Manager',
           description:
-              'Easily block any number directly from call history or contact details, and manage your full blocklist in one convenient place.',
+              'Block a number with a long-press in Recents, from the Block control during a call, or by typing it in yourself. Blocking during a live call hangs it up at once, and blocked calls still appear in Recents so you can see who tried.',
           icon: Icons.block_outlined,
           highlights: [
-            '1-tap number blocking',
+            'Block from Recents or in-call',
             'Blocklist manager',
             'Unblock anytime',
+          ],
+        ),
+        _AppFeature(
+          title: 'Block Unknown Callers',
+          description:
+              'Turn away calls that arrive with no number or a withheld one. They are rejected before ringing and still written into Recents as blocked.',
+          icon: Icons.no_accounts_outlined,
+          highlights: [
+            'Hidden numbers rejected',
+            'Still logged in Recents',
+            'One switch to turn on',
+          ],
+        ),
+        _AppFeature(
+          title: 'Caller Identification & Spam Filter',
+          description:
+              'Label callers who are not in your contacts using what can be worked out locally — telemarketing and service number series, numbers you marked as spam, and the network\'s verified-caller flag. Flagged callers can ring silently instead of loudly.',
+          icon: Icons.label_outline,
+          highlights: [
+            'Labels unknown callers',
+            'Ring spam silently',
+            'Mark a number as spam',
           ],
         ),
       ],
@@ -417,20 +506,20 @@ class FeaturesScreen extends StatelessWidget {
       icon: Icons.palette_outlined,
       features: [
         _AppFeature(
-          title: 'Theme & Accent Color Engine',
+          title: 'Theme, Accent Color & Typography',
           description:
-              'Switch between Light, Dark, or System mode with curated vibrant accent colors and modern glassmorphic visual cards.',
+              'Switch between Light, Dark, or System mode, choose an accent colour, and set the font and text size. Three bundled fonts cover both Malayalam and English.',
           icon: Icons.color_lens_outlined,
           highlights: [
             'Dark & Light mode',
             'Curated color palettes',
-            'Modern glass styling',
+            'Font & text size',
           ],
         ),
         _AppFeature(
-          title: 'Per-SIM & Group Ringtones',
+          title: 'Per-SIM, Group & Contact Ringtones',
           description:
-              'Assign distinctive ringtones to SIM 1 vs SIM 2, or set special melodies for family, close friends and individual contacts.',
+              'Assign distinctive ringtones to SIM 1 vs SIM 2, to a group, or to a single contact. The most specific one wins: the contact\'s tone, then their group\'s, then the SIM\'s.',
           icon: Icons.notifications_active_outlined,
           highlights: [
             'Distinct ringtone per SIM',
@@ -452,12 +541,34 @@ class FeaturesScreen extends StatelessWidget {
         _AppFeature(
           title: 'Default Country Dialing Code',
           description:
-              'Automatically format local and international phone numbers with your selected default country code for seamless dialing.',
+              'Tell the app which country your plain, un-prefixed numbers belong to. It is what lets a call from +91 98765 43210 be recognised as the 98765 43210 in your contacts, and it is used to match blocked numbers too.',
           icon: Icons.public_outlined,
           highlights: [
             'Auto country prefix',
             'International format',
-            'Smart carrier detection',
+            'Matches callers to contacts',
+          ],
+        ),
+        _AppFeature(
+          title: 'Contact Counts & Search Index',
+          description:
+              'See how many contacts sit on the phone and in the app, and check the health of the search index that makes T9 and name search fast. Rebuild it in seconds if a contact stops turning up.',
+          icon: Icons.manage_search_outlined,
+          highlights: [
+            'Device vs app counts',
+            'Index health check',
+            'One-tap rebuild',
+          ],
+        ),
+        _AppFeature(
+          title: 'In-App Help & Guides',
+          description:
+              'Over twenty plain-English guides covering every feature here — calling, blocking, sync, backups, privacy, sharing and more — plus a FAQ and troubleshooting page. All offline, inside the app.',
+          icon: Icons.help_center_outlined,
+          highlights: [
+            'Guide for every feature',
+            'FAQ & troubleshooting',
+            'Works offline',
           ],
         ),
       ],

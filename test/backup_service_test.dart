@@ -246,6 +246,61 @@ void main() {
     expect(emergencyContacts.first['display_name'], 'Zoe\'s brother');
   });
 
+  test('speed-dial keys travel in a backup and come back', () async {
+    final aliceId = await seedOriginal();
+    final db = await DatabaseHelper().database;
+    await db.insert('speed_dial', {
+      'slot': 2,
+      'contact_id': aliceId,
+      'phone_number': '9876543210',
+    });
+
+    final bundle = await SyncBundleService().exportBundle(mode: SyncMode.full);
+
+    await reseedDifferent();
+    // Whatever the phone has now must be replaced by the backup's keys.
+    await DatabaseHelper().database.then(
+      (d) => d.insert('speed_dial', {'slot': 7, 'phone_number': '111'}),
+    );
+
+    await SyncBundleService().replaceAllFromBundle(bundle.metaJson, []);
+
+    final restored = await (await DatabaseHelper().database).query('speed_dial');
+    expect(restored, hasLength(1));
+    expect(restored.first['slot'], 2);
+    expect(restored.first['phone_number'], '9876543210');
+    // Contact ids are preserved by a full replace, so the link still resolves.
+    expect(restored.first['contact_id'], aliceId);
+  });
+
+  test('a backup made before speed dial existed leaves the keys alone', () async {
+    await seedOriginal();
+    final bundle = await SyncBundleService().exportBundle(mode: SyncMode.full);
+
+    // Rebuild the payload without the speed-dial table — exactly what a backup
+    // file written before the feature existed contains.
+    final meta = jsonDecode(bundle.metaJson) as Map<String, dynamic>;
+    (meta['tables'] as Map).remove('speed_dial');
+
+    await reseedDifferent();
+    final db = await DatabaseHelper().database;
+    await db.insert('speed_dial', {'slot': 4, 'phone_number': '555000'});
+
+    await SyncBundleService().replaceAllFromBundle(jsonEncode(meta), []);
+
+    // Contacts were replaced as usual...
+    final names = (await db.query(
+      'contacts',
+    )).map((c) => c['first_name']).toList();
+    expect(names, containsAll(['Alice', 'Bob']));
+
+    // ...but the key set on this phone survived untouched.
+    final keys = await db.query('speed_dial');
+    expect(keys, hasLength(1));
+    expect(keys.first['slot'], 4);
+    expect(keys.first['phone_number'], '555000');
+  });
+
   test('wrong password is rejected and nothing is changed', () async {
     await seedOriginal();
     final bytes = await backup.encodeBackup('right-one');

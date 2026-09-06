@@ -145,7 +145,7 @@ mixin CallLifecycleMixin<T extends StatefulWidget>
       // Resolve which SIM to use before dialing. Returns a sentinel to abort
       // when the user dismisses the SIM chooser. (The number to dial is decided
       // by the caller — e.g. the list's long-press number picker.)
-      final sim = await _resolveSim();
+      final sim = await _resolveSim(contactId);
       if (sim == _aborted) return;
 
       final pending = await _callService.placeCall(
@@ -173,21 +173,38 @@ mixin CallLifecycleMixin<T extends StatefulWidget>
     componentName: '',
   );
 
-  /// Decides which SIM to place the call on: the per-call chooser when the user
-  /// enabled it and there are 2+ SIMs, otherwise the configured default SIM (or
-  /// null = system default). Returns [_aborted] if the chooser was dismissed.
-  Future<SimAccount?> _resolveSim() async {
+  /// Decides which SIM to place the call on.
+  ///
+  /// The SIM the call would use on its own is [SimService.resolveForCall]: this
+  /// contact's preferred SIM if it set one and that SIM is still in the phone,
+  /// else the configured default, else null (system default).
+  ///
+  /// When "ask which SIM before each call" is on and there are 2+ SIMs the
+  /// chooser is still shown — the user asked to confirm every call — but that
+  /// resolved SIM is pre-selected in it, so honouring a contact's preference is
+  /// one tap. Returns [_aborted] if the chooser was dismissed.
+  Future<SimAccount?> _resolveSim(int? contactId) async {
     final settings = mounted ? context.read<AppSettings>() : null;
     if (settings == null) return null;
+
+    final resolved = await _simService.resolveForCall(
+      contactId: contactId,
+      defaultSimId: settings.defaultSimId,
+    );
 
     if (settings.askSimBeforeCall) {
       final sims = await _simService.list();
       if (sims.length > 1 && mounted) {
-        final chosen = await showSimPickerSheet(context, sims: sims);
+        final chosen = await showSimPickerSheet(
+          context,
+          sims: sims,
+          preselectedId: resolved?.phoneAccountId,
+          preselectedNote: 'Usual SIM for this call',
+        );
         return chosen ?? _aborted;
       }
     }
-    return _simService.defaultSim(settings.defaultSimId);
+    return resolved;
   }
 
   Future<void> _reconcilePendingCall() async {

@@ -6,17 +6,25 @@
 import 'package:flutter/material.dart';
 
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
+import 'package:smart_contacts_dialer/screens/help/app_lock_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/backup_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/biometrics_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/call_management_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/call_screening_help_screen.dart';
+import 'package:smart_contacts_dialer/screens/help/caller_id_spam_help_screen.dart';
+import 'package:smart_contacts_dialer/screens/help/caller_intelligence_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/cloud_sync_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/contact_sharing_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/contact_sync_help_screen.dart';
+import 'package:smart_contacts_dialer/screens/help/contact_tools_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/duplicate_merge_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/emergency_info_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/faq_troubleshooting_help_screen.dart';
+import 'package:smart_contacts_dialer/screens/help/groups_tags_help_screen.dart';
+import 'package:smart_contacts_dialer/screens/help/import_export_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/p2p_sync_help_screen.dart';
+import 'package:smart_contacts_dialer/screens/help/permissions_help_screen.dart';
+import 'package:smart_contacts_dialer/screens/help/personalization_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/privacy_security_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/relationship_categories_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/t9_dialing_help_screen.dart';
@@ -37,7 +45,11 @@ class HelpHomeScreen extends StatelessWidget {
           _buildHeaderCard(context, colors),
           const SizedBox(height: 20),
 
-          _buildSectionHeader(context, 'Calling & Dialer', Icons.dialpad_outlined),
+          _buildSectionHeader(
+            context,
+            'Calling & Dialer',
+            Icons.dialpad_outlined,
+          ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.grid_3x3_outlined,
@@ -51,7 +63,7 @@ class HelpHomeScreen extends StatelessWidget {
             icon: Icons.call_end_outlined,
             title: 'Calling & In-Call Controls',
             subtitle:
-                'Conference merge, call hold/swap, dual-SIM controls, smart redial, and spoken caller ID.',
+                'Conference merge, hold and swap, dual-SIM options, smart redial, and spoken caller names.',
             onTap: () => _push(context, const CallManagementHelpScreen()),
           ),
           const SizedBox(height: 10),
@@ -59,19 +71,48 @@ class HelpHomeScreen extends StatelessWidget {
             icon: Icons.phone_disabled_outlined,
             title: 'Call Screening & Blocking',
             subtitle:
-                'Automatic background spam defense, blocking numbers, and default dialer requirements.',
+                'Blocking a number before it rings, blocked unknown callers, and why the default dialer role is needed.',
             onTap: () => _push(context, const CallScreeningHelpScreen()),
+          ),
+          const SizedBox(height: 10),
+          _HelpTopicCard(
+            icon: Icons.label_outline,
+            title: 'Caller ID & Spam Filter',
+            subtitle:
+                'Labelling unknown callers, ringing suspected spam silently, and marking a number as spam.',
+            onTap: () => _push(context, const CallerIdSpamHelpScreen()),
+          ),
+          const SizedBox(height: 10),
+          _HelpTopicCard(
+            icon: Icons.insights_outlined,
+            title: 'Call Context & Notes',
+            subtitle:
+                'Pre-call summary, "Likely to answer now", and the notes you write after a call.',
+            onTap: () => _push(context, const CallerIntelligenceHelpScreen()),
           ),
           const SizedBox(height: 22),
 
-          _buildSectionHeader(context, 'Organization & Sharing', Icons.people_alt_outlined),
+          _buildSectionHeader(
+            context,
+            'Organization & Sharing',
+            Icons.people_alt_outlined,
+          ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.hub_outlined,
             title: 'Relationship Spheres',
             subtitle:
-                'The 7 relationship buckets (Family, Friends, Work), kinship labels, and quiet hours.',
-            onTap: () => _push(context, const RelationshipCategoriesHelpScreen()),
+                'The 7 categories from Immediate Family to Service, your own labels, and quiet hours.',
+            onTap: () =>
+                _push(context, const RelationshipCategoriesHelpScreen()),
+          ),
+          const SizedBox(height: 10),
+          _HelpTopicCard(
+            icon: Icons.sell_outlined,
+            title: 'Groups & Tags',
+            subtitle:
+                'Building groups, group ringtones, the tag cloud, and selecting many contacts at once.',
+            onTap: () => _push(context, const GroupsTagsHelpScreen()),
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
@@ -86,12 +127,24 @@ class HelpHomeScreen extends StatelessWidget {
             icon: Icons.qr_code_scanner_outlined,
             title: 'Sharing & Card Scanning',
             subtitle:
-                'vCard QR code generation/scanning, on-device OCR business card scanner, and offline BLE share.',
+                'QR contact codes, the on-device business card scanner, and sharing over Bluetooth.',
             onTap: () => _push(context, const ContactSharingHelpScreen()),
+          ),
+          const SizedBox(height: 10),
+          _HelpTopicCard(
+            icon: Icons.import_export_outlined,
+            title: 'Import & Export Files',
+            subtitle:
+                'CSV and vCard files in and out, and AirQR for sending more than one QR code can hold.',
+            onTap: () => _push(context, const ImportExportHelpScreen()),
           ),
           const SizedBox(height: 22),
 
-          _buildSectionHeader(context, 'Privacy & Protection', Icons.security_outlined),
+          _buildSectionHeader(
+            context,
+            'Privacy & Protection',
+            Icons.security_outlined,
+          ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.lock_outline,
@@ -105,8 +158,24 @@ class HelpHomeScreen extends StatelessWidget {
             icon: Icons.fingerprint,
             title: 'Biometric Lock Details',
             subtitle:
-                'What fingerprint & face authentication protect across the app and fallback options.',
+                'Every place the app asks for your fingerprint or face, and what happens without a screen lock.',
             onTap: () => _push(context, const BiometricsHelpScreen()),
+          ),
+          const SizedBox(height: 10),
+          _HelpTopicCard(
+            icon: Icons.pin_outlined,
+            title: 'App Lock & PIN',
+            subtitle:
+                'The three lock modes, setting an App PIN, and the recovery code if you forget it.',
+            onTap: () => _push(context, const AppLockHelpScreen()),
+          ),
+          const SizedBox(height: 10),
+          _HelpTopicCard(
+            icon: Icons.verified_user_outlined,
+            title: 'Permissions Explained',
+            subtitle:
+                'What each permission is for, which are optional, and what stops working if you say no.',
+            onTap: () => _push(context, const PermissionsHelpScreen()),
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
@@ -118,7 +187,11 @@ class HelpHomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 22),
 
-          _buildSectionHeader(context, 'Sync & Backups', Icons.cloud_sync_outlined),
+          _buildSectionHeader(
+            context,
+            'Sync & Backups',
+            Icons.cloud_sync_outlined,
+          ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.wifi_tethering,
@@ -153,7 +226,34 @@ class HelpHomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 22),
 
-          _buildSectionHeader(context, 'Frequently Asked Questions', Icons.question_answer_outlined),
+          _buildSectionHeader(
+            context,
+            'Personalization & Tools',
+            Icons.tune_outlined,
+          ),
+          const SizedBox(height: 10),
+          _HelpTopicCard(
+            icon: Icons.palette_outlined,
+            title: 'Look, Sound & Region',
+            subtitle:
+                'Theme and accent colour, fonts and text size, ringtones and vibration, and the default country.',
+            onTap: () => _push(context, const PersonalizationHelpScreen()),
+          ),
+          const SizedBox(height: 10),
+          _HelpTopicCard(
+            icon: Icons.handyman_outlined,
+            title: 'Contact Tools',
+            subtitle:
+                'Temporary self-deleting contacts, connected messaging apps, and the search index.',
+            onTap: () => _push(context, const ContactToolsHelpScreen()),
+          ),
+          const SizedBox(height: 22),
+
+          _buildSectionHeader(
+            context,
+            'Frequently Asked Questions',
+            Icons.question_answer_outlined,
+          ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.help_outline,
@@ -238,7 +338,11 @@ class HelpHomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title, IconData icon) {
+  Widget _buildSectionHeader(
+    BuildContext context,
+    String title,
+    IconData icon,
+  ) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),

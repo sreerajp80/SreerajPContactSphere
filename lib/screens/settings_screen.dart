@@ -18,6 +18,7 @@ import 'package:smart_contacts_dialer/screens/permissions_screen.dart';
 import 'package:smart_contacts_dialer/screens/ringtone_settings_screen.dart';
 import 'package:smart_contacts_dialer/screens/security_screen.dart';
 import 'package:smart_contacts_dialer/screens/sim_settings_screen.dart';
+import 'package:smart_contacts_dialer/screens/speed_dial_screen.dart';
 import 'package:smart_contacts_dialer/screens/sync/sync_home_screen.dart';
 
 import 'package:smart_contacts_dialer/screens/settings/online_sync_settings_screen.dart';
@@ -44,6 +45,13 @@ class SettingsScreen extends StatelessWidget {
           const _DialerTopContactsCard(),
           const SizedBox(height: 12),
           const _DialpadScriptCard(),
+          const SizedBox(height: 12),
+          _SettingsCard(
+            icon: Icons.touch_app_outlined,
+            title: 'Speed Dial',
+            subtitle: 'Hold a keypad key 1-9 to call a saved person',
+            onTap: () => _push(context, const SpeedDialScreen()),
+          ),
           const SizedBox(height: 12),
           _SettingsCard(
             icon: Icons.contacts_outlined,

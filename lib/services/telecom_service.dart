@@ -424,15 +424,14 @@ class TelecomService {
     bool? quietHoursEnabled,
     String? quietHoursStart,
     String? quietHoursEnd,
-  }) =>
-      _invokeVoid('setRingerPrefs', {
-        'volumePercent': volumePercent,
-        'vibrate': vibrate,
-        'spokenAnnouncementEnabled': spokenAnnouncementEnabled,
-        'quietHoursEnabled': quietHoursEnabled,
-        'quietHoursStart': quietHoursStart,
-        'quietHoursEnd': quietHoursEnd,
-      });
+  }) => _invokeVoid('setRingerPrefs', {
+    'volumePercent': volumePercent,
+    'vibrate': vibrate,
+    'spokenAnnouncementEnabled': spokenAnnouncementEnabled,
+    'quietHoursEnabled': quietHoursEnabled,
+    'quietHoursStart': quietHoursStart,
+    'quietHoursEnd': quietHoursEnd,
+  });
 
   /// Speaks a test announcement for [name] using the native TTS engine.
   Future<void> previewCallerAnnouncement(String name) =>
@@ -603,6 +602,12 @@ class TelecomService {
     }
   }
 
+  /// One-shot collect of the native "the user tapped the call notification" flag.
+  /// True when the app was opened (or re-entered) through the call notification and
+  /// the calling screen still has to be shown. Clears the flag natively.
+  Future<bool> consumePendingShowInCall() =>
+      _invokeBool('consumePendingShowInCall');
+
   /// Arms a native exact alarm to post a generic notification at [fireAt].
   /// Returns whether the OS alarm was actually armed.
   Future<bool> scheduleNotification({
@@ -612,15 +617,14 @@ class TelecomService {
     required DateTime fireAt,
     String? payload,
     String? category,
-  }) =>
-      _invokeBool('scheduleNotification', {
-        'id': id,
-        'title': title,
-        'body': body,
-        'fireAtMillis': fireAt.millisecondsSinceEpoch,
-        'payload': payload,
-        'category': category,
-      });
+  }) => _invokeBool('scheduleNotification', {
+    'id': id,
+    'title': title,
+    'body': body,
+    'fireAtMillis': fireAt.millisecondsSinceEpoch,
+    'payload': payload,
+    'category': category,
+  });
 
   /// Cancels a native generic scheduled notification alarm by [id].
   Future<void> cancelNotification(String id) =>

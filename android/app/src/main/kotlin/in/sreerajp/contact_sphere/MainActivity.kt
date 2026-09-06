@@ -90,6 +90,19 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
 
     private var pendingNotificationPayload: String? = null
 
+    /**
+     * Set when the activity is started (or re-delivered an intent) by the call
+     * notification's tap target — `ContactSphereInCallService.ACTION_SHOW_IN_CALL`.
+     * Parked until the Flutter side collects it with `consumePendingShowInCall`,
+     * the same cold-start-poll / warm-nudge pattern as [pendingDial].
+     *
+     * Needed because the tap only brings this activity to the front: if the Dart
+     * calling screen was popped (a back press during a live call) or buried under
+     * another route, the call state has not changed, so no call event is emitted
+     * and nothing would re-show the screen.
+     */
+    private var pendingShowInCall = false
+
     /** The `contact_sphere/telecom` channel, kept so warm dial intents can nudge Dart. */
     private var telecomChannel: MethodChannel? = null
 
@@ -113,9 +126,7 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (intent?.action == ContactSphereInCallService.ACTION_SHOW_IN_CALL) {
-            applyShowWhenLocked(true)
-        }
+        handleShowInCallIntent(intent)
         handleVCardIntent(intent)
         handleDialIntent(intent)
         handleTrustedCallbackIntent(intent)
@@ -127,15 +138,46 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (intent.action == ContactSphereInCallService.ACTION_SHOW_IN_CALL) {
-            applyShowWhenLocked(true)
-        }
+        handleShowInCallIntent(intent)
         handleVCardIntent(intent)
         handleDialIntent(intent)
         handleTrustedCallbackIntent(intent)
         handleSmartRedialIntent(intent)
         handleScheduledNotificationIntent(intent)
         handleContactIntent(intent)
+    }
+
+    /**
+     * Handles the call notification's tap target: allows this activity over the
+     * keyguard, parks [pendingShowInCall] and, for an app that is already running,
+     * nudges Dart to bring the calling screen back.
+     * On a cold start the channel isn't up yet, so Dart drains the flag with
+     * `consumePendingShowInCall` after its first frame.
+     */
+    private fun handleShowInCallIntent(intent: Intent?) {
+        if (intent?.action != ContactSphereInCallService.ACTION_SHOW_IN_CALL) return
+        // Let this activity show over the keyguard: the tap may well come from a
+        // locked device while the call is ringing.
+        applyShowWhenLocked(true)
+        pendingShowInCall = true
+        // Warm delivery: Dart answers the nudge, which is how we know it was acted on
+        // and can drop the flag. On a cold start no Dart handler is up yet, nothing
+        // answers, and the flag survives for Dart to drain after its first frame.
+        runOnUiThread {
+            telecomChannel?.invokeMethod(
+                "showInCall",
+                null,
+                object : MethodChannel.Result {
+                    override fun success(result: Any?) {
+                        pendingShowInCall = false
+                    }
+
+                    override fun error(code: String, message: String?, details: Any?) = Unit
+
+                    override fun notImplemented() = Unit
+                },
+            )
+        }
     }
 
     private fun handleScheduledNotificationIntent(intent: Intent?) {
@@ -355,6 +397,13 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
                 }
                 "getPendingNotificationIds" ->
                     result.success(NotificationSchedulerManager.pendingIds(this))
+                // One-shot collect: true when the app was opened (or re-entered) by
+                // the call notification and the calling screen still has to be shown.
+                "consumePendingShowInCall" -> {
+                    val show = pendingShowInCall
+                    pendingShowInCall = false
+                    result.success(show)
+                }
                 "getPendingNotificationPayload" -> {
                     val payload = pendingNotificationPayload
                     pendingNotificationPayload = null

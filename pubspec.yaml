@@ -5,7 +5,7 @@ description: Advanced contacts and dialer app with SQLite
 # Drives flutter.versionName/versionCode (android/app/build.gradle.kts) and
 # PackageInfo.fromPlatform(). Keep in sync with assets/config/app_config.json
 # (version/build); ConfigService.loadAndVerify() logs a debug drift note if they differ.
-version: 15.17.8+91
+version: 15.17.10+93
 
 environment:
   sdk: '^3.12.0'

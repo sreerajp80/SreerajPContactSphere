@@ -40,6 +40,28 @@ class CallManagementHelpScreen extends StatelessWidget {
           ),
 
           _Section(
+            icon: Icons.touch_app_outlined,
+            title: 'Speed Dial',
+            children: [
+              _Bullet(
+                'Keypad keys 1 to 9 can each hold one person. Hold a key on the dialer to call them.',
+              ),
+              _Bullet(
+                'Holding only works when the number box is empty, so a long press while you are typing never starts a call.',
+              ),
+              _Bullet(
+                'To set a key: hold an empty key on the dialer and pick a contact, or go to Settings → Speed Dial. If the contact has more than one number you are asked which one to save.',
+              ),
+              _Bullet(
+                'A key that holds someone shows a small coloured dot above the digit.',
+              ),
+              _Bullet(
+                'Secret contacts cannot be put on a key, and a key is freed automatically if you delete its contact or make it secret.',
+              ),
+            ],
+          ),
+
+          _Section(
             icon: Icons.sim_card_outlined,
             title: 'Dual-SIM Calling & Preferences',
             children: [
@@ -47,10 +69,22 @@ class CallManagementHelpScreen extends StatelessWidget {
                 'On dual-SIM phones, the dialer gives you SIM 1 and SIM 2 call buttons for immediate selection.',
               ),
               _Bullet(
-                'You can assign a preferred SIM to individual contacts under Contact Details → Edit Contact so that calls always route through your chosen number.',
+                'Settings → SIM & calling → SIM Cards & Accounts sets the default SIM for outgoing calls, or switches on "Ask before each call" so you are asked every time.',
               ),
               _Bullet(
-                'Call logs clearly show which SIM card was used for incoming, outgoing, or missed calls.',
+                'One person can have their own SIM: open the contact, tap Edit, and choose it under "Preferred SIM". Calls to them then use that SIM instead of the default one.',
+              ),
+              _Bullet(
+                'With "Ask before each call" switched on you are still asked, but the SIM that call would have used is already ticked, so it is one tap.',
+              ),
+              _Bullet(
+                'If that SIM is later removed from the phone, calls quietly fall back to your default SIM.',
+              ),
+              _Bullet(
+                'The same screen gives each SIM its own colour, so you can tell at a glance which line a call is on.',
+              ),
+              _Bullet(
+                'Recents shows which SIM was used for each incoming, outgoing, or missed call.',
               ),
             ],
           ),
@@ -60,13 +94,16 @@ class CallManagementHelpScreen extends StatelessWidget {
             title: 'Smart Redial & "Reach Me" SMS',
             children: [
               _Bullet(
-                'When an outgoing call is busy or unanswered, ContactSphere offers to schedule an automatic redial reminder.',
+                'When an outgoing call is busy or unanswered, the app offers to redial the number for you after a delay.',
               ),
               _Bullet(
-                'You can also tap "Send SMS" to dispatch a quick "Hey, I tried reaching you" text with 1 tap.',
+                'You can instead send a preset "Reach Me" text in one tap, to say you tried to get through.',
               ),
               _Bullet(
-                'Configure your preferred redial interval and retry limit in Settings → Smart Redial.',
+                'Settings → SIM & calling → Smart Redial & "Reach Me" sets the default retry delay and the preset message, and lists the redials that are waiting to run.',
+              ),
+              _Bullet(
+                'A scheduled redial is the one place the app dials on its own, and only because you set the delay yourself. Cancel a waiting redial from that same list.',
               ),
             ],
           ),
@@ -76,13 +113,13 @@ class CallManagementHelpScreen extends StatelessWidget {
             title: 'Spoken Caller Announcements',
             children: [
               _Bullet(
-                'When enabled in Settings → Spoken Announcements, the app reads the caller\'s name out loud when your phone rings.',
+                'Turn it on under Settings → SIM & calling → Spoken caller announcement. The app then says the caller\'s name over the ringtone — "Amma calling".',
               ),
               _Bullet(
-                'You can set it to speak always, or only when wired headphones or Bluetooth headsets are connected.',
+                'A Malayalam name is announced in Malayalam. Use the Test button on that screen to hear how a name sounds before a real call arrives.',
               ),
               _Bullet(
-                'Customize the speech prefix (e.g., "Incoming call from...") and speech rate to your liking.',
+                'Switch on the quiet-hours exception, and set its time range, to stay silent at night while the phone still rings.',
               ),
             ],
           ),
@@ -92,17 +129,17 @@ class CallManagementHelpScreen extends StatelessWidget {
             title: 'Quick SMS Decline Replies',
             children: [
               _Bullet(
-                'Cannot answer right now? Tap Quick Reply on the incoming call alert to send a preset SMS template.',
+                'Cannot answer right now? Tap Reply on the incoming call screen to decline the call and send a preset text instead.',
               ),
               _Bullet(
-                'You can customize your own reply templates in Settings → Quick Replies.',
+                'Write your own messages under Settings → SIM & calling → Quick replies.',
               ),
             ],
           ),
 
           SizedBox(height: 8),
           _Footer(
-            'Tip: Enable ContactSphere as your Default Phone App in Android Settings to unlock full in-call controls and full-screen incoming alerts.',
+            'Tip: make this your Default Phone App — Settings → Permissions shows whether it already is. Without that role, Android does not hand over the in-call controls or the full-screen incoming alert.',
           ),
         ],
       ),

@@ -33,6 +33,23 @@ class CallScreeningMatchingTest {
     }
 
     @Test
+    fun `seven and eight digit overlaps are not enough`() {
+        // 919876543210 ends with "6543210" (7) and "76543210" (8). Real numbers
+        // can share that much, so neither may count as a match — the threshold
+        // is 9. The Dart side (FlaggedNumberRepository) mirrors this rule.
+        assertFalse(
+            ContactSphereCallScreeningService.sameNumber("919876543210", "6543210")
+        )
+        assertFalse(
+            ContactSphereCallScreeningService.sameNumber("919876543210", "76543210")
+        )
+        // Nine digits of overlap is a match again.
+        assertTrue(
+            ContactSphereCallScreeningService.sameNumber("919876543210", "876543210")
+        )
+    }
+
+    @Test
     fun `different numbers do not match`() {
         assertFalse(
             ContactSphereCallScreeningService.sameNumber("9876543210", "9876543211")

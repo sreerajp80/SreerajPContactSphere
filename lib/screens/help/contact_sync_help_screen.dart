@@ -23,7 +23,7 @@ class ContactSyncHelpScreen extends StatelessWidget {
           _Intro(
             'Sync keeps the app and your phone in step. You control each '
             'direction yourself — nothing here runs automatically. Open it from '
-            'Settings → Contacts → Sync.',
+            'Settings → Contacts → Device & cloud sync.',
           ),
           SizedBox(height: 24),
 

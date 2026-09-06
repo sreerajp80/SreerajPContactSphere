@@ -14,59 +14,95 @@ class CallScreeningHelpScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
         children: const [
           _Intro(
-            'ContactSphere includes an automatic background call screening engine '
-            'that protects you against annoying spam, telemarketers, and unwanted callers.',
+            'The app can turn a call away before your phone rings. Blocking is '
+            'a list you build yourself, checked on this phone against the '
+            'incoming number \u2014 nothing is looked up anywhere else.',
           ),
           SizedBox(height: 24),
 
           _Section(
             icon: Icons.shield_outlined,
-            title: 'How Call Screening Works',
+            title: 'How call screening works',
             children: [
               _Bullet(
-                'When a call arrives, Android asks ContactSphere\'s Call Screening Service to inspect the incoming phone number.',
+                'When a call arrives, Android hands the number to the app\'s call screening service before the phone rings.',
               ),
               _Bullet(
-                'If the number is on your Blocked List, the call is rejected immediately without ringing or vibrating your phone.',
+                'If the number is on your blocked list, the call is rejected straight away \u2014 no ring, no vibration, no incoming screen.',
               ),
               _Bullet(
-                'Screened and blocked calls are silently logged in your Call History with a "Blocked" badge so you can review them anytime.',
+                'Numbers are matched after being put into full international form using your Default country, so a number blocked as 98765 43210 also blocks +91 98765 43210.',
+              ),
+              _Bullet(
+                'A blocked call is still written into Recents with a "Blocked" mark, so you can see who tried.',
               ),
             ],
           ),
 
           _Section(
             icon: Icons.block_outlined,
-            title: 'Blocking Numbers',
+            title: 'Blocking a number',
             children: [
               _Bullet(
-                'To block any number: Tap on a call entry in Call History or on a contact card, tap the 3-dots menu, and choose "Block Number".',
+                'From Recents: long-press the call and choose "Block number". The same action then reads "Unblock number".',
               ),
               _Bullet(
-                'You can review and manage all blocked numbers under Settings → Blocked Numbers.',
+                'During a call: tap Block on the call screen. This works while it is ringing and while you are talking.',
               ),
               _Bullet(
-                'Unblocking is instant: simply tap "Unblock" next to any number in your Blocked Numbers list.',
+                'By hand: Settings \u2192 Contacts \u2192 Blocked numbers, then add the number yourself.',
+              ),
+              _Bullet(
+                'Blocking a number that is on a call right now hangs that call up immediately, wherever you blocked it from.',
+              ),
+            ],
+          ),
+
+          _Section(
+            icon: Icons.no_accounts_outlined,
+            title: 'Callers with no number',
+            children: [
+              _Bullet(
+                'Settings \u2192 Contacts \u2192 Blocked numbers also has a "Block unknown callers" switch, for calls that arrive with a hidden or withheld number.',
+              ),
+              _Bullet(
+                'Those calls are rejected before ringing and still recorded in Recents as blocked.',
+              ),
+              _Bullet(
+                'It does not affect ordinary numbers you have not saved \u2014 only calls that carry no number at all.',
+              ),
+            ],
+          ),
+
+          _Section(
+            icon: Icons.volume_off_outlined,
+            title: 'Silencing instead of blocking',
+            children: [
+              _Bullet(
+                'If you would rather see the call but not be disturbed, use "Filter suspected spam" under Settings \u2192 SIM & calling \u2192 Identification. Flagged callers then ring silently.',
+              ),
+              _Bullet(
+                'See the "Caller ID & spam filter" guide for how a caller gets flagged.',
               ),
             ],
           ),
 
           _Section(
             icon: Icons.phone_android_outlined,
-            title: 'Default Dialer Requirement',
+            title: 'Default phone app is required',
             children: [
               _Bullet(
-                'Android requires ContactSphere to be your Default Phone App to screen calls in the background and block numbers before ringing.',
+                'Android only lets the default phone app inspect a call before it rings. Without that role, blocking cannot happen early enough.',
               ),
               _Bullet(
-                'If ContactSphere is not the default phone app, you will be prompted to grant the role under Settings → Permissions.',
+                'Settings \u2192 Permissions shows whether the app already holds the role, and lets you ask for it.',
               ),
             ],
           ),
 
           SizedBox(height: 8),
           _Footer(
-            'Privacy Note: Number screening is performed 100% locally on your phone against your private blocklist. No phone numbers are ever sent to remote tracking servers.',
+            'Privacy note: screening happens entirely on this phone, against your own list. No phone number is ever sent to a server, and there is no shared spam database behind it.',
           ),
         ],
       ),

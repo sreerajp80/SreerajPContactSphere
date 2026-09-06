@@ -27,10 +27,10 @@ class PrivacySecurityHelpScreen extends StatelessWidget {
                 'What is a Secret Contact? Any contact marked as "Secret" is completely hidden from the main contact list, T9 dialer searches, and general export files.',
               ),
               _Bullet(
-                'Accessing Secret Contacts: Tap the Vault lock icon in the top bar or under Settings → Security and authenticate with your fingerprint, face, or App PIN.',
+                'Seeing them: tap the padlock icon in the top bar of the Contacts tab and unlock with your fingerprint, face, or device PIN. The list then shows the secret contacts alongside the rest.',
               ),
               _Bullet(
-                'Auto-Lock: The vault automatically locks whenever you leave the screen or switch apps, keeping your private numbers safe from prying eyes.',
+                'Tap the padlock again to hide them. They also hide when you leave the contact list, so they are never left showing behind you.',
               ),
             ],
           ),
@@ -43,7 +43,7 @@ class PrivacySecurityHelpScreen extends StatelessWidget {
                 'You can secure the entire app or sensitive sections using your device\'s biometric sensors (fingerprint / face unlock).',
               ),
               _Bullet(
-                'If your phone does not have biometric hardware or you prefer a separate passcode, you can set up a custom App PIN in Settings → Security.',
+                'If your phone has no biometric hardware, or you want a code separate from your phone PIN, set an App PIN under Settings → Security → App lock. See the "App lock & PIN" guide.',
               ),
             ],
           ),
@@ -53,10 +53,10 @@ class PrivacySecurityHelpScreen extends StatelessWidget {
             title: 'Screenshot Guard',
             children: [
               _Bullet(
-                'Screenshot Guard prevents screen captures, screen recording, and task switcher previews while browsing secure screens.',
+                'Screenshot guard blocks screenshots, screen recording, and the preview Android shows in Recents, while you are on a screen holding private data.',
               ),
               _Bullet(
-                'Enable or disable Screenshot Guard under Settings → Security → Screenshot Guard.',
+                'Turn it on or off under Settings → Security → Screenshot guard.',
               ),
             ],
           ),
@@ -66,17 +66,23 @@ class PrivacySecurityHelpScreen extends StatelessWidget {
             title: 'Security Audit Log',
             children: [
               _Bullet(
-                'ContactSphere records a secure, private audit log of sensitive actions such as vault unlocks, secret contact exports, and PIN updates.',
+                'The audit log records every change to a contact — created, edited, or deleted — with what it looked like before and after.',
               ),
               _Bullet(
-                'View the audit log in Settings → Security → Audit Log to ensure no unauthorized access has occurred.',
+                'Open an entry to see exactly what changed, and undo it if the change was a mistake.',
+              ),
+              _Bullet(
+                'Entries are chained together with a cryptographic hash, so an entry cannot be quietly altered or removed without it showing.',
+              ),
+              _Bullet(
+                'Settings → Security → Audit log, which asks for your unlock first. It can also export a signed copy of the log.',
               ),
             ],
           ),
 
           SizedBox(height: 8),
           _Footer(
-            'Security Principle: ContactSphere stores all data locally in an encrypted SQLite database on your device. We do not operate any tracking or advertising telemetry.',
+            'Security principle: everything is stored on this phone in a database encrypted with a key held in the phone\'s hardware keystore. There is no tracking, no advertising, and no server of ours to talk to.',
           ),
         ],
       ),

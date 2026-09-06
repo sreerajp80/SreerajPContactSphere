@@ -100,6 +100,28 @@ class RelationshipCategoriesHelpScreen extends StatelessWidget {
             ],
           ),
 
+          const _Section(
+            icon: Icons.bedtime_outlined,
+            title: 'Quiet hours use these categories',
+            children: [
+              _Bullet(
+                'Settings → SIM & calling → Relationship-tier quiet hours '
+                'silences calls between the times you set.',
+              ),
+              _Bullet(
+                'It is an allow list, not a block list. Everyone is silenced '
+                'except the people you add — starred contacts, whole '
+                'categories such as Immediate Family, a tag, or named '
+                'individuals.',
+              ),
+              _Bullet(
+                'This is why the category matters: allowing "Immediate '
+                'Family" lets every contact in that bucket ring through, '
+                'whatever label you gave each one.',
+              ),
+            ],
+          ),
+
           const SizedBox(height: 8),
           const _Footer(
             'Tip: if you are unsure where someone belongs, pick the category '

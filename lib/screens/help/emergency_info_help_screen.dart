@@ -52,9 +52,7 @@ class EmergencyInfoHelpScreen extends StatelessWidget {
             icon: Icons.visibility_outlined,
             title: 'You choose every line',
             children: [
-              _Bullet(
-                'The whole feature is off until you switch it on.',
-              ),
+              _Bullet('The whole feature is off until you switch it on.'),
               _Bullet(
                 'Each field has its own "Show on lock screen" switch. A field '
                 'you leave switched off never leaves the app.',

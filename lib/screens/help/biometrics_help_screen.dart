@@ -42,6 +42,19 @@ class BiometricsHelpScreen extends StatelessWidget {
                 'Opening "Sync to Another Device", because a sync can include '
                 'your secret contacts.',
               ),
+              _Bullet(
+                'Opening "Backup & Restore", because a backup can include them '
+                'too.',
+              ),
+              _Bullet(
+                'Opening the audit log, which holds a full before-and-after '
+                'record of your contacts.',
+              ),
+              _Bullet('Accepting a contact someone sends you over Bluetooth.'),
+              _Bullet(
+                'Opening the app at all, if you set App lock to "Device lock" '
+                'under Settings → Security.',
+              ),
             ],
           ),
 
@@ -56,6 +69,11 @@ class BiometricsHelpScreen extends StatelessWidget {
               _Bullet(
                 'If you have not set up a fingerprint or face, the phone falls '
                 'back to your screen-lock PIN, pattern, or password.',
+              ),
+              _Bullet(
+                'App lock can instead use an App PIN, which is separate from '
+                'the phone\'s lock. That one is checked by the app itself — '
+                'see the "App lock & PIN" guide.',
               ),
             ],
           ),
@@ -78,7 +96,8 @@ class BiometricsHelpScreen extends StatelessWidget {
           SizedBox(height: 8),
           _Footer(
             'Tip: set up a screen lock (fingerprint, face, or PIN) in Android '
-            'settings. Without any lock, this protection cannot be applied.',
+            'settings. With no lock at all the check cannot run, so sync and '
+            'backup warn you and then let you decide whether to go on.',
           ),
         ],
       ),

@@ -43,6 +43,22 @@ import 'package:smart_contacts_dialer/theme/app_theme.dart';
 import 'package:smart_contacts_dialer/widgets/keyboard_inset_guard.dart';
 import 'package:smart_contacts_dialer/widgets/sim_picker_sheet.dart';
 
+/// Stop rule for the pops that clear whatever is stacked over the calling
+/// screen — the call-ended clean-up and the notification-tap recovery.
+///
+/// Stops at [inCallRoute] itself, at [lockRoute] when there is one, and at the
+/// first route as a backstop. Stopping at the lock is a security rule, not a
+/// nicety: `popUntil` removes routes with `Navigator.pop`, which does **not**
+/// consult `PopScope`, so popping past the app-lock screen would dismiss it
+/// without any PIN or biometric check and leave the app open.
+@visibleForTesting
+bool Function(Route<dynamic>) inCallPopStop(
+  Route<dynamic> inCallRoute,
+  Route<dynamic>? lockRoute,
+) =>
+    (r) =>
+        r == inCallRoute || (lockRoute != null && r == lockRoute) || r.isFirst;
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Install the global error boundaries first (standard §11.1), before anything
@@ -85,6 +101,17 @@ class _SmartContactsAppState extends State<SmartContactsApp>
   bool _shouldLockOnResume = true;
   bool _lockShown = false;
   bool _locking = false;
+
+  /// The pushed app-lock route, kept so the route clean-ups that clear whatever
+  /// is stacked over the calling screen can stop at it instead of popping it —
+  /// see [inCallPopStop]. Cleared wherever [_lockShown] is.
+  Route<bool>? _lockRoute;
+
+  /// Set when the user asks for the calling screen while the lock is up (a tap
+  /// on the call notification). Drained by [_maybeLock] once the user has
+  /// authenticated, so the screen comes back after the unlock, never through it.
+  bool _showInCallAfterUnlock = false;
+
   StreamSubscription<CallState>? _callSub;
   final CallEventLogger _callLogger = CallEventLogger();
   final SimService _simService = SimService();
@@ -132,6 +159,8 @@ class _SmartContactsAppState extends State<SmartContactsApp>
     _telecomChannel.setMethodCallHandler((call) async {
       if (call.method == 'dialReceived') {
         await _collectPendingDial();
+      } else if (call.method == 'showInCall') {
+        await _showInCallScreen();
       } else if (call.method == 'onCallLogChanged') {
         unawaited(CallLogImportService().syncFromDevice(force: true));
         unawaited(CallEventLogger().drainBlockedCalls());
@@ -192,6 +221,13 @@ class _SmartContactsAppState extends State<SmartContactsApp>
     await _collectPendingDial();
     // Cold start via a contact intent (view, edit, insert, pick):
     await _collectPendingContactIntent();
+    // Cold start via the call notification: the tap was parked natively before
+    // the channel existed. Usually the call event stream has already shown the
+    // calling screen by now (native pushes a snapshot on subscribe), in which
+    // case [_showInCallScreen] sees it on top and does nothing.
+    if (await TelecomService().consumePendingShowInCall()) {
+      await _showInCallScreen();
+    }
   }
 
   /// Collapses Recents rows that are two records of one call, once per install.
@@ -268,7 +304,8 @@ class _SmartContactsAppState extends State<SmartContactsApp>
         if (resolvedContactId != null) {
           await nav.push(
             MaterialPageRoute<void>(
-              builder: (_) => ContactDetailScreen(contactId: resolvedContactId!),
+              builder: (_) =>
+                  ContactDetailScreen(contactId: resolvedContactId!),
             ),
           );
         } else {
@@ -296,9 +333,15 @@ class _SmartContactsAppState extends State<SmartContactsApp>
           final company = intent.extras['company'] ?? '';
           final title = intent.extras['job_title'] ?? '';
 
-          final phoneNumbers = phone.isNotEmpty ? [PhoneNumber(number: phone, type: 'personal', isPrimary: true)] : <PhoneNumber>[];
-          final emails = email.isNotEmpty ? [Email(email: email, type: 'personal', isPrimary: true)] : <Email>[];
-          final addresses = postal.isNotEmpty ? [Address(street: postal, type: 'personal')] : <Address>[];
+          final phoneNumbers = phone.isNotEmpty
+              ? [PhoneNumber(number: phone, type: 'personal', isPrimary: true)]
+              : <PhoneNumber>[];
+          final emails = email.isNotEmpty
+              ? [Email(email: email, type: 'personal', isPrimary: true)]
+              : <Email>[];
+          final addresses = postal.isNotEmpty
+              ? [Address(street: postal, type: 'personal')]
+              : <Address>[];
 
           final contact = Contact(
             firstName: name.isNotEmpty ? name : 'New Contact',
@@ -328,9 +371,15 @@ class _SmartContactsAppState extends State<SmartContactsApp>
         final company = intent.extras['company'] ?? '';
         final title = intent.extras['job_title'] ?? '';
 
-        final phoneNumbers = phone.isNotEmpty ? [PhoneNumber(number: phone, type: 'personal', isPrimary: true)] : <PhoneNumber>[];
-        final emails = email.isNotEmpty ? [Email(email: email, type: 'personal', isPrimary: true)] : <Email>[];
-        final addresses = postal.isNotEmpty ? [Address(street: postal, type: 'personal')] : <Address>[];
+        final phoneNumbers = phone.isNotEmpty
+            ? [PhoneNumber(number: phone, type: 'personal', isPrimary: true)]
+            : <PhoneNumber>[];
+        final emails = email.isNotEmpty
+            ? [Email(email: email, type: 'personal', isPrimary: true)]
+            : <Email>[];
+        final addresses = postal.isNotEmpty
+            ? [Address(street: postal, type: 'personal')]
+            : <Address>[];
 
         final contact = Contact(
           firstName: name.isNotEmpty ? name : 'New Contact',
@@ -369,17 +418,22 @@ class _SmartContactsAppState extends State<SmartContactsApp>
                 onContactSelected: (selectedContact) async {
                   final devId = selectedContact.deviceId;
                   if (devId == null || devId.isEmpty) {
-                    _showSnack('Cannot pick this contact: not synced with the system book.');
+                    _showSnack(
+                      'Cannot pick this contact: not synced with the system book.',
+                    );
                     return;
                   }
 
-                  final contactUri = 'content://com.android.contacts/contacts/$devId';
+                  final contactUri =
+                      'content://com.android.contacts/contacts/$devId';
 
                   String? chosenPhone;
                   String? chosenEmail;
 
-                  final isPhoneMime = intent.mimeType?.contains('phone') == true;
-                  final isEmailMime = intent.mimeType?.contains('email') == true;
+                  final isPhoneMime =
+                      intent.mimeType?.contains('phone') == true;
+                  final isEmailMime =
+                      intent.mimeType?.contains('email') == true;
 
                   if (isPhoneMime && selectedContact.phoneNumbers.isNotEmpty) {
                     if (selectedContact.phoneNumbers.length == 1) {
@@ -444,26 +498,36 @@ class _SmartContactsAppState extends State<SmartContactsApp>
   /// [_onCall]. Failures surface as a snackbar rather than a silent no-op.
   Future<void> _placeCallback(String number) async {
     // Honour the multi-SIM setting exactly like the dialer (see
-    // CallLifecycleMixin._resolveSim): when the user enabled "ask which SIM" and
-    // there are 2+ SIMs, show the picker; otherwise use the configured default SIM
-    // (null = system default). Dismissing the picker cancels the call-back.
+    // CallLifecycleMixin._resolveSim): resolve the contact's preferred SIM (else
+    // the configured default, else null = system default), and when the user
+    // enabled "ask which SIM" and there are 2+ SIMs show the picker with that
+    // SIM pre-selected. Dismissing the picker cancels the call-back.
+    //
+    // Unlike the screens, this path is entered from a notification and knows
+    // only a number, so the contact is looked up here to find its preference.
     SimAccount? sim;
     final ctx = _navKey.currentContext;
     final settings = ctx != null
         ? Provider.of<AppSettings>(ctx, listen: false)
         : null;
+    final contactId = await _contactIdForNumber(number);
+    sim = await _simService.resolveForCall(
+      contactId: contactId,
+      defaultSimId: settings?.defaultSimId,
+    );
     if (settings != null && settings.askSimBeforeCall) {
       final sims = await _simService.list();
       final pickCtx = _navKey.currentContext;
       if (sims.length > 1 && pickCtx != null && pickCtx.mounted) {
-        final chosen = await showSimPickerSheet(pickCtx, sims: sims);
+        final chosen = await showSimPickerSheet(
+          pickCtx,
+          sims: sims,
+          preselectedId: sim?.phoneAccountId,
+          preselectedNote: 'Usual SIM for this call',
+        );
         if (chosen == null) return; // dismissed → don't place the call
         sim = chosen;
-      } else {
-        sim = await _simService.defaultSim(settings.defaultSimId);
       }
-    } else {
-      sim = await _simService.defaultSim(settings?.defaultSimId);
     }
     try {
       _callbackPending = await CallService().placeCall(
@@ -475,6 +539,23 @@ class _SmartContactsAppState extends State<SmartContactsApp>
       _showSnack('Call permission denied');
     } catch (e) {
       _showSnack('Could not place call: $e');
+    }
+  }
+
+  /// The contact [number] belongs to, or null when it matches none. Used only
+  /// to find that contact's preferred SIM — a failed lookup must never stop the
+  /// call, so any error resolves to null.
+  Future<int?> _contactIdForNumber(String number) async {
+    try {
+      final iso = await AppSettings.readDefaultCountryIso();
+      final matches = await ContactRepository().findByFullNumber(
+        number,
+        defaultIso: iso,
+      );
+      if (matches.isEmpty) return null;
+      return matches.first.contactId;
+    } catch (_) {
+      return null;
     }
   }
 
@@ -639,13 +720,24 @@ class _SmartContactsAppState extends State<SmartContactsApp>
       if (nav == null) return;
       _shouldLockOnResume = false;
       _lockShown = true;
-      await nav.push(
-        MaterialPageRoute<bool>(
-          fullscreenDialog: true,
-          builder: (_) => AppLockScreen(mode: mode),
-        ),
+      final lockRoute = MaterialPageRoute<bool>(
+        fullscreenDialog: true,
+        builder: (_) => AppLockScreen(mode: mode),
       );
-      _lockShown = false;
+      _lockRoute = lockRoute;
+      try {
+        await nav.push(lockRoute);
+      } finally {
+        _lockShown = false;
+        if (_lockRoute == lockRoute) _lockRoute = null;
+      }
+      // Authenticated (the lock route is gone). If the user asked for the
+      // calling screen while the lock was up, honour it now — see
+      // [_showInCallScreen].
+      if (_showInCallAfterUnlock) {
+        _showInCallAfterUnlock = false;
+        await _showInCallScreen();
+      }
     } finally {
       _locking = false;
     }
@@ -714,17 +806,19 @@ class _SmartContactsAppState extends State<SmartContactsApp>
     }
     _selectingHandled = false;
 
+    // Trust the route, not just the flag. If the tracked route is gone or no
+    // longer active while the flag still says "showing" — it was left buried on
+    // the stack, or removed without completing — every later call would take the
+    // "already showing" path and push nothing, leaving the user with a connected
+    // call and no calling screen until the app is killed. Re-syncing here lets it
+    // recover by itself.
+    if (_inCallRouteShown && _inCallRoute?.isActive != true) {
+      _inCallRouteShown = false;
+      _inCallRoute = null;
+    }
+
     if (state.phase.isOngoing && !_inCallRouteShown) {
-      _inCallRouteShown = true;
-      final route = MaterialPageRoute<void>(
-        fullscreenDialog: true,
-        builder: (_) => InCallScreen(initialState: state),
-      );
-      _inCallRoute = route;
-      nav.push(route).whenComplete(() {
-        _inCallRouteShown = false;
-        if (_inCallRoute == route) _inCallRoute = null;
-      });
+      _pushInCallRoute(nav, state);
     } else if (!state.phase.isOngoing && _inCallRouteShown) {
       _inCallRouteShown = false;
       final route = _inCallRoute;
@@ -732,10 +826,10 @@ class _SmartContactsAppState extends State<SmartContactsApp>
       if (route != null) {
         // Clear anything the in-call screen pushed above itself (the Add-call
         // dialer, a confirm dialog, the reject-with-message sheet). Only needed
-        // when the in-call route isn't on top; when backgrounded / over the lock
-        // screen nothing is stacked above, so this never runs (or animates) there.
+        // when the in-call route isn't on top. The stop rule deliberately halts
+        // at the app-lock route, which can sit above a buried in-call route.
         if (route.isActive && !route.isCurrent) {
-          nav.popUntil((r) => r == route || r.isFirst);
+          nav.popUntil(inCallPopStop(route, _lockRoute));
         }
         // Remove the in-call route WITHOUT an exit animation. An animated pop
         // started while the app is being sent to the background (call answered
@@ -748,6 +842,58 @@ class _SmartContactsAppState extends State<SmartContactsApp>
         nav.removeRoute(route);
       }
     }
+  }
+
+  /// Pushes the full-screen calling screen and keeps [_inCallRouteShown] /
+  /// [_inCallRoute] in step with it. The single place the route is built, so the
+  /// call-event path and the notification-tap path always produce the same route.
+  void _pushInCallRoute(NavigatorState nav, CallState state) {
+    _inCallRouteShown = true;
+    final route = MaterialPageRoute<void>(
+      fullscreenDialog: true,
+      builder: (_) => InCallScreen(initialState: state),
+    );
+    _inCallRoute = route;
+    nav.push(route).whenComplete(() {
+      _inCallRouteShown = false;
+      if (_inCallRoute == route) _inCallRoute = null;
+    });
+  }
+
+  /// Brings the calling screen back after the user tapped the call notification.
+  ///
+  /// The tap only foregrounds the activity. The call state has not changed, so no
+  /// call event is emitted, and on its own nothing would re-show the screen once
+  /// it is no longer on top. The calling screen buries itself whenever the user
+  /// opens the Keypad or Add call from it (both push a route over it), and the
+  /// route can also be gone entirely — removed on an earlier call's end path, or
+  /// never pushed because the app started while the call was already up. Here we
+  /// look at the live call and put the screen back on top: unbury it when it
+  /// still exists, push a fresh one when it is gone.
+  Future<void> _showInCallScreen() async {
+    // The lock is on screen: never pop or push past it. Park the request and let
+    // [_maybeLock] replay it the moment the user authenticates.
+    if (_lockShown) {
+      _showInCallAfterUnlock = true;
+      return;
+    }
+    final state = await TelecomService().activeCall();
+    // The call ended between the tap and this check — nothing to show.
+    if (!state.phase.isOngoing) return;
+    final nav = _navKey.currentState;
+    if (nav == null) return;
+    final route = _inCallRoute;
+    if (route != null && route.isActive) {
+      // Already on top: the tap only had to foreground the app.
+      if (route.isCurrent) return;
+      // Buried under routes the user (or the in-call screen) pushed over it.
+      nav.popUntil(inCallPopStop(route, _lockRoute));
+      return;
+    }
+    // Gone, or never pushed: clear the stale pair and show a fresh screen.
+    _inCallRouteShown = false;
+    _inCallRoute = null;
+    _pushInCallRoute(nav, state);
   }
 
   /// Keeps the Smart Redial list honest across a call that happens while the

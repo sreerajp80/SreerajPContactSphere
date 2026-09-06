@@ -51,12 +51,12 @@ class CloudSyncHelpScreen extends StatelessWidget {
                 'Microsoft OneDrive or a self-hosted WebDAV server.',
               ),
               _Bullet(
-                'In Settings → Online Sync, toggle "Contact Sync: On" and "Cloud Backup: Off" '
+                'In Settings → Online Provider Sync, toggle "Contact Sync: On" and "Cloud Backup: Off" '
                 'for your Google account.',
               ),
               _Bullet(
                 'Add your Microsoft or WebDAV account separately and select it when uploading '
-                'encrypted cloud backups in Settings → Cloud Backup.',
+                'encrypted cloud backups in Settings → Encrypted Cloud Backup.',
               ),
             ],
           ),
@@ -79,7 +79,7 @@ class CloudSyncHelpScreen extends StatelessWidget {
 
           SizedBox(height: 8),
           _Footer(
-            'Tip: You can manage all configured accounts under Settings → Online Sync. Each account can '
+            'Tip: You can manage all configured accounts under Settings → Online Provider Sync. Each account can '
             'have independent toggles for live contact sync and cloud backup.',
           ),
         ],

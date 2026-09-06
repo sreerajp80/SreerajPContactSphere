@@ -24,13 +24,13 @@ class ContactSharingHelpScreen extends StatelessWidget {
             title: 'QR Code Sharing & Scanner',
             children: [
               _Bullet(
-                'Generate QR Code: Open any contact card and tap "Share QR Code" to display an industry-standard vCard QR code on your screen.',
+                'Show a QR code: open a contact, tap Share, and choose "Share as QR code". A standard vCard QR appears on screen for someone else to scan.',
               ),
               _Bullet(
-                'Scan QR Code: Tap the QR icon in the top search bar or in contact list actions to open the camera and scan anyone\'s contact QR code.',
+                'Scan a QR code: open the Contacts tab, tap the three-dot menu, and choose "Scan QR code" to open the camera.',
               ),
               _Bullet(
-                'Scanned details are previewed immediately, letting you save them directly as a new contact or merge with an existing record.',
+                'What was scanned is shown to you first. You save it as a new contact only after looking at it.',
               ),
             ],
           ),
@@ -62,7 +62,10 @@ class ContactSharingHelpScreen extends StatelessWidget {
                 'Share contacts directly with nearby Android devices running ContactSphere without internet or pairing codes.',
               ),
               _Bullet(
-                'The receiver opens "Receive over Bluetooth" under Settings/Contacts, while the sender taps "Share via Bluetooth" on any contact.',
+                'The sender opens a contact, taps Share, and chooses "Share via Bluetooth". The receiver opens the Contacts tab, taps the three-dot menu, and chooses "Bluetooth transfer".',
+              ),
+              _Bullet(
+                'The receiving phone shows a challenge you must confirm, so a contact cannot be pushed onto your phone without you agreeing.',
               ),
               _Bullet(
                 'Devices automatically discover each other and transfer the contact securely over low-energy radio.',
@@ -72,7 +75,7 @@ class ContactSharingHelpScreen extends StatelessWidget {
 
           SizedBox(height: 8),
           _Footer(
-            'Tip: All contact sharing methods export clean, universal vCard formats compatible with Android, iOS, and desktop address books.',
+            'Tip: every sharing method here uses the standard vCard format, which Android, iOS and desktop address books all understand. To send a whole address book as a file instead, see the Import & export guide.',
           ),
         ],
       ),

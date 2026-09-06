@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:provider/provider.dart';
 
+import 'package:smart_contacts_dialer/models/speed_dial_entry.dart';
 import 'package:smart_contacts_dialer/repositories/contact_repository.dart';
+import 'package:smart_contacts_dialer/repositories/speed_dial_repository.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 import 'package:smart_contacts_dialer/utils/phone_normalizer.dart';
@@ -21,6 +23,13 @@ import 'package:smart_contacts_dialer/services/reach_window_service.dart';
 import 'package:smart_contacts_dialer/screens/add_edit_contact_screen.dart';
 import 'package:smart_contacts_dialer/screens/contact_detail_screen.dart';
 import 'package:smart_contacts_dialer/screens/settings_screen.dart';
+import 'package:smart_contacts_dialer/screens/speed_dial_screen.dart';
+
+/// How far the dialpad follows the system font-size setting. Keys grow taller
+/// with the text up to this scale so nothing is clipped; past it the keys stop
+/// growing (the keypad shares the screen with the number display and the call
+/// button) and the digit stops with them.
+const double _kMaxKeyScale = 1.5;
 
 /// A standalone T9 dialpad. Uses a custom number display (not a `TextField`) so
 /// the OS keyboard never covers the pad, and surfaces match-as-you-type contact
@@ -56,6 +65,12 @@ class DialerScreenState extends State<DialerScreen>
   final ContactRepository _contacts = ContactRepository();
   final TelecomService _telecom = TelecomService();
   final ReachWindowService _reachWindows = ReachWindowService();
+  final SpeedDialRepository _speedDial = SpeedDialRepository();
+
+  /// Speed-dial assignments by key (1–9), so the keypad can mark a key that is
+  /// taken and dial it on a long-press without hitting the database each time.
+  /// Reloaded whenever an assignment changes and on [reload].
+  Map<int, SpeedDialEntry> _speedDialEntries = const {};
 
   String _number = '';
   late final TextEditingController _numberController;
@@ -110,6 +125,7 @@ class DialerScreenState extends State<DialerScreen>
       _refreshSuggestions();
     }
     _loadFavorites();
+    _loadSpeedDial();
   }
 
   Timer? _backspaceTimer;
@@ -162,7 +178,65 @@ class DialerScreenState extends State<DialerScreen>
   /// the Dialer tab is selected, since the [IndexedStack] keeps this screen alive
   /// and stars/scores may have changed on another tab since it was built.
   void reload() {
-    if (mounted) _loadFavorites();
+    if (mounted) {
+      _loadFavorites();
+      _loadSpeedDial();
+    }
+  }
+
+  Future<void> _loadSpeedDial() async {
+    Map<int, SpeedDialEntry> entries;
+    try {
+      entries = await _speedDial.all();
+    } catch (_) {
+      // Speed dial is an extra on the keypad; a failed read just leaves every
+      // key unassigned rather than breaking the dialer.
+      entries = const {};
+    }
+    if (!mounted) return;
+    setState(() => _speedDialEntries = entries);
+  }
+
+  /// Long-press on a digit key, for the keys that can hold a speed dial (1–9).
+  ///
+  /// Only acts when the number box is **empty**: while a number is being typed
+  /// a long-press must not turn into a call to somebody else. A key that holds
+  /// a number calls it; an empty key opens the picker to fill it.
+  Future<void> _onSpeedDialKeyLongPress(int slot) async {
+    if (_numberController.text.isNotEmpty) return;
+
+    final entry = _speedDialEntries[slot];
+    if (entry == null) {
+      final saved = await assignSpeedDialSlot(
+        context,
+        slot,
+        repository: _speedDial,
+        contacts: _contacts,
+      );
+      if (saved) {
+        await _loadSpeedDial();
+        if (mounted) {
+          final name = _speedDialEntries[slot]?.label ?? '';
+          _showMessage('Key $slot now calls $name');
+        }
+      }
+      return;
+    }
+
+    _showMessage('Calling ${entry.label}…');
+    await startCall(
+      contactId: entry.contactId,
+      number: entry.phoneNumber,
+      displayName: entry.label,
+    );
+    _popIfAddingCall();
+  }
+
+  void _showMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _press(String char) {
@@ -187,8 +261,6 @@ class DialerScreenState extends State<DialerScreen>
     );
     _numberFocusNode.requestFocus();
   }
-
-
 
   void _clear() {
     _numberController.value = TextEditingValue.empty;
@@ -322,10 +394,6 @@ class DialerScreenState extends State<DialerScreen>
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));
   }
-
-
-
-
 
   /// Loads the two lists shown in the empty state — starred Favorites and the
   /// highest-scoring Top contacts. Best-effort: on error a list simply stays as
@@ -497,9 +565,7 @@ class DialerScreenState extends State<DialerScreen>
             _numberDisplay(colors),
             // Fills the flexible region between number display and dialpad so
             // the dialpad remains in a fixed position at the bottom without jumping.
-            Expanded(
-              child: _strip(colors),
-            ),
+            Expanded(child: _strip(colors)),
             _dialpad(colors),
             const SizedBox(height: 4),
             _callRow(colors),
@@ -595,7 +661,9 @@ class DialerScreenState extends State<DialerScreen>
                         letterSpacing: 1,
                       ),
                       inputFormatters: [
-                        FilteringTextInputFormatter.allow(RegExp(r'[0-9+*#,;]')),
+                        FilteringTextInputFormatter.allow(
+                          RegExp(r'[0-9+*#,;]'),
+                        ),
                       ],
                       decoration: InputDecoration(
                         border: InputBorder.none,
@@ -637,9 +705,7 @@ class DialerScreenState extends State<DialerScreen>
                         ? Icons.check_circle_outline
                         : Icons.info_outline,
                     size: 13,
-                    color: validation.isValid
-                        ? Colors.green
-                        : colors.mutedText,
+                    color: validation.isValid ? Colors.green : colors.mutedText,
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -745,14 +811,11 @@ class DialerScreenState extends State<DialerScreen>
           for (final m in _favorites) _matchRow(m, colors, favorite: true),
         ],
         if (_topContacts.isNotEmpty) ...[
-          _header(
-            switch (_topSource) {
-              DialerTopSource.relations => 'Family & friends',
-              DialerTopSource.likelyToAnswer => 'Likely to answer now',
-              DialerTopSource.recent => 'Top contacts',
-            },
-            colors,
-          ),
+          _header(switch (_topSource) {
+            DialerTopSource.relations => 'Family & friends',
+            DialerTopSource.likelyToAnswer => 'Likely to answer now',
+            DialerTopSource.recent => 'Top contacts',
+          }, colors),
           for (final m in _topContacts) _matchRow(m, colors, favorite: true),
         ],
       ],
@@ -959,11 +1022,22 @@ class DialerScreenState extends State<DialerScreen>
     final settings = context.watch<AppSettings>();
     final keys = _buildKeys(settings);
     final accent = Theme.of(context).colorScheme.primary;
+
+    // A key's height is its width divided by this ratio, so a fixed ratio
+    // means the digit grows with the system font size inside a box that does
+    // not — and overflows. Dividing by the text scale lets the key grow with
+    // the digit instead of clipping it. At normal font sizes the divisor is
+    // 1.0 and the keypad is unchanged; the clamp stops an extreme setting
+    // from turning the keypad into the whole screen.
+    final textScale = MediaQuery.textScalerOf(
+      context,
+    ).scale(1.0).clamp(1.0, _kMaxKeyScale);
+
     final grid = GridView.count(
       crossAxisCount: 3,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.85,
+      childAspectRatio: 1.85 / textScale,
       mainAxisSpacing: 8,
       crossAxisSpacing: 12,
       children: keys.map((k) => _key(k, colors)).toList(),
@@ -1002,6 +1076,13 @@ class DialerScreenState extends State<DialerScreen>
   Widget _key(_DialKey k, AppColors colors) {
     final accent = Theme.of(context).colorScheme.primary;
     final isZero = k.digit == '0';
+    // Keys 1-9 can hold a speed dial. Key 0 keeps its long-press '+', and
+    // '*'/'#' are not slots at all.
+    final speedDialSlot = int.tryParse(k.digit);
+    final canSpeedDial =
+        speedDialSlot != null && SpeedDialEntry.isValidSlot(speedDialSlot);
+    final hasSpeedDial =
+        canSpeedDial && _speedDialEntries.containsKey(speedDialSlot);
     const radius = 20.0;
     final dark = colors.isDark;
 
@@ -1080,55 +1161,114 @@ class DialerScreenState extends State<DialerScreen>
                   highlightColor: accent.withValues(alpha: 0.12),
                   splashColor: accent.withValues(alpha: 0.14),
                   onTap: () => _press(k.digit),
-                  onLongPress: isZero ? () => _press('+') : null,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  onLongPress: isZero
+                      ? () => _press('+')
+                      : canSpeedDial
+                      ? () => _onSpeedDialKeyLongPress(speedDialSlot)
+                      : null,
+                  // A small accent dot marks a key that holds a speed dial, so
+                  // an assignment is discoverable without opening Settings.
+                  // Drawn as an overlay rather than a row so it costs the key no
+                  // vertical space — the digit and its letters must still fit at
+                  // large system font sizes.
+                  child: Stack(
+                    fit: StackFit.expand,
                     children: [
-                      Text(
-                        k.digit,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.w600,
-                          height: 1.1,
+                      if (hasSpeedDial)
+                        Positioned(
+                          top: 5,
+                          left: 0,
+                          right: 0,
+                          child: Center(
+                            child: Container(
+                              width: 5,
+                              height: 5,
+                              decoration: BoxDecoration(
+                                color: accent,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                      if (k.letters.isNotEmpty || k.mlLetters.isNotEmpty) ...[
-                        const SizedBox(height: 1),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (k.letters.isNotEmpty)
-                              Text(
-                                k.letters,
-                                style: TextStyle(
-                                  fontSize: 8.5,
-                                  letterSpacing: 0.8,
-                                  fontWeight: FontWeight.w700,
-                                  color: colors.mutedText,
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // The key grows with the font setting only up to
+                          // [_kMaxKeyScale]. Past that the key is as tall as
+                          // it gets, so the digit has to stop there too.
+                          MediaQuery.withClampedTextScaling(
+                            maxScaleFactor: _kMaxKeyScale,
+                            child: Text(
+                              k.digit,
+                              style: const TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w600,
+                                height: 1.1,
+                              ),
+                            ),
+                          ),
+                          if (k.letters.isNotEmpty ||
+                              k.mlLetters.isNotEmpty) ...[
+                            const SizedBox(height: 1),
+                            // The legend must never be wider than its key.
+                            // scaleDown only ever shrinks, so at normal sizes
+                            // this is a no-op; when the row would not fit — a
+                            // narrow screen, a large system font size, or the
+                            // wider English + Malayalam legend — it is scaled
+                            // down instead of overflowing. The clamp stops the
+                            // legend scaling so far up that it has to shrink
+                            // back to something unreadable; the digit above
+                            // keeps scaling as before, since that is the
+                            // label that matters.
+                            SizedBox(
+                              width: double.infinity,
+                              child: MediaQuery.withClampedTextScaling(
+                                maxScaleFactor: 1.2,
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (k.letters.isNotEmpty)
+                                        Text(
+                                          k.letters,
+                                          style: TextStyle(
+                                            fontSize: 8.5,
+                                            letterSpacing: 0.8,
+                                            fontWeight: FontWeight.w700,
+                                            color: colors.mutedText,
+                                          ),
+                                        ),
+                                      if (k.letters.isNotEmpty &&
+                                          k.mlLetters.isNotEmpty)
+                                        Text(
+                                          ' · ',
+                                          style: TextStyle(
+                                            fontSize: 8.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: colors.mutedText.withValues(
+                                              alpha: 0.6,
+                                            ),
+                                          ),
+                                        ),
+                                      if (k.mlLetters.isNotEmpty)
+                                        Text(
+                                          k.mlLetters,
+                                          style: TextStyle(
+                                            fontSize: 8.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: colors.mutedText,
+                                          ),
+                                        ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            if (k.letters.isNotEmpty && k.mlLetters.isNotEmpty)
-                              Text(
-                                ' · ',
-                                style: TextStyle(
-                                  fontSize: 8.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: colors.mutedText.withValues(alpha: 0.6),
-                                ),
-                              ),
-                            if (k.mlLetters.isNotEmpty)
-                              Text(
-                                k.mlLetters,
-                                style: TextStyle(
-                                  fontSize: 8.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: colors.mutedText,
-                                ),
-                              ),
+                            ),
                           ],
-                        ),
-                      ],
+                        ],
+                      ),
                     ],
                   ),
                 ),

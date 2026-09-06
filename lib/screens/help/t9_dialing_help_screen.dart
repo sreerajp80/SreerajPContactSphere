@@ -27,18 +27,10 @@ class T9DialingHelpScreen extends StatelessWidget {
             icon: Icons.sort_by_alpha,
             title: 'Malayalam Vowels Mapping (അ to അഃ)',
             children: [
-              _Bullet(
-                'Key 2 (ക-ങ): Vowels അ, ആ + Matras ാ, ി, ീ',
-              ),
-              _Bullet(
-                'Key 3 (ച-ഞ): Vowels ഉ, ഊ, ഋ + Matras ു, ൂ, ൃ',
-              ),
-              _Bullet(
-                'Key 4 (ട-ണ): Vowels എ, ഏ, ഐ + Matras െ, േ, ൈ',
-              ),
-              _Bullet(
-                'Key 5 (ത-ന): Vowels ഒ, ഓ, ഔ + Matras ൊ, ോ, ൌ, ൗ',
-              ),
+              _Bullet('Key 2 (ക-ങ): Vowels അ, ആ + Matras ാ, ി, ീ'),
+              _Bullet('Key 3 (ച-ഞ): Vowels ഉ, ഊ, ഋ + Matras ു, ൂ, ൃ'),
+              _Bullet('Key 4 (ട-ണ): Vowels എ, ഏ, ഐ + Matras െ, േ, ൈ'),
+              _Bullet('Key 5 (ത-ന): Vowels ഒ, ഓ, ഔ + Matras ൊ, ോ, ൌ, ൗ'),
               _Bullet(
                 'Key 9 (ള-റ): Anusvaram & Visargam (ം, ഃ) + Chillu letters (ൺ, ൻ, ർ, ൽ, ൾ, ൿ)',
               ),
@@ -71,16 +63,18 @@ class T9DialingHelpScreen extends StatelessWidget {
                 '"Anil" and "അനിൽ".',
               ),
               _Bullet(
-                'You can toggle or change the active dialpad script legend under '
-                'Settings → Dialpad Script.',
+                'To change the script shown on the keys, use the "Dialpad '
+                'script" card on the main Settings page.',
               ),
             ],
           ),
 
           SizedBox(height: 8),
           _Footer(
-            'Tip: In Settings → Dialpad Script, choose Auto, Malayalam, '
-            'Devanagari, Cyrillic, Arabic, Greek, or None based on your preferred language.',
+            'Tip: the "Dialpad script" card offers Auto, Malayalam, '
+            'Devanagari, Cyrillic, Arabic, Greek, or None. Auto follows the '
+            'app language. Whichever you pick, search still matches every '
+            'script — the setting only changes what is printed on the keys.',
           ),
         ],
       ),

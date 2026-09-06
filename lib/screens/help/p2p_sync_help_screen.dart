@@ -39,8 +39,13 @@ class P2PSyncHelpScreen extends StatelessWidget {
                 'both phones.',
               ),
               _Bullet(
-                'On the phone that is sending, open "Send to Another Device". '
-                'On the phone that is receiving, open "Receive from Another '
+                'On both phones open Settings → Sync to Another Device. It '
+                'asks for your fingerprint, face, or PIN first, because a sync '
+                'can include secret contacts.',
+              ),
+              _Bullet(
+                'On the phone that is sending, tap "Send to Another Device". '
+                'On the phone that is receiving, tap "Receive from Another '
                 'Device".',
               ),
             ],

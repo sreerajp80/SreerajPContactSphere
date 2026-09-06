@@ -105,15 +105,31 @@ class FlaggedNumberRepository {
       if (activeNum == null || activeNum.isEmpty) return;
       final activeDigits = activeNum.replaceAll(RegExp(r'\D'), '');
       final keyDigits = key.replaceAll(RegExp(r'\D'), '');
-      if (keyDigits.isNotEmpty &&
-          (keyDigits == activeDigits ||
-              (keyDigits.length >= 7 && activeDigits.endsWith(keyDigits)) ||
-              (activeDigits.length >= 7 && keyDigits.endsWith(activeDigits)))) {
+      if (_sameNumber(keyDigits, activeDigits)) {
         await _telecom.disconnect();
       }
     } catch (_) {
       // Best-effort: native mirror also disconnects matching live calls.
     }
+  }
+
+  /// Minimum overlap for a suffix match (below this: exact only).
+  ///
+  /// Mirrors `ContactSphereCallScreeningService.MIN_SUFFIX_DIGITS` on the native
+  /// side — the two must agree, or a number blocked here and a number blocked
+  /// there would not be the same set. Keep it at 9: real mobile numbers can
+  /// share their last 7 digits, so a shorter overlap hangs up the wrong call.
+  static const int _kMinSuffixDigits = 9;
+
+  /// Exact digit equality, or a >= [_kMinSuffixDigits]-digit suffix match — so
+  /// country-code variants ("+91..." vs national) of one number still agree,
+  /// while short codes only ever match exactly. Mirrors the native `sameNumber`.
+  static bool _sameNumber(String a, String b) {
+    if (a.isEmpty || b.isEmpty) return false;
+    if (a == b) return true;
+    final shorter = a.length < b.length ? a : b;
+    final longer = a.length < b.length ? b : a;
+    return shorter.length >= _kMinSuffixDigits && longer.endsWith(shorter);
   }
 
   /// Removes one flagged entry by row id.

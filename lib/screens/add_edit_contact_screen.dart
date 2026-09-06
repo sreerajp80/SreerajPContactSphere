@@ -20,12 +20,14 @@ import 'package:smart_contacts_dialer/models/email.dart';
 import 'package:smart_contacts_dialer/models/official_details.dart';
 import 'package:smart_contacts_dialer/models/phone_number.dart';
 import 'package:smart_contacts_dialer/models/relationship.dart';
+import 'package:smart_contacts_dialer/models/sim_account.dart';
 import 'package:smart_contacts_dialer/models/social_link.dart';
 import 'package:smart_contacts_dialer/repositories/group_repository.dart';
 import 'package:smart_contacts_dialer/repositories/relationship_repository.dart';
 import 'package:smart_contacts_dialer/services/contact_sync_service.dart';
 import 'package:smart_contacts_dialer/services/ephemeral_contact_service.dart';
 import 'package:smart_contacts_dialer/services/permission_service.dart';
+import 'package:smart_contacts_dialer/services/sim_service.dart';
 import 'package:smart_contacts_dialer/services/telecom_service.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
@@ -254,6 +256,16 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   String? _ringtonePath;
   String? _ringtoneLabel;
 
+  /// The SIM this contact should be called on (Telecom `phoneAccountId`), or
+  /// null for "use the default SIM". The section is only built when the phone
+  /// reports two or more SIMs — on a single-SIM phone the choice is meaningless.
+  String? _preferredSimId;
+  String? _preferredSimLabel;
+
+  /// SIMs found on the phone, loaded once in [initState]. Empty until it
+  /// returns, and empty for good off Android or without the phone permission.
+  List<SimAccount> _sims = const [];
+
   // In-app preview of the picked ringtone (native player, not the OS ringer).
   final TelecomService _telecom = TelecomService();
   bool _previewPlaying = false;
@@ -401,6 +413,8 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
     _cardPhotoPath = c?.cardPhotoPath;
     _ringtonePath = c?.ringtonePath;
     _ringtoneLabel = c?.ringtoneLabel;
+    _preferredSimId = c?.preferredSimId;
+    _preferredSimLabel = c?.preferredSimLabel;
     _isSecret = c?.isSecret ?? false;
     _isSelf = c?.isSelf ?? widget.initialIsSelf;
     _isEphemeral = c?.isEphemeral ?? false;
@@ -422,6 +436,21 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
     _loadGroups();
     _loadHomeCountry();
     _loadTags();
+    _loadSims();
+  }
+
+  /// Loads the phone's SIMs so the "Preferred SIM" section can be shown. Stays
+  /// empty (and the section stays hidden) on a single-SIM phone, off Android, or
+  /// without the phone permission.
+  Future<void> _loadSims() async {
+    List<SimAccount> sims;
+    try {
+      sims = await SimService().list();
+    } catch (_) {
+      sims = const [];
+    }
+    if (!mounted) return;
+    setState(() => _sims = sims);
   }
 
   void _onTagInputChanged() {
@@ -1010,6 +1039,8 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
         ..cardPhotoPath = _isSelf ? null : _cardPhotoPath
         ..ringtonePath = _ringtonePath
         ..ringtoneLabel = _ringtoneLabel
+        ..preferredSimId = _preferredSimId
+        ..preferredSimLabel = _preferredSimLabel
         ..isSecret = _isSecret
         ..isSelf = _isSelf
         ..isEphemeral = _isEphemeral
@@ -1152,6 +1183,12 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
                     const SizedBox(height: 22),
                     _ringtoneSection(),
                     const SizedBox(height: 22),
+                    // Only meaningful with 2+ SIMs, and never for your own
+                    // record (you don't call yourself).
+                    if (_sims.length > 1 && !_isSelf) ...[
+                      _preferredSimSection(),
+                      const SizedBox(height: 22),
+                    ],
                     // The calling card (the in-call full-screen backdrop) is
                     // irrelevant for your own record.
                     if (!_isSelf) ...[
@@ -1436,6 +1473,89 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
         ),
       ],
     ]);
+  }
+
+  /// Picks which SIM this contact's calls go out on. "Default SIM" (null) means
+  /// no preference — the global default in Settings is used, exactly as before.
+  ///
+  /// Only built when the phone has 2+ SIMs (see the build list). The label is
+  /// stored alongside the id so the contact screen can name the SIM even before
+  /// the SIM list has loaded.
+  Widget _preferredSimSection() {
+    return _section('Preferred SIM', [
+      Text(
+        'Which SIM to call this person on. Leave it on Default to use your '
+        'usual SIM.',
+        style: TextStyle(color: _t.sub, fontSize: 12.5),
+      ),
+      const SizedBox(height: 10),
+      _preferredSimOption(
+        title: 'Default SIM',
+        subtitle: 'Use the SIM set in Settings',
+        selected: _preferredSimId == null,
+        onTap: () => setState(() {
+          _preferredSimId = null;
+          _preferredSimLabel = null;
+        }),
+      ),
+      for (final sim in _sims) ...[
+        const SizedBox(height: 8),
+        _preferredSimOption(
+          title: sim.displayLabel,
+          subtitle: sim.slotIndex != null
+              ? 'SIM ${sim.slotIndex! + 1}'
+              : 'On this phone',
+          selected: _preferredSimId == sim.phoneAccountId,
+          onTap: () => setState(() {
+            _preferredSimId = sim.phoneAccountId;
+            _preferredSimLabel = sim.displayLabel;
+          }),
+        ),
+      ],
+    ]);
+  }
+
+  Widget _preferredSimOption({
+    required String title,
+    required String subtitle,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return _shell(
+      accentBorder: selected,
+      onTap: onTap,
+      child: Row(
+        children: [
+          Icon(
+            selected ? Icons.radio_button_checked : Icons.radio_button_off,
+            size: 20,
+            color: selected ? _t.accent : _t.sub,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _t.text,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: _t.sub, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _ringtoneSection() {

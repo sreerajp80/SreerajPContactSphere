@@ -24,13 +24,16 @@ class DuplicateMergeHelpScreen extends StatelessWidget {
             title: 'How Duplicates are Detected',
             children: [
               _Bullet(
-                'Identical Phone Numbers: Contacts sharing the exact same phone number or formatted mobile number.',
+                'Same phone number: two contacts share the same digits, or the same number once it is put into full international form.',
               ),
               _Bullet(
-                'Matching Names: Contacts with identical or near-identical first and last names across different accounts.',
+                'Same name: two contacts have the same full name, or the same name once it is transliterated — so "Anil" and "അനിൽ" are seen as one person.',
               ),
               _Bullet(
-                'Matching Email Addresses: Contacts sharing the same personal or work email address.',
+                'Matching spreads across a set: if A matches B and B matches C, all three are shown together as one set.',
+              ),
+              _Bullet(
+                'Email addresses are deliberately not used, and neither are sound-alike name codes. Both produced wrong merges between unrelated people.',
               ),
             ],
           ),
@@ -40,16 +43,19 @@ class DuplicateMergeHelpScreen extends StatelessWidget {
             title: 'Smart Merging Process',
             children: [
               _Bullet(
-                'Open Contacts → Tap the options menu → Select "Find Duplicates".',
+                'Open the Contacts tab, tap the three-dot menu, and choose "Find Duplicates".',
               ),
               _Bullet(
-                'ContactSphere groups matching records into clear comparison cards so you can see what data will be combined.',
+                'Each set is shown as one card. The contact that will be kept is at the top; the others are ticked to be merged into it.',
               ),
               _Bullet(
-                'Safe Combination: All distinct phone numbers, emails, addresses, birthdays, and notes from both contacts are preserved and unified into one master contact.',
+                'Untick anyone who does not belong in the set, or tap a different row to keep that one instead.',
               ),
               _Bullet(
-                'You can review every merge individually or tap "Merge All" to clean up your entire address book in one step.',
+                'All the different phone numbers, emails, addresses, birthdays and notes from the set are carried over into the contact you keep. Nothing is thrown away.',
+              ),
+              _Bullet(
+                'Merge one set with its own Merge button, or use "Merge all sets" at the bottom to do the whole list at once.',
               ),
             ],
           ),
@@ -59,17 +65,17 @@ class DuplicateMergeHelpScreen extends StatelessWidget {
             title: 'Safety & Reversibility',
             children: [
               _Bullet(
-                'Before running bulk merges, you can create a quick backup file under Settings → Backup.',
+                'Before merging everything at once, make a backup under Settings → Backup & Restore. A merge cannot be undone from the duplicates screen.',
               ),
               _Bullet(
-                'If two contacts were merged by mistake, you can easily re-edit the contact profile to separate or adjust numbers.',
+                'If a merge was wrong, open the kept contact and edit it — the extra numbers and details are all still there, so you can move them back out into a new contact.',
               ),
             ],
           ),
 
           SizedBox(height: 8),
           _Footer(
-            'Tip: Run "Find Duplicates" after syncing with your phonebook or importing contacts from another device to keep everything organized.',
+            'Tip: run "Find Duplicates" after a phonebook sync or a file import — that is when duplicates usually appear.',
           ),
         ],
       ),

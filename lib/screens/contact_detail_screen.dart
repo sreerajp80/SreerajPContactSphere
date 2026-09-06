@@ -599,6 +599,15 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
                           _toggleRingtonePreview(contact.ringtonePath!),
                     ),
                   ),
+                // Only shown when the contact has its own SIM preference —
+                // "no preference" is the norm and needs no row.
+                if (contact.preferredSimId != null &&
+                    contact.preferredSimId!.isNotEmpty)
+                  ListTile(
+                    leading: const Icon(Icons.sim_card_outlined),
+                    title: Text(contact.preferredSimLabel ?? 'Chosen SIM'),
+                    subtitle: const Text('Calls go out on this SIM'),
+                  ),
                 if (contact.officialDetails != null)
                   ListTile(
                     leading: const Icon(Icons.work),

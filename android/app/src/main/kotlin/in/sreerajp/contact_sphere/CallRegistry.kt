@@ -530,11 +530,27 @@ object CallRegistry {
     }
 
     /**
-     * Checks all top-level live calls; any call whose number is in [blockedList]
-     * or is unknown while [blockUnknown] is true is disconnected/rejected immediately.
+     * Checks all top-level live **incoming** calls; any call whose number is in
+     * [blockedList] or is unknown while [blockUnknown] is true is disconnected/rejected
+     * immediately.
+     *
+     * Only incoming calls are considered. The blocklist and the "block unknown callers"
+     * setting describe *callers*, never numbers the user dials, and this runs on every
+     * screening-mirror push — app load, a settings change, a quiet-hours sync — not just
+     * on a deliberate "block this number" tap. Without the direction guard an outgoing
+     * call still in [Call.STATE_CONNECTING] (no handle yet, so no digits) would be read
+     * as an unknown caller and hung up under the user. A deliberate block of the number
+     * on a running outgoing call is handled on the Dart side, in
+     * `FlaggedNumberRepository.add`.
      */
     fun disconnectBlockedCalls(blockedList: List<String>, blockUnknown: Boolean) {
         for (call in topLevel()) {
+            if (!isIncoming(call)) continue
+            val state = stateOf(call)
+            // Already on its way out; disconnecting again would be a no-op at best.
+            if (state == Call.STATE_DISCONNECTING || state == Call.STATE_DISCONNECTED) {
+                continue
+            }
             val number = call.details?.handle?.schemeSpecificPart
             val digits = number?.filter { it.isDigit() } ?: ""
             val shouldDisconnect = if (digits.isEmpty()) {
@@ -543,7 +559,7 @@ object CallRegistry {
                 ContactSphereCallScreeningService.matchesList(digits, blockedList)
             }
             if (shouldDisconnect) {
-                if (stateOf(call) == Call.STATE_RINGING) {
+                if (state == Call.STATE_RINGING) {
                     call.reject(false, null)
                 } else {
                     call.disconnect()

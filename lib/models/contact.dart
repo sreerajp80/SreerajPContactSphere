@@ -59,6 +59,20 @@ class Contact {
   /// Count of calls logged for this ephemeral contact.
   int ephemeralCallCount;
 
+  /// The Telecom `phoneAccountId` of the SIM this contact should be called on,
+  /// or null for "no preference — use the global default SIM".
+  ///
+  /// App-only, like [cardPhotoPath]: the device address book has no field for
+  /// it, so it is never pushed to or read from the system contacts provider,
+  /// and it is not part of vCard/CSV export. An id that no longer matches a SIM
+  /// in the phone is ignored at call time and the global default is used.
+  String? preferredSimId;
+
+  /// The SIM's label when the preference was set. Display only — [preferredSimId]
+  /// is what actually routes the call. Kept so a contact can still be described
+  /// before the SIM list has loaded.
+  String? preferredSimLabel;
+
   /// Links this app contact to a contact in the device address book. Null means
   /// app-only (never written to the device). Set when a contact is imported from
   /// or pushed to the device; cleared when a contact is made secret (secret
@@ -113,6 +127,8 @@ class Contact {
     this.ephemeralExpiresAt,
     this.ephemeralAutoDeleteCall = false,
     this.ephemeralCallCount = 0,
+    this.preferredSimId,
+    this.preferredSimLabel,
     this.deviceId,
     this.createdAt,
     this.updatedAt,
@@ -148,6 +164,8 @@ class Contact {
       'ephemeral_expires_at': ephemeralExpiresAt?.toIso8601String(),
       'ephemeral_auto_delete_call': ephemeralAutoDeleteCall ? 1 : 0,
       'ephemeral_call_count': ephemeralCallCount,
+      'preferred_sim_id': preferredSimId,
+      'preferred_sim_label': preferredSimLabel,
       'device_id': deviceId,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
@@ -190,6 +208,8 @@ class Contact {
           : null,
       ephemeralAutoDeleteCall: map['ephemeral_auto_delete_call'] == 1,
       ephemeralCallCount: map['ephemeral_call_count'] ?? 0,
+      preferredSimId: map['preferred_sim_id'] as String?,
+      preferredSimLabel: map['preferred_sim_label'] as String?,
       deviceId: map['device_id'],
       createdAt: map['created_at'] != null
           ? DateTime.parse(map['created_at'])

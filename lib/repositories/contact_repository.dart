@@ -419,6 +419,42 @@ class ContactRepository {
     );
   }
 
+  /// The Telecom `phoneAccountId` of the SIM this contact prefers, or null when
+  /// it has no preference (or the contact no longer exists).
+  ///
+  /// A single-column read rather than a full hydrate, because it runs on the
+  /// call path every time a call is placed from a screen that knows the contact.
+  Future<String?> preferredSimId(int contactId) async {
+    final db = await _dbHelper.database;
+    final rows = await db.query(
+      'contacts',
+      columns: ['preferred_sim_id'],
+      where: 'id = ?',
+      whereArgs: [contactId],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    final id = rows.first['preferred_sim_id'] as String?;
+    return (id == null || id.isEmpty) ? null : id;
+  }
+
+  /// Sets (or clears, with a null [phoneAccountId]) this contact's preferred
+  /// SIM without touching the rest of the record — used by the contact editor's
+  /// SIM section.
+  Future<void> setPreferredSim(
+    int contactId,
+    String? phoneAccountId,
+    String? label,
+  ) async {
+    final db = await _dbHelper.database;
+    await db.update(
+      'contacts',
+      {'preferred_sim_id': phoneAccountId, 'preferred_sim_label': label},
+      where: 'id = ?',
+      whereArgs: [contactId],
+    );
+  }
+
   /// Romanized search key of the contact's full name (see [searchKey]) —
   /// stored in `contacts.name_translit` so an English-script query can match
   /// a Malayalam-script name. Kept current on every insert/update.
@@ -569,6 +605,13 @@ class ContactRepository {
 
       // "Self" is a singleton — clear the flag on any previous Self record.
       if (contact.isSelf) await _clearOtherSelf(txn, id);
+
+      // A secret contact must not hold a speed-dial key: the key would show its
+      // name on the keypad and dial it with no unlock. Freeing the slot here
+      // covers a contact that was assigned first and made secret afterwards.
+      if (contact.isSecret) {
+        await txn.delete('speed_dial', where: 'contact_id = ?', whereArgs: [id]);
+      }
 
       // Replace children wholesale (simpler and correct for an edit form).
       for (final table in const [

@@ -191,8 +191,13 @@ class SyncBundleService {
   /// DB version, so an older backup file passes the schema-version gate while
   /// carrying no card at all. Wiping unconditionally would erase the card that
   /// is on the phone; skipping the wipe leaves it exactly as an older restore
-  /// left it.
-  static const List<String> _optionalManagedTables = _emergencyTables;
+  /// left it. `speed_dial` joined later still and is in the list for the same
+  /// reason — restoring a backup made before speed dial existed must leave the
+  /// keys already set on this phone alone.
+  static const List<String> _optionalManagedTables = [
+    ..._emergencyTables,
+    'speed_dial',
+  ];
 
   /// [_allManagedTables] plus whichever [_optionalManagedTables] the incoming
   /// bundle carries, in PARENT → CHILD order.
@@ -245,6 +250,11 @@ class SyncBundleService {
 
     final includedTables = <String>{
       for (final c in included) ..._categoryTables[c]!,
+      // Speed-dial keys belong to no shareable category — which key calls whom
+      // is personal to one phone, so a picked-category share never carries it.
+      // A full run (what a backup takes) does, so restoring your own backup
+      // brings the keys back.
+      if (mode == SyncMode.full) 'speed_dial',
     };
 
     final db = await DatabaseHelper().database;

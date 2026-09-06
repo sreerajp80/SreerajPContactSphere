@@ -9,22 +9,39 @@ import 'package:smart_contacts_dialer/theme/app_theme.dart';
 ///
 /// Shown by [CallLifecycleMixin] when "ask which SIM before each call" is on and
 /// the device has more than one SIM.
+///
+/// [preselectedId] highlights the SIM the call would have used anyway — the
+/// contact's own preferred SIM, else the global default. The sheet still waits
+/// for a tap; the highlight only says which one is expected, and
+/// [preselectedNote] is the one-line reason shown under it.
 Future<SimAccount?> showSimPickerSheet(
   BuildContext context, {
   required List<SimAccount> sims,
+  String? preselectedId,
+  String? preselectedNote,
 }) {
   return showModalBottomSheet<SimAccount>(
     context: context,
     showDragHandle: true,
     isScrollControlled: true,
-    builder: (ctx) => _SimPickerSheet(sims: sims),
+    builder: (ctx) => _SimPickerSheet(
+      sims: sims,
+      preselectedId: preselectedId,
+      preselectedNote: preselectedNote,
+    ),
   );
 }
 
 class _SimPickerSheet extends StatelessWidget {
-  const _SimPickerSheet({required this.sims});
+  const _SimPickerSheet({
+    required this.sims,
+    this.preselectedId,
+    this.preselectedNote,
+  });
 
   final List<SimAccount> sims;
+  final String? preselectedId;
+  final String? preselectedNote;
 
   @override
   Widget build(BuildContext context) {
@@ -63,19 +80,29 @@ class _SimPickerSheet extends StatelessWidget {
     Color accent,
     AppColors colors,
   ) {
+    final preselected =
+        preselectedId != null && sim.phoneAccountId == preselectedId;
     final slot = sim.slotIndex != null ? 'SIM ${sim.slotIndex! + 1}' : 'SIM';
-    final subtitle = <String>[
+    final parts = <String>[
       slot,
       if (sim.carrierName != null && sim.carrierName!.trim().isNotEmpty)
         sim.carrierName!.trim(),
-    ].where((s) => s != sim.displayLabel).join(' · ');
+    ].where((s) => s != sim.displayLabel).toList();
+    if (preselected && (preselectedNote?.trim().isNotEmpty ?? false)) {
+      parts.add(preselectedNote!.trim());
+    }
+    final subtitle = parts.join(' · ');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: colors.cardSurface,
+        color: preselected
+            ? Color.alphaBlend(accent.withValues(alpha: 0.10), colors.cardSurface)
+            : colors.cardSurface,
         borderRadius: BorderRadius.circular(16),
-        border: colors.isDark
+        border: preselected
+            ? Border.all(color: accent.withValues(alpha: 0.55), width: 1.4)
+            : colors.isDark
             ? Border.all(color: Colors.white.withValues(alpha: 0.06))
             : null,
       ),
@@ -105,7 +132,9 @@ class _SimPickerSheet extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: colors.mutedText, fontSize: 12.5),
               ),
-        trailing: Icon(Icons.chevron_right, color: colors.mutedText),
+        trailing: preselected
+            ? Icon(Icons.check_circle, color: accent)
+            : Icon(Icons.chevron_right, color: colors.mutedText),
       ),
     );
   }

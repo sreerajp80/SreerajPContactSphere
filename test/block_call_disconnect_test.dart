@@ -100,6 +100,49 @@ void main() {
       expect(disconnectCalled, isFalse);
     });
 
+    test('disconnects when the running call is the same number without '
+        'its country code', () async {
+      final repo = FlaggedNumberRepository();
+      // Stored as +919876543210; the live call reports the national form. A
+      // 10-digit overlap is a real match and must still hang up.
+      activeCallResult = {
+        'state': 'active',
+        'hasCall': true,
+        'number': '9876543210',
+      };
+
+      final added = await repo.add(
+        '9876543210',
+        kind: FlaggedNumberRepository.kindBlocked,
+        defaultIso: 'IN',
+      );
+
+      expect(added, isTrue);
+      expect(disconnectCalled, isTrue);
+    });
+
+    test('does not disconnect a different number that shares only the last '
+        'seven digits', () async {
+      final repo = FlaggedNumberRepository();
+      // +919876543210 ends with "6543210", so a 7-digit overlap alone used to
+      // count as a match and hung up an unrelated call. Matching now needs at
+      // least 9 digits, the same threshold the native screening service uses.
+      activeCallResult = {
+        'state': 'active',
+        'hasCall': true,
+        'number': '6543210',
+      };
+
+      final added = await repo.add(
+        '9876543210',
+        kind: FlaggedNumberRepository.kindBlocked,
+        defaultIso: 'IN',
+      );
+
+      expect(added, isTrue);
+      expect(disconnectCalled, isFalse);
+    });
+
     test('does not disconnect if kind is spam rather than blocked', () async {
       final repo = FlaggedNumberRepository();
       activeCallResult = {

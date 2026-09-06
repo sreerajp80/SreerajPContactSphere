@@ -64,7 +64,7 @@ class DatabaseHelper {
     if (!_encryptionEnabled) {
       return await openDatabase(
         path,
-        version: 29,
+        version: 30,
         onConfigure: _onConfigure,
         onCreate: _onCreate,
         onUpgrade: _onUpgrade,
@@ -76,7 +76,7 @@ class DatabaseHelper {
     return await cipher.openDatabase(
       path,
       password: key,
-      version: 29,
+      version: 30,
       onConfigure: _onConfigure,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
@@ -109,6 +109,8 @@ class DatabaseHelper {
     await _ensureCallOutcomeColumn(db);
     await _ensureOnlineSyncColumns(db);
     await _ensureRelationshipCategoryColumn(db);
+    await ensureSpeedDialTable(db);
+    await ensurePreferredSimColumns(db);
     if (await staleContactSearchKeyCount(db) > 0) {
       await rebuildContactSearchKeys(db);
     }
@@ -145,6 +147,8 @@ class DatabaseHelper {
         ephemeral_expires_at TEXT,
         ephemeral_auto_delete_call INTEGER DEFAULT 0,
         ephemeral_call_count INTEGER DEFAULT 0,
+        preferred_sim_id TEXT,
+        preferred_sim_label TEXT,
         device_id TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
@@ -291,6 +295,7 @@ class DatabaseHelper {
     await _createFlaggedNumbers(db);
     await _ensureAuditTable(db);
     await _ensureConfirmedMergePhonesTable(db);
+    await ensureSpeedDialTable(db);
     await _createIndexes(db);
   }
 
@@ -654,6 +659,62 @@ class DatabaseHelper {
     // version-bumped during development before this migration existed.
     if (oldVersion < 29) {
       await _ensureRelationshipCategoryColumn(db);
+    }
+    // v29 -> v30: speed dial (keypad keys 1-9 -> a saved number) and the
+    // per-contact preferred SIM. Both are existence-checked helpers, so they
+    // also run from [_onOpen] and self-heal a DB whose version ran ahead of
+    // this migration during development.
+    if (oldVersion < 30) {
+      await ensureSpeedDialTable(db);
+      await ensurePreferredSimColumns(db);
+    }
+  }
+
+  /// Speed-dial assignments: keypad key [1..9] -> a phone number, optionally
+  /// linked to the contact it came from.
+  ///
+  /// `slot` is the primary key, so assigning a key that is already taken simply
+  /// replaces it (one number per key). `ON DELETE CASCADE` frees a key when its
+  /// contact is deleted, so no slot can point at a contact that is gone.
+  ///
+  /// The number lives in the encrypted DB rather than SharedPreferences because
+  /// it is personal data (see the project's security rules).
+  Future<void> ensureSpeedDialTable(DatabaseExecutor db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS speed_dial (
+        slot INTEGER PRIMARY KEY,
+        contact_id INTEGER,
+        phone_number TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (contact_id) REFERENCES contacts (id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_speed_dial_contact_id '
+      'ON speed_dial(contact_id)',
+    );
+  }
+
+  /// Self-healing helper for the per-contact preferred SIM columns.
+  ///
+  /// `preferred_sim_id` is the SIM's Telecom `phoneAccountId` — the same key
+  /// [SimAccount.phoneAccountId] carries — and null means "no preference, use
+  /// the global default". `preferred_sim_label` is only kept so a contact can
+  /// still be described before the SIM list has loaded; the id is what routes
+  /// the call, and an id that no longer matches a SIM in the phone is ignored.
+  Future<void> ensurePreferredSimColumns(DatabaseExecutor db) async {
+    final info = await db.rawQuery('PRAGMA table_info(contacts)');
+    if (info.isEmpty) return; // table not created yet
+    final columns = info.map((c) => c['name'] as String).toSet();
+    if (!columns.contains('preferred_sim_id')) {
+      await db.execute(
+        'ALTER TABLE contacts ADD COLUMN preferred_sim_id TEXT',
+      );
+    }
+    if (!columns.contains('preferred_sim_label')) {
+      await db.execute(
+        'ALTER TABLE contacts ADD COLUMN preferred_sim_label TEXT',
+      );
     }
   }
 
