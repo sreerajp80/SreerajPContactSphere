@@ -104,8 +104,13 @@ class InteractionRepository {
               key) {
             continue;
           }
-          if (_isOutgoing(row['call_type'] as String?) !=
-              _isOutgoing(callType)) {
+          final rowType = row['call_type'] as String?;
+          final isProvisional = row['duration'] == null;
+          if (isProvisional) {
+            if (_isOutgoing(rowType) != _isOutgoing(callType)) {
+              continue;
+            }
+          } else if (rowType != null && rowType != callType) {
             continue;
           }
           final ts = DateTime.tryParse((row['timestamp'] as String?) ?? '');

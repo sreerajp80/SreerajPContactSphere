@@ -574,30 +574,52 @@ class _InCallScreenState extends State<InCallScreen>
     );
   }
 
-  /// A compact chip for the backgrounded (held) call, e.g. "9876543210 — on hold".
+  /// A compact chip for the backgrounded (held) call, e.g. "John Doe — on hold".
+  /// When swapping is supported, the chip is tappable to switch between calls.
   Widget _heldBanner(Color fg) {
     final held = _state.heldNumber ?? '';
-    final label = held.isEmpty ? 'Second call' : held;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: fg.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.pause_circle_outline, size: 18, color: fg),
-          const SizedBox(width: 8),
-          Text(
-            '$label — on hold',
-            style: TextStyle(
-              color: fg,
-              fontSize: 13.5,
-              fontWeight: FontWeight.w600,
+    final name = _resolvedHeldName;
+    final label = (name != null && name.isNotEmpty)
+        ? name
+        : (held.isEmpty ? 'Second call' : held);
+    final canSwap = _state.canSwap;
+    return Tooltip(
+      message: canSwap ? 'Tap to switch call' : '',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: canSwap ? _telecom.swapCalls : null,
+          borderRadius: BorderRadius.circular(999),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: fg.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(999),
+              border: canSwap
+                  ? Border.all(color: fg.withValues(alpha: 0.25))
+                  : null,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  canSwap ? Icons.swap_calls : Icons.pause_circle_outline,
+                  size: 18,
+                  color: fg,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '$label — on hold',
+                  style: TextStyle(
+                    color: fg,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

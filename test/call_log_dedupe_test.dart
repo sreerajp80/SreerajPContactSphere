@@ -169,6 +169,28 @@ void main() {
       expect(await rowCount(), 2);
     });
 
+    test(
+        'an incoming answered call and a missed call close together stay two rows',
+        () async {
+      // An answered incoming call and an unanswered missed call are two separate events.
+      await interactions.logCallIfNew(
+        contactId: null,
+        phoneNumber: '+919000000010',
+        callType: 'incoming',
+        duration: 29,
+        timestamp: ringStart,
+      );
+      await interactions.logCallIfNew(
+        contactId: null,
+        phoneNumber: '+919000000010',
+        callType: 'missed',
+        duration: 0,
+        timestamp: ringStart.add(const Duration(seconds: 40)),
+      );
+
+      expect(await rowCount(), 2);
+    });
+
     test('a different number at the same moment stays its own row', () async {
       await interactions.logCallIfNew(
         contactId: null,
@@ -244,6 +266,26 @@ void main() {
       expect(await rowCount(), 3);
     });
 
+    test('does not merge an incoming answered call and a missed call', () async {
+      await interactions.logCall(
+        contactId: null,
+        phoneNumber: '+919000000010',
+        callType: 'incoming',
+        duration: 29,
+        timestamp: ringStart,
+      );
+      await interactions.logCall(
+        contactId: null,
+        phoneNumber: '+919000000010',
+        callType: 'missed',
+        duration: 0,
+        timestamp: ringStart.add(const Duration(seconds: 25)),
+      );
+
+      expect(await callLogs.mergeDuplicateCalls(), 0);
+      expect(await rowCount(), 2);
+    });
+
     test('is idempotent — a second pass removes nothing', () async {
       await interactions.logCall(
         contactId: null,
@@ -262,6 +304,73 @@ void main() {
 
       expect(await callLogs.mergeDuplicateCalls(), 1);
       expect(await callLogs.mergeDuplicateCalls(), 0);
+    });
+  });
+
+  group('findMatch', () {
+    final candidate = StoredCall(
+      id: 1,
+      matchKey: '9000000010',
+      epochMillis: ringStart.millisecondsSinceEpoch,
+      duration: 29,
+      callType: 'incoming',
+    );
+
+    test('matches identical number, time, and type', () {
+      final match = CallLogRepository.findMatch(
+        [candidate],
+        '9000000010',
+        ringStart.millisecondsSinceEpoch + 5000,
+        callType: 'incoming',
+      );
+      expect(match?.id, 1);
+    });
+
+    test('does not match when callType differs (incoming vs missed)', () {
+      final match = CallLogRepository.findMatch(
+        [candidate],
+        '9000000010',
+        ringStart.millisecondsSinceEpoch + 5000,
+        callType: 'missed',
+      );
+      expect(match, isNull);
+    });
+
+    test('provisional candidate only matches outgoing query', () {
+      const provisional = StoredCall(
+        id: 2,
+        matchKey: '9000000010',
+        epochMillis: 100000,
+        duration: null,
+        callType: 'outgoing',
+      );
+      expect(
+        CallLogRepository.findMatch(
+          [provisional],
+          '9000000010',
+          101000,
+          callType: 'outgoing',
+        )?.id,
+        2,
+      );
+      expect(
+        CallLogRepository.findMatch(
+          [provisional],
+          '9000000010',
+          101000,
+          callType: 'incoming',
+        ),
+        isNull,
+      );
+      expect(
+        CallLogRepository.findMatch(
+          [provisional],
+          '9000000010',
+          101000,
+          callType: 'missed',
+        ),
+        isNull,
+      );
     });
   });
 }

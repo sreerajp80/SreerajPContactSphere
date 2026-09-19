@@ -149,9 +149,6 @@ object CallRegistry {
             }
             if (state == Call.STATE_ACTIVE) {
                 sawActiveCalls.add(c)
-                if (topLevel().size >= 2) {
-                    merge()
-                }
             }
             if (state == Call.STATE_SELECT_PHONE_ACCOUNT) maybeResolvePhoneAccount(c)
             notifyChange()

@@ -188,14 +188,19 @@ class CallLogRepository {
   /// entry with [key] at [epochMillis], or null when this is a new call. When
   /// several are in the window the closest in time wins.
   ///
-  /// [isOutgoing] optionally restricts the match to the same direction: when
-  /// true only outgoing candidates are considered, when false only non-outgoing
-  /// ones. Null (the default) disables the filter, preserving the old behaviour
-  /// for call sites that don't need it.
+  /// When [callType] is given, candidate call types must match:
+  /// an answered incoming call (`incoming`) never matches an unanswered
+  /// missed call (`missed`), and vice versa. Provisional calls (`duration == null`)
+  /// match `outgoing`.
+  ///
+  /// [isOutgoing] optionally restricts the match to the same direction when
+  /// [callType] is omitted: when true only outgoing candidates are considered,
+  /// when false only non-outgoing ones. Null disables the filter.
   static StoredCall? findMatch(
     List<StoredCall> candidates,
     String key,
     int epochMillis, {
+    String? callType,
     bool? isOutgoing,
   }) {
     if (key.isEmpty) return null;
@@ -203,7 +208,15 @@ class CallLogRepository {
     var bestDelta = matchWindow.inMilliseconds + 1;
     for (final c in candidates) {
       if (c.matchKey != key) continue;
-      if (isOutgoing != null &&
+      if (callType != null) {
+        final cType = c.callType;
+        final isProvisional = c.duration == null;
+        if (isProvisional) {
+          if (callType != 'outgoing') continue;
+        } else if (cType != null && cType != callType) {
+          continue;
+        }
+      } else if (isOutgoing != null &&
           isOutgoingType(c.callType) != isOutgoing) {
         continue;
       }
@@ -226,15 +239,15 @@ class CallLogRepository {
   /// [InteractionRepository.logCallIfNew]).
   ///
   /// Two rows are the same call when they share a [matchKey], sit within
-  /// [matchWindow] of each other, and are on the same side of the
-  /// outgoing/inbound line. The **oldest** row survives — it is the one the user
-  /// may have attached a note, intent or feedback to — and takes anything it was
-  /// missing (duration, call type, SIM, contact link) from the row being dropped.
+  /// [matchWindow] of each other, and share the same call type. The **oldest** row
+  /// survives — it is the one the user may have attached a note, intent or feedback
+  /// to — and takes anything it was missing (duration, call type, SIM, contact link)
+  /// from the row being dropped.
   Future<int> mergeDuplicateCalls() async {
     final db = await _dbHelper.database;
     return db.transaction<int>((txn) async {
       final rows = await txn.query('call_logs', orderBy: 'timestamp ASC, id ASC');
-      // Survivor per (match key + direction), tracked with the time it sits at
+      // Survivor per (match key + type), tracked with the time it sits at
       // so a long run of calls to one number only merges the close pairs.
       final kept = <String, Map<String, Object?>>{};
       final keptAt = <String, DateTime>{};
@@ -246,7 +259,7 @@ class CallLogRepository {
         final key = matchKey(number);
         if (ts == null || key.isEmpty) continue;
         final type = row['call_type'] as String?;
-        final bucket = '$key|${type == 'outgoing' ? 'out' : 'in'}';
+        final bucket = '$key|${type ?? 'unknown'}';
 
         final previous = kept[bucket];
         final previousAt = keptAt[bucket];

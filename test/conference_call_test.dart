@@ -78,19 +78,23 @@ void main() {
     });
 
     test(
-      'playDtmf forwards the digit; stop/merge/swap forward by name',
+      'playDtmf forwards the digit; stop/merge/swap/answerWaiting/rejectWaiting forward by name',
       () async {
         final telecom = TelecomService();
         await telecom.playDtmf('5');
         await telecom.stopDtmf();
         await telecom.mergeCalls();
         await telecom.swapCalls();
+        await telecom.answerWaiting();
+        await telecom.rejectWaiting();
 
         expect(calls.map((c) => c.method), [
           'playDtmf',
           'stopDtmf',
           'merge',
           'swap',
+          'answerWaiting',
+          'rejectWaiting',
         ]);
         expect(calls.first.arguments, {'digit': '5'});
       },

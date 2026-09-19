@@ -184,7 +184,7 @@ class CallLogImportService {
 
       final match = CallLogRepository.findMatch(
         existing, key, millis,
-        isOutgoing: CallLogRepository.isOutgoingType(callType),
+        callType: callType,
       );
       if (match != null) {
         // Already in Recents. Fill in what the device knows and the app may not
@@ -203,6 +203,7 @@ class CallLogImportService {
           );
           updated++;
         }
+        existing.remove(match);
         continue;
       }
 
