@@ -1,4 +1,5 @@
 // lib/screens/sim_preferences_screen.dart
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -47,11 +48,11 @@ class _SimPreferencesScreenState extends State<SimPreferencesScreen> {
     final colors = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SIM Cards & Accounts'),
+        title: Text(AppLocalizations.of(context).labelSimCardsAccounts),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh SIMs',
+            tooltip: AppLocalizations.of(context).tooltipRefreshSims,
             onPressed: _loading ? null : () => _load(refresh: true),
           ),
         ],
@@ -86,9 +87,7 @@ class _SimPreferencesScreenState extends State<SimPreferencesScreen> {
             const SizedBox(width: 14),
             Expanded(
               child: Text(
-                'No SIMs detected. Multi-SIM options need phone permission and a '
-                'device with at least one SIM. Grant the phone permission and tap '
-                'refresh.',
+                AppLocalizations.of(context).emptyNoSims,
                 style: TextStyle(color: colors.mutedText, fontSize: 13.5),
               ),
             ),
@@ -115,13 +114,16 @@ class _SimPreferencesScreenState extends State<SimPreferencesScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Default SIM',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  Text(
+                    AppLocalizations.of(context).labelDefaultSim,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Which SIM outgoing calls use unless you pick per call',
+                    AppLocalizations.of(context).descDefaultSimInfo,
                     style: TextStyle(color: colors.mutedText, fontSize: 13),
                   ),
                 ],
@@ -132,8 +134,8 @@ class _SimPreferencesScreenState extends State<SimPreferencesScreen> {
               colors: colors,
               accent: accent,
               selected: selected == null,
-              title: 'System default',
-              subtitle: 'Let Android choose',
+              title: AppLocalizations.of(context).labelSystemDefault,
+              subtitle: AppLocalizations.of(context).descLetAndroidChoose,
               onTap: () => context.read<AppSettings>().setDefaultSimId(null),
             ),
             for (final sim in _accounts)
@@ -168,14 +170,14 @@ class _SimPreferencesScreenState extends State<SimPreferencesScreen> {
         onChanged: canAsk
             ? (v) => context.read<AppSettings>().setAskSimBeforeCall(v)
             : null,
-        title: const Text(
-          'Ask which SIM before each call',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        title: Text(
+          AppLocalizations.of(context).labelAskSimEachCall,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
         subtitle: Text(
           canAsk
-              ? 'Show a SIM chooser each time you place a call'
-              : 'Needs more than one SIM',
+              ? AppLocalizations.of(context).descAskSimEachCall
+              : AppLocalizations.of(context).descNeedsMoreThanOneSim,
           style: TextStyle(color: colors.mutedText, fontSize: 13),
         ),
       ),
@@ -197,13 +199,16 @@ class _SimPreferencesScreenState extends State<SimPreferencesScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'SIM colours',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  Text(
+                    AppLocalizations.of(context).labelSimColours,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'The SIM name appears in this colour on the calling screen',
+                    AppLocalizations.of(context).descSimColoursInfo,
                     style: TextStyle(color: colors.mutedText, fontSize: 13),
                   ),
                 ],
@@ -255,7 +260,7 @@ class _SimPreferencesScreenState extends State<SimPreferencesScreen> {
                   const SizedBox(height: 1),
                   Text(
                     picked == null
-                        ? '${_simSubtitle(sim)} · Default colour'
+                        ? '${_simSubtitle(sim)} · ${AppLocalizations.of(context).labelDefaultColour}'
                         : _simSubtitle(sim),
                     style: TextStyle(color: colors.mutedText, fontSize: 12.5),
                   ),
@@ -283,7 +288,7 @@ class _SimPreferencesScreenState extends State<SimPreferencesScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Colour for ${sim.displayLabel}',
+                  AppLocalizations.of(context).titleColourFor(sim.displayLabel),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
@@ -316,7 +321,7 @@ class _SimPreferencesScreenState extends State<SimPreferencesScreen> {
                   },
                   icon: Icon(Icons.restart_alt, color: colors.mutedText),
                   label: Text(
-                    'Use default',
+                    AppLocalizations.of(context).actionUseDefault,
                     style: TextStyle(color: colors.mutedText),
                   ),
                 ),

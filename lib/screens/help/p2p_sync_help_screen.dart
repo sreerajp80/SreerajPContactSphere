@@ -8,6 +8,7 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
 class P2PSyncHelpScreen extends StatelessWidget {
@@ -16,165 +17,88 @@ class P2PSyncHelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sync to Another Device')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).helpP2pSyncText)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-        children: const [
-          _Intro(
-            'Copy your contacts (and more) from one phone to another over the '
-            'same Wi-Fi network. There is no internet, cloud, or account '
-            'involved — the two phones talk directly to each other. Both phones '
-            'must be running this app.',
-          ),
-          SizedBox(height: 24),
+        children: [
+          _Intro(AppLocalizations.of(context).helpP2pSyncIntro),
+          const SizedBox(height: 24),
 
           _Section(
             icon: Icons.checklist_rounded,
-            title: 'Before you start',
+            title: AppLocalizations.of(context).helpP2pSyncTitle1,
             children: [
-              _Bullet('Put both phones on the same Wi-Fi network.'),
-              _Bullet(
-                'Make sure both phones run the same version of this app. If '
-                'the versions do not match, sync stops and asks you to update '
-                'both phones.',
-              ),
-              _Bullet(
-                'On both phones open Settings → Sync to Another Device. It '
-                'asks for your fingerprint, face, or PIN first, because a sync '
-                'can include secret contacts.',
-              ),
-              _Bullet(
-                'On the phone that is sending, tap "Send to Another Device". '
-                'On the phone that is receiving, tap "Receive from Another '
-                'Device".',
-              ),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet1),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet2),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet3),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet4),
             ],
           ),
 
           _Section(
             icon: Icons.qr_code_2_rounded,
-            title: 'How the two phones connect',
+            title: AppLocalizations.of(context).helpP2pSyncTitle2,
             children: [
-              _Bullet('The sending phone shows a pairing code and a QR code.'),
-              _Bullet(
-                'The receiving phone scans that QR code, or you type the '
-                'pairing code in by hand.',
-              ),
-              _Bullet(
-                'The pairing code is only ever shown on screen — it is never '
-                'sent over the network. The whole transfer is encrypted using '
-                'that code, so if the wrong code is used the connection simply '
-                'fails.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet5),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet6),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet7),
             ],
           ),
 
           _Section(
             icon: Icons.tune_rounded,
-            title: 'Full Sync vs Selective Sync',
+            title: AppLocalizations.of(context).helpP2pSyncTitle3,
             children: [
-              _Bullet(
-                'Full Sync sends everything below in one go. The sender\'s app '
-                'settings replace the receiver\'s, and the sender\'s own '
-                'profile ("Self") card is added to the receiver as a normal '
-                'contact (it never replaces the receiver\'s own profile).',
-              ),
-              _Bullet(
-                'Selective Sync sends only the groups of data you pick. '
-                'Contacts are always included. Settings only fill in blanks '
-                '(they never overwrite what the receiver already set), and the '
-                'sender\'s "Self" card is not sent.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet8),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet9),
             ],
           ),
 
           _Section(
             icon: Icons.cloud_done_outlined,
-            title: 'What gets synced',
+            title: AppLocalizations.of(context).helpP2pSyncTitle4,
             children: [
-              _Bullet(
-                'Contacts and their details: phone numbers, emails, '
-                'addresses, official details, social links, and tags.',
-              ),
-              _Bullet('Contact photos and calling-card photos.'),
-              _Bullet('Call history: call logs, interactions, and reminders.'),
-              _Bullet('Groups and who belongs to them.'),
-              _Bullet('Relationships between contacts.'),
-              _Bullet('Blocked numbers.'),
-              _Bullet(
-                'Your emergency info card — on a Full Sync, or when you tick it '
-                'while choosing what to share. The receiving phone takes it '
-                'only if it has no card of its own, so nobody\'s medical '
-                'details get replaced.',
-              ),
-              _Bullet(
-                'App settings that are not tied to a specific phone — such as '
-                'theme, accent color, default country, quick replies, and '
-                'call-handling options.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet10),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet11),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet12),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet13),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet14),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet15),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet16),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet17),
             ],
           ),
 
           _Section(
             icon: Icons.block_flipped,
-            title: 'What is never synced',
+            title: AppLocalizations.of(context).helpP2pSyncTitle5,
             children: [
-              _Bullet(
-                'Ringtones. A ringtone points at a file on the sending phone, '
-                'which would not exist on the other phone.',
-              ),
-              _Bullet(
-                'SIM-specific settings, such as the default SIM and per-SIM '
-                'ringtones or colors. These refer to the physical SIM cards in '
-                'the sending phone.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet18),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet19),
             ],
           ),
 
           _Section(
             icon: Icons.merge_type_rounded,
-            title: 'Nothing on the receiving phone is deleted',
+            title: AppLocalizations.of(context).helpP2pSyncTitle6,
             children: [
-              _Bullet(
-                'Sync only adds. The receiving phone keeps all of its own '
-                'data — nothing is erased or overwritten by the contacts that '
-                'come in.',
-              ),
-              _Bullet(
-                'A contact you already have (same name and at least one shared '
-                'phone number) is skipped, not duplicated. Only brand-new '
-                'contacts are added, and their details and call history come '
-                'across with them.',
-              ),
-              _Bullet(
-                'Because an existing contact is skipped, the sender\'s call '
-                'history for that contact is not merged in — only new contacts '
-                'bring their history.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet20),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet21),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet22),
             ],
           ),
 
           _Section(
             icon: Icons.lock_outline_rounded,
-            title: 'Your data stays private',
+            title: AppLocalizations.of(context).helpP2pSyncTitle7,
             children: [
-              _Bullet(
-                'The transfer happens directly between the two phones on your '
-                'local Wi-Fi. Nothing is uploaded to the internet or to any '
-                'server.',
-              ),
-              _Bullet(
-                'Opening sync is protected by your device lock, because the '
-                'data can include secret contacts.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet23),
+              _Bullet(AppLocalizations.of(context).helpP2pSyncBullet24),
             ],
           ),
 
-          SizedBox(height: 8),
-          _Footer(
-            'Tip: keep both phones awake and on the same Wi-Fi until the sync '
-            'finishes.',
-          ),
+          const SizedBox(height: 8),
+          _Footer(AppLocalizations.of(context).helpP2pSyncFooter),
         ],
       ),
     );

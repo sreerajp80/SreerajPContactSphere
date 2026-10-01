@@ -2,8 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
+import 'package:smart_contacts_dialer/l10n/settings_labels.dart';
 import 'package:smart_contacts_dialer/services/auth_service.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
+import 'package:smart_contacts_dialer/state/locale_controller.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 import 'package:smart_contacts_dialer/utils/phone_normalizer.dart';
 import 'package:smart_contacts_dialer/screens/about_screen.dart';
@@ -14,6 +17,7 @@ import 'package:smart_contacts_dialer/screens/default_country_screen.dart';
 import 'package:smart_contacts_dialer/screens/emergency_info_screen.dart';
 import 'package:smart_contacts_dialer/screens/features_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/help_home_screen.dart';
+import 'package:smart_contacts_dialer/screens/language_settings_screen.dart';
 import 'package:smart_contacts_dialer/screens/permissions_screen.dart';
 import 'package:smart_contacts_dialer/screens/ringtone_settings_screen.dart';
 import 'package:smart_contacts_dialer/screens/security_screen.dart';
@@ -30,15 +34,16 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: Text(l10n.titleSettings)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           _SettingsCard(
             icon: Icons.security_outlined,
-            title: 'Security',
-            subtitle: 'App lock, block screenshots and audit log',
+            title: l10n.titleSecurity,
+            subtitle: l10n.descSecurityCard,
             onTap: () => _push(context, const SecurityScreen()),
           ),
           const SizedBox(height: 12),
@@ -48,106 +53,108 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 12),
           _SettingsCard(
             icon: Icons.touch_app_outlined,
-            title: 'Speed Dial',
-            subtitle: 'Hold a keypad key 1-9 to call a saved person',
+            title: l10n.titleSpeedDial,
+            subtitle: l10n.descSpeedDialCard,
             onTap: () => _push(context, const SpeedDialScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsCard(
             icon: Icons.contacts_outlined,
-            title: 'Contacts',
-            subtitle: 'Your profile and contact options',
+            title: l10n.navContacts,
+            subtitle: l10n.descContactsCard,
             onTap: () => _push(context, const ContactsSettingsScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsCard(
             icon: Icons.sync_alt,
-            title: 'Sync to Another Device',
-            subtitle: 'Send or receive contacts over Wi-Fi',
+            title: l10n.titleSyncToAnotherDevice,
+            subtitle: l10n.descSyncCard,
             onTap: () => _openSync(context),
           ),
           const SizedBox(height: 12),
           _SettingsCard(
             icon: Icons.cloud_sync_outlined,
-            title: 'Online Provider Sync',
-            subtitle: 'Direct 2-way sync with Google, Microsoft & CardDAV',
+            title: l10n.titleOnlineProviderSync,
+            subtitle: l10n.descOnlineSyncCard,
             onTap: () => _push(context, const OnlineSyncSettingsScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsCard(
             icon: Icons.backup_outlined,
-            title: 'Backup & Restore',
-            subtitle: 'Save all your data to a file, or restore it',
+            title: l10n.titleBackupRestore,
+            subtitle: l10n.descBackupCard,
             onTap: () => _openBackup(context),
           ),
           const SizedBox(height: 12),
           _SettingsCard(
             icon: Icons.cloud_upload_outlined,
-            title: 'Encrypted Cloud Backup',
-            subtitle: 'Save .csbak backup to Google Drive, OneDrive or WebDAV',
+            title: l10n.titleEncryptedCloudBackup,
+            subtitle: l10n.descCloudBackupCard,
             onTap: () => _push(context, const CloudBackupSettingsScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsCard(
             icon: Icons.sim_card_outlined,
-            title: 'SIM & calling',
-            subtitle: 'Default SIM, caller identification and spam filtering',
+            title: l10n.titleSimCalling,
+            subtitle: l10n.descSimCard,
             onTap: () => _push(context, const SimSettingsScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsCard(
             icon: Icons.notifications_active_outlined,
-            title: 'Ringtone',
-            subtitle: 'Volume, vibration and per-SIM ringtones',
+            title: l10n.labelRingtone,
+            subtitle: l10n.descRingtoneCard,
             onTap: () => _push(context, const RingtoneSettingsScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsCard(
             icon: Icons.medical_information_outlined,
-            title: 'Emergency info',
-            subtitle: 'A card a helper can read on your lock screen',
+            title: l10n.titleEmergencyInfo,
+            subtitle: l10n.descEmergencyCard,
             onTap: () => _push(context, const EmergencyInfoScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsCard(
             icon: Icons.public_outlined,
-            title: 'Default country',
+            title: l10n.titleDefaultCountry,
             subtitle: _countrySubtitle(context),
             onTap: () => _push(context, const DefaultCountryScreen()),
           ),
           const SizedBox(height: 12),
+          _languageCard(context),
+          const SizedBox(height: 12),
           _SettingsCard(
             icon: Icons.palette_outlined,
-            title: 'Appearance',
-            subtitle: 'Theme mode and accent color',
+            title: l10n.titleAppearance,
+            subtitle: l10n.descAppearanceCard,
             onTap: () => _push(context, const AppearanceScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsCard(
             icon: Icons.stars_outlined,
-            title: 'Features',
-            subtitle: 'Explore all features of SreerajP Contacts Sphere',
+            title: l10n.titleFeatures,
+            subtitle: l10n.descFeaturesCard,
             onTap: () => _push(context, const FeaturesScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsCard(
             icon: Icons.shield_outlined,
-            title: 'Permissions',
-            subtitle: 'What the app can access and why',
+            title: l10n.titlePermissions,
+            subtitle: l10n.descPermissionsCard,
             onTap: () => _push(context, const PermissionsScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsCard(
             icon: Icons.help_outline,
-            title: 'Help',
-            subtitle: 'How features like sync work',
+            title: l10n.titleHelp,
+            subtitle: l10n.descHelpCard,
             onTap: () => _push(context, const HelpHomeScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsCard(
             icon: Icons.info_outline,
-            title: 'About',
-            subtitle: 'Version, author and build details',
+            title: l10n.titleAbout,
+            subtitle: l10n.descAboutCard,
             onTap: () => _push(context, const AboutScreen()),
           ),
         ],
@@ -169,21 +176,18 @@ class SettingsScreen extends StatelessWidget {
   Future<void> _openSync(BuildContext context) async {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
     final auth = AuthService();
 
     if (await auth.isAvailable) {
-      final ok = await auth.authenticate(
-        reason: 'Authenticate to sync your data',
-      );
+      final ok = await auth.authenticate(reason: l10n.descAuthReasonSync);
       if (ok) {
         navigator.push(
           MaterialPageRoute(builder: (_) => const SyncHomeScreen()),
         );
       } else {
         messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Authentication required to sync your data'),
-          ),
+          SnackBar(content: Text(l10n.errorAuthRequiredSync)),
         );
       }
       return;
@@ -194,20 +198,16 @@ class SettingsScreen extends StatelessWidget {
     final proceed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('No screen lock'),
-        content: const Text(
-          'Your device has no screen lock, so synced data can\'t be protected '
-          'by authentication. This may include secret contacts. Continue '
-          'anyway?',
-        ),
+        title: Text(l10n.titleNoScreenLock),
+        content: Text(l10n.descNoLockSync),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.actionCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Continue'),
+            child: Text(l10n.actionContinue),
           ),
         ],
       ),
@@ -224,21 +224,18 @@ class SettingsScreen extends StatelessWidget {
   Future<void> _openBackup(BuildContext context) async {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
     final auth = AuthService();
 
     if (await auth.isAvailable) {
-      final ok = await auth.authenticate(
-        reason: 'Authenticate to back up or restore your data',
-      );
+      final ok = await auth.authenticate(reason: l10n.descAuthReasonBackup);
       if (ok) {
         navigator.push(
           MaterialPageRoute(builder: (_) => const BackupRestoreScreen()),
         );
       } else {
         messenger.showSnackBar(
-          const SnackBar(
-            content: Text('Authentication required to back up or restore'),
-          ),
+          SnackBar(content: Text(l10n.errorAuthRequiredBackup)),
         );
       }
       return;
@@ -249,20 +246,16 @@ class SettingsScreen extends StatelessWidget {
     final proceed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('No screen lock'),
-        content: const Text(
-          'Your device has no screen lock, so a backup can\'t be protected by '
-          'authentication. A backup may include secret contacts. Continue '
-          'anyway?',
-        ),
+        title: Text(l10n.titleNoScreenLock),
+        content: Text(l10n.descNoLockBackup),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.actionCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Continue'),
+            child: Text(l10n.actionContinue),
           ),
         ],
       ),
@@ -276,13 +269,30 @@ class SettingsScreen extends StatelessWidget {
 
   /// The Default country card's subtitle, reflecting the current selection
   /// (e.g. "India (+91) · used to identify callers").
+  /// Settings → Language (standard §8.4). The subtitle shows the current
+  /// choice, and a screen reader hears "Language, currently …" as one label.
+  Widget _languageCard(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final current = languageOptionLabel(
+      l10n,
+      context.watch<LocaleController>().value,
+    );
+    return _SettingsCard(
+      icon: Icons.translate,
+      title: l10n.titleLanguage,
+      subtitle: current,
+      semanticsLabel: l10n.semanticsLanguageSetting(current),
+      onTap: () => _push(context, const LanguageSettingsScreen()),
+    );
+  }
+
   String _countrySubtitle(BuildContext context) {
     final iso = context.watch<AppSettings>().defaultCountryIso;
     final code = PhoneNormalizer.isoFromString(iso);
     final label = code == null
         ? iso
         : '${PhoneNormalizer.nameFor(code)} (+${PhoneNormalizer.dialCodeFor(code)})';
-    return '$label · used to identify callers';
+    return AppLocalizations.of(context).descCountrySubtitle(label);
   }
 }
 
@@ -292,30 +302,18 @@ class SettingsScreen extends StatelessWidget {
 class _DialerTopContactsCard extends StatelessWidget {
   const _DialerTopContactsCard();
 
-  static String _labelFor(DialerTopSource source) => switch (source) {
-    DialerTopSource.relations => 'Family & friends',
-    DialerTopSource.likelyToAnswer => 'Likely to answer now',
-    DialerTopSource.recent => 'Most recent',
-  };
-
-  static String _descFor(DialerTopSource source) => switch (source) {
-    DialerTopSource.relations => 'Contacts you’ve linked as relations',
-    DialerTopSource.likelyToAnswer =>
-      'Ordered by who usually answers at this time of day',
-    DialerTopSource.recent => 'Most contacted, then most recent calls',
-  };
-
   Future<void> _choose(BuildContext context, DialerTopSource current) async {
+    final l10n = AppLocalizations.of(context);
     final chosen = await showDialog<DialerTopSource>(
       context: context,
       builder: (ctx) => SimpleDialog(
-        title: const Text('Dialer top contacts'),
+        title: Text(l10n.titleDialerTopContacts),
         children: [
           for (final source in DialerTopSource.values)
             _OptionTile(
               selected: source == current,
-              title: _labelFor(source),
-              subtitle: _descFor(source),
+              title: dialerTopSourceLabel(l10n, source),
+              subtitle: dialerTopSourceDescription(l10n, source),
               onTap: () => Navigator.of(ctx).pop(source),
             ),
         ],
@@ -332,6 +330,7 @@ class _DialerTopContactsCard extends StatelessWidget {
     final colors = theme.extension<AppColors>()!;
     final accent = theme.colorScheme.primary;
     final source = context.watch<AppSettings>().dialerTopSource;
+    final l10n = AppLocalizations.of(context);
 
     return Card(
       margin: EdgeInsets.zero,
@@ -356,16 +355,16 @@ class _DialerTopContactsCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Dialer top contacts',
-                      style: TextStyle(
+                    Text(
+                      l10n.titleDialerTopContacts,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      _labelFor(source),
+                      dialerTopSourceLabel(l10n, source),
                       style: TextStyle(color: colors.mutedText, fontSize: 13),
                     ),
                   ],
@@ -425,11 +424,16 @@ class _SettingsCard extends StatelessWidget {
   final String subtitle;
   final VoidCallback onTap;
 
+  /// Replaces the title + subtitle a screen reader would otherwise read, when
+  /// the row needs one clearer spoken label.
+  final String? semanticsLabel;
+
   const _SettingsCard({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.semanticsLabel,
   });
 
   @override
@@ -458,22 +462,26 @@ class _SettingsCard extends StatelessWidget {
               ),
               const SizedBox(width: 16),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
+                child: Semantics(
+                  label: semanticsLabel,
+                  excludeSemantics: semanticsLabel != null,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(color: colors.mutedText, fontSize: 13),
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: TextStyle(color: colors.mutedText, fontSize: 13),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               Icon(Icons.chevron_right, color: colors.mutedText),
@@ -490,16 +498,17 @@ class _DialpadScriptCard extends StatelessWidget {
   const _DialpadScriptCard();
 
   Future<void> _choose(BuildContext context, DialpadScript current) async {
+    final l10n = AppLocalizations.of(context);
     final chosen = await showDialog<DialpadScript>(
       context: context,
       builder: (ctx) => SimpleDialog(
-        title: const Text('Dialpad script layout'),
+        title: Text(l10n.titleDialpadScriptLayout),
         children: [
           for (final script in DialpadScript.values)
             _OptionTile(
               selected: script == current,
-              title: script.label,
-              subtitle: _descFor(script),
+              title: dialpadScriptLabel(l10n, script),
+              subtitle: dialpadScriptDescription(l10n, script),
               onTap: () => Navigator.of(ctx).pop(script),
             ),
         ],
@@ -510,31 +519,13 @@ class _DialpadScriptCard extends StatelessWidget {
     }
   }
 
-  static String _descFor(DialpadScript script) {
-    switch (script) {
-      case DialpadScript.auto:
-        return 'Follows your device language / locale';
-      case DialpadScript.malayalam:
-        return 'Dual English + Malayalam script layout (ക-ങ)';
-      case DialpadScript.devanagari:
-        return 'Dual English + Devanagari script layout (क-ङ)';
-      case DialpadScript.cyrillic:
-        return 'Dual English + Cyrillic script layout (АБВГ)';
-      case DialpadScript.arabic:
-        return 'Dual English + Arabic script layout (ا ب ت ث)';
-      case DialpadScript.greek:
-        return 'Dual English + Greek script layout (ΑΒΓ)';
-      case DialpadScript.none:
-        return 'Standard English letters only (A-Z)';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.extension<AppColors>()!;
     final accent = theme.colorScheme.primary;
     final script = context.watch<AppSettings>().dialpadScript;
+    final l10n = AppLocalizations.of(context);
 
     return Card(
       margin: EdgeInsets.zero,
@@ -552,20 +543,28 @@ class _DialpadScriptCard extends StatelessWidget {
                   color: accent.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(Icons.keyboard_alt_outlined, color: accent, size: 20),
+                child: Icon(
+                  Icons.keyboard_alt_outlined,
+                  color: accent,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Dialpad script layout',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                    Text(
+                      l10n.titleDialpadScriptLayout,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${script.label} — ${_descFor(script)}',
+                      '${dialpadScriptLabel(l10n, script)} — '
+                      '${dialpadScriptDescription(l10n, script)}',
                       style: TextStyle(color: colors.mutedText, fontSize: 13),
                     ),
                   ],

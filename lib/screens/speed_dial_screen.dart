@@ -1,4 +1,5 @@
 // lib/screens/speed_dial_screen.dart
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import 'package:smart_contacts_dialer/models/speed_dial_entry.dart';
@@ -26,7 +27,7 @@ Future<bool> assignSpeedDialSlot(
 
   final picked = await showContactSearchPickerSheet(
     context,
-    title: 'Speed dial $slot',
+    title: AppLocalizations.of(context).titleSpeedDialSlot(slot),
     requirePhone: true,
   );
   if (picked == null || picked.id == null) return false;
@@ -108,7 +109,7 @@ class _SpeedDialScreenState extends State<SpeedDialScreen> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Speed Dial')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).titleSpeedDial)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
@@ -140,9 +141,7 @@ class _SpeedDialScreenState extends State<SpeedDialScreen> {
             const SizedBox(width: 14),
             Expanded(
               child: Text(
-                'Hold a keypad key on the dialer to call the person saved on '
-                'it. Holding works only when the number box is empty. Secret '
-                'contacts cannot be saved to a key.',
+                AppLocalizations.of(context).descSpeedDialIntro,
                 style: TextStyle(color: colors.mutedText, fontSize: 13.5),
               ),
             ),
@@ -179,7 +178,7 @@ class _SpeedDialScreenState extends State<SpeedDialScreen> {
           ),
         ),
         title: Text(
-          filled ? entry.label : 'Not set',
+          filled ? entry.label : AppLocalizations.of(context).labelNotSet,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
@@ -195,13 +194,15 @@ class _SpeedDialScreenState extends State<SpeedDialScreen> {
                 style: TextStyle(color: colors.mutedText, fontSize: 12.5),
               )
             : Text(
-                'Tap to choose a contact',
+                AppLocalizations.of(context).descTapToChooseContact,
                 style: TextStyle(color: colors.mutedText, fontSize: 12.5),
               ),
         trailing: filled
             ? IconButton(
                 icon: const Icon(Icons.close),
-                tooltip: 'Remove from key $slot',
+                tooltip: AppLocalizations.of(
+                  context,
+                ).tooltipRemoveFromKey(slot),
                 onPressed: () => _clear(slot),
               )
             : Icon(Icons.chevron_right, color: colors.mutedText),

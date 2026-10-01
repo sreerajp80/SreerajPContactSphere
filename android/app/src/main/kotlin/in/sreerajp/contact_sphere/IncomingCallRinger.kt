@@ -114,11 +114,16 @@ class IncomingCallRinger(private val context: Context) {
      * plays from the first note.
      */
     fun start(number: String?, phoneAccountId: String?) {
+        val filter = currentInterruptionFilter()
+        // Only DND "Priority only" needs the caller check and the real ringer mode.
+        val priority = filter == RingerPolicy.FILTER_PRIORITY
         decision = RingerPolicy.decide(
             ringerMode = audioManager.ringerMode,
-            interruptionFilter = currentInterruptionFilter(),
+            interruptionFilter = filter,
             vibrateWhenRinging = vibrateWhenRinging(),
             appVibrateEnabled = vibrateEnabled,
+            callerAllowedByDnd = if (priority) callerAllowedByDnd(number) else null,
+            internalRingerMode = if (priority) internalRingerMode() else null,
         )
         if (decision.vibrate) startVibration()
         if (!decision.playSound) return
@@ -134,10 +139,9 @@ class IncomingCallRinger(private val context: Context) {
     }
 
     /**
-     * The current Do Not Disturb state. Reading it needs no permission (unlike
-     * `getNotificationPolicy`, which is why DND "Priority only" still rings — see
-     * [RingerPolicy]). Falls back to [RingerPolicy.FILTER_ALL] so an unreadable
-     * filter rings rather than silencing the call.
+     * The current Do Not Disturb state. Reading it needs no permission. Falls back to
+     * [RingerPolicy.FILTER_ALL] so an unreadable filter rings rather than silencing
+     * the call.
      */
     private fun currentInterruptionFilter(): Int =
         try {
@@ -146,6 +150,36 @@ class IncomingCallRinger(private val context: Context) {
             nm?.currentInterruptionFilter ?: RingerPolicy.FILTER_ALL
         } catch (e: Exception) {
             RingerPolicy.FILTER_ALL
+        }
+
+    /**
+     * Whether Do Not Disturb lets a call from [number] through — the same check the
+     * system dialer makes. Public from Android 13; it needs READ_CONTACTS, which this
+     * app holds. Null (unknown) on older Android, without a number, or on any error, so
+     * [RingerPolicy] keeps the app-facing ringer mode and never rings a blocked caller.
+     */
+    private fun callerAllowedByDnd(number: String?): Boolean? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return null
+        if (number.isNullOrBlank()) return null
+        return try {
+            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE)
+                as? NotificationManager
+            nm?.matchesCallFilter(Uri.fromParts("tel", number, null))
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * The phone's real ringer mode. During DND "Priority only" `AudioManager.ringerMode`
+     * reports SILENT to apps, while the real mode (what the user set) is kept in
+     * `Settings.Global.MODE_RINGER`. Null when it can't be read.
+     */
+    private fun internalRingerMode(): Int? =
+        try {
+            Settings.Global.getInt(context.contentResolver, Settings.Global.MODE_RINGER)
+        } catch (e: Exception) {
+            null
         }
 
     /**

@@ -1,4 +1,6 @@
 // lib/screens/about_screen.dart
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
+import 'package:smart_contacts_dialer/l10n/about_labels.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -11,12 +13,16 @@ import 'package:smart_contacts_dialer/theme/app_theme.dart';
 /// [ConfigService]). The `details` map is rendered dynamically — adding or
 /// removing a key in the JSON is the only change needed (guideline §1.6).
 class AboutScreen extends StatelessWidget {
-  const AboutScreen({super.key});
+  const AboutScreen({super.key, this.configService});
+
+  /// Loads the config. Null means the default [ConfigService]; tests pass one
+  /// with an injected asset loader.
+  final ConfigService? configService;
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<AppConfig>(
-      future: ConfigService().loadAndVerify(),
+      future: (configService ?? ConfigService()).loadAndVerify(),
       // Render the fallback while loading so the screen never blocks.
       initialData: AppConfig.fallback,
       builder: (context, snapshot) {
@@ -42,32 +48,36 @@ class _AboutView extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.extension<AppColors>()!;
     final scheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context);
+    final lang = Localizations.localeOf(context).languageCode;
+    final appName = config.appName.resolve(lang);
+    final description = config.description.resolve(lang);
 
     // Fixed top rows (version/build, build date) plus one row per details entry (skip empties).
     final rows = <Widget>[
       _row(
         colors: colors,
         scheme: scheme,
-        label: 'Version',
-        value: '${config.version} (build ${config.build})',
+        label: l10n.labelVersion,
+        value: l10n.labelVersionBuild(config.version, config.build),
       ),
       _row(
         colors: colors,
         scheme: scheme,
-        label: 'Build Date',
+        label: l10n.labelBuildDate,
         value: kBuildDate,
       ),
     ];
     for (final entry in config.details.entries) {
       final key = entry.key.trim();
-      final value = entry.value.trim();
+      final value = entry.value.resolve(lang).trim();
       if (key.isEmpty || value.isEmpty) continue;
       final isEmail = key.toLowerCase() == 'email';
       rows.add(
         _row(
           colors: colors,
           scheme: scheme,
-          label: key,
+          label: aboutDetailLabel(l10n, key),
           value: value,
           onTap: isEmail ? () => _openMail(value) : null,
         ),
@@ -75,7 +85,7 @@ class _AboutView extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('About')),
+      appBar: AppBar(title: Text(l10n.titleAbout)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
         children: [
@@ -104,15 +114,15 @@ class _AboutView extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  config.appName,
+                  appName,
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                if (config.description.trim().isNotEmpty) ...[
+                if (description.trim().isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Text(
-                    config.description,
+                    description,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: colors.mutedText,
@@ -151,9 +161,12 @@ class _AboutView extends StatelessWidget {
     required String value,
     VoidCallback? onTap,
   }) {
+    // The value sits under the label, not in `trailing`: a long value (a
+    // translated tool name, say) would take the whole row width there and
+    // break the tile's layout (guideline §1.6 uses title + subtitle too).
     return ListTile(
       title: Text(label, style: TextStyle(color: colors.mutedText)),
-      trailing: Text(
+      subtitle: Text(
         value,
         style: TextStyle(
           fontWeight: FontWeight.w600,

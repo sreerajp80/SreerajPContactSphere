@@ -1,6 +1,7 @@
 // lib/screens/help/privacy_security_help_screen.dart
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
 class PrivacySecurityHelpScreen extends StatelessWidget {
@@ -9,81 +10,56 @@ class PrivacySecurityHelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Privacy, Security & Vault')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).helpPrivacySecurityText),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-        children: const [
-          _Intro(
-            'SreerajP Contacts Sphere is built from the ground up to guarantee '
-            'uncompromising privacy, encrypted local storage, and granular security controls.',
-          ),
-          SizedBox(height: 24),
+        children: [
+          _Intro(AppLocalizations.of(context).helpPrivacySecurityIntro),
+          const SizedBox(height: 24),
 
           _Section(
             icon: Icons.lock_outline,
-            title: 'Secret Contacts Vault',
+            title: AppLocalizations.of(context).helpPrivacySecurityTitle1,
             children: [
-              _Bullet(
-                'What is a Secret Contact? Any contact marked as "Secret" is completely hidden from the main contact list, T9 dialer searches, and general export files.',
-              ),
-              _Bullet(
-                'Seeing them: tap the padlock icon in the top bar of the Contacts tab and unlock with your fingerprint, face, or device PIN. The list then shows the secret contacts alongside the rest.',
-              ),
-              _Bullet(
-                'Tap the padlock again to hide them. They also hide when you leave the contact list, so they are never left showing behind you.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpPrivacySecurityBullet1),
+              _Bullet(AppLocalizations.of(context).helpPrivacySecurityBullet2),
+              _Bullet(AppLocalizations.of(context).helpPrivacySecurityBullet3),
             ],
           ),
 
           _Section(
             icon: Icons.fingerprint,
-            title: 'Biometrics & App PIN Protection',
+            title: AppLocalizations.of(context).helpPrivacySecurityTitle2,
             children: [
-              _Bullet(
-                'You can secure the entire app or sensitive sections using your device\'s biometric sensors (fingerprint / face unlock).',
-              ),
-              _Bullet(
-                'If your phone has no biometric hardware, or you want a code separate from your phone PIN, set an App PIN under Settings → Security → App lock. See the "App lock & PIN" guide.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpPrivacySecurityBullet4),
+              _Bullet(AppLocalizations.of(context).helpPrivacySecurityBullet5),
             ],
           ),
 
           _Section(
             icon: Icons.screenshot_outlined,
-            title: 'Screenshot Guard',
+            title: AppLocalizations.of(context).helpPrivacySecurityTitle3,
             children: [
-              _Bullet(
-                'Screenshot guard blocks screenshots, screen recording, and the preview Android shows in Recents, while you are on a screen holding private data.',
-              ),
-              _Bullet(
-                'Turn it on or off under Settings → Security → Screenshot guard.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpPrivacySecurityBullet6),
+              _Bullet(AppLocalizations.of(context).helpPrivacySecurityBullet7),
             ],
           ),
 
           _Section(
             icon: Icons.history_edu_outlined,
-            title: 'Security Audit Log',
+            title: AppLocalizations.of(context).helpPrivacySecurityTitle4,
             children: [
-              _Bullet(
-                'The audit log records every change to a contact — created, edited, or deleted — with what it looked like before and after.',
-              ),
-              _Bullet(
-                'Open an entry to see exactly what changed, and undo it if the change was a mistake.',
-              ),
-              _Bullet(
-                'Entries are chained together with a cryptographic hash, so an entry cannot be quietly altered or removed without it showing.',
-              ),
-              _Bullet(
-                'Settings → Security → Audit log, which asks for your unlock first. It can also export a signed copy of the log.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpPrivacySecurityBullet8),
+              _Bullet(AppLocalizations.of(context).helpPrivacySecurityBullet9),
+              _Bullet(AppLocalizations.of(context).helpPrivacySecurityBullet10),
+              _Bullet(AppLocalizations.of(context).helpPrivacySecurityBullet11),
             ],
           ),
 
-          SizedBox(height: 8),
-          _Footer(
-            'Security principle: everything is stored on this phone in a database encrypted with a key held in the phone\'s hardware keystore. There is no tracking, no advertising, and no server of ours to talk to.',
-          ),
+          const SizedBox(height: 8),
+          _Footer(AppLocalizations.of(context).helpPrivacySecurityFooter),
         ],
       ),
     );

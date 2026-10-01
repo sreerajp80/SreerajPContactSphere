@@ -7,6 +7,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'package:smart_contacts_dialer/core/config/app_flavor_config.dart';
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
+import 'package:smart_contacts_dialer/l10n/sa_material_localizations.dart';
 import 'package:smart_contacts_dialer/core/errors/error_handlers.dart';
 import 'package:smart_contacts_dialer/core/logging/app_logger.dart';
 import 'package:smart_contacts_dialer/core/utils/call_log_write_lock.dart';
@@ -39,6 +41,7 @@ import 'package:smart_contacts_dialer/services/telecom_service.dart';
 import 'package:smart_contacts_dialer/services/vcard_service.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
 import 'package:smart_contacts_dialer/state/call_log_events.dart';
+import 'package:smart_contacts_dialer/state/locale_controller.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 import 'package:smart_contacts_dialer/widgets/keyboard_inset_guard.dart';
 import 'package:smart_contacts_dialer/widgets/sim_picker_sheet.dart';
@@ -74,11 +77,28 @@ Future<void> main() async {
   // (see [_SmartContactsAppState.initState]) so the native launch screen clears
   // immediately instead of waiting on a permission platform-channel round trip —
   // a dialer must be ready to place a call the moment it opens.
-  runApp(const SmartContactsApp());
+  //
+  // The one exception is the saved app language (standard §8.4): it is read
+  // here, before the first frame, so the app never paints in the wrong
+  // language and then switches. Only that single key is read; everything else
+  // in AppSettings still loads after the first frame.
+  LocaleController localeController;
+  try {
+    localeController = await LocaleController.load();
+  } catch (e) {
+    AppLogger.warning('Could not read the saved app language', error: e);
+    localeController = LocaleController();
+  }
+  runApp(SmartContactsApp(localeController: localeController));
 }
 
 class SmartContactsApp extends StatefulWidget {
-  const SmartContactsApp({super.key});
+  const SmartContactsApp({super.key, this.localeController});
+
+  /// The app-language state, built in [main] before the first frame. Null in
+  /// tests that pump the app directly; the app then follows the system
+  /// language until a choice is made.
+  final LocaleController? localeController;
 
   @override
   State<SmartContactsApp> createState() => _SmartContactsAppState();
@@ -106,6 +126,11 @@ class _SmartContactsAppState extends State<SmartContactsApp>
   /// is stacked over the calling screen can stop at it instead of popping it —
   /// see [inCallPopStop]. Cleared wherever [_lockShown] is.
   Route<bool>? _lockRoute;
+
+  /// Single source of truth for the app language (standard §8.4). Owned (and
+  /// disposed) here only when [SmartContactsApp.localeController] is null.
+  late final LocaleController _localeController =
+      widget.localeController ?? LocaleController();
 
   /// Set when the user asks for the calling screen while the lock is up (a tap
   /// on the call notification). Drained by [_maybeLock] once the user has
@@ -408,6 +433,7 @@ class _SmartContactsAppState extends State<SmartContactsApp>
                 title: const Text('Select Contact'),
                 leading: IconButton(
                   icon: const Icon(Icons.close),
+                  tooltip: AppLocalizations.of(ctx).actionClose,
                   onPressed: () {
                     ContactIntentService().submitContactPickerResult();
                   },
@@ -523,7 +549,7 @@ class _SmartContactsAppState extends State<SmartContactsApp>
           pickCtx,
           sims: sims,
           preselectedId: sim?.phoneAccountId,
-          preselectedNote: 'Usual SIM for this call',
+          preselectedNote: 'Usual SIM',
         );
         if (chosen == null) return; // dismissed → don't place the call
         sim = chosen;
@@ -668,6 +694,7 @@ class _SmartContactsAppState extends State<SmartContactsApp>
     WidgetsBinding.instance.removeObserver(this);
     _callSub?.cancel();
     _callLogger.dispose();
+    if (widget.localeController == null) _localeController.dispose();
     super.dispose();
   }
 
@@ -974,11 +1001,19 @@ class _SmartContactsAppState extends State<SmartContactsApp>
   Widget build(BuildContext context) {
     // The app owns its AppSettings provider so it stays self-contained (and the
     // widget smoke test can pump it directly). `load()` runs lazily after the
-    // first frame; defaults apply until persisted values arrive.
-    return ChangeNotifierProvider<AppSettings>(
-      create: (_) => AppSettings()..load(),
-      child: Consumer<AppSettings>(
-        builder: (context, settings, _) {
+    // first frame; defaults apply until persisted values arrive. The
+    // LocaleController was already loaded before the first frame (see [main]).
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<AppSettings>(
+          create: (_) => AppSettings()..load(),
+        ),
+        ChangeNotifierProvider<LocaleController>.value(
+          value: _localeController,
+        ),
+      ],
+      child: Consumer2<AppSettings, LocaleController>(
+        builder: (context, settings, localeController, _) {
           return MaterialApp(
             title: AppFlavorConfig.instance.appName,
             navigatorKey: _navKey,
@@ -986,27 +1021,43 @@ class _SmartContactsAppState extends State<SmartContactsApp>
             debugShowCheckedModeBanner: false,
             // Standard §8.1: declare the Global localization delegates so built-in
             // Material widgets (date pickers, dialogs, tooltips) render correctly on
-            // non-English device locales. App strings are English; `ml` is listed so
-            // Material widgets localize to Malayalam on Malayalam devices.
+            // non-English device locales. `AppLocalizations.delegate` serves the
+            // app's own strings from lib/l10n/*.arb (standard §8.2); screens not
+            // yet converted still hold English literals and are migrated phase by
+            // phase.
+            // The three Sa* delegates sit ahead of the Global ones on purpose
+            // (standard §8.3.1): flutter_localizations has no `sa`, so they
+            // answer for Sanskrit with the English framework strings. Behind
+            // the Global delegates they would never be asked and Material
+            // widgets would assert under `sa`.
             localizationsDelegates: const [
+              AppLocalizations.delegate,
+              SaMaterialLocalizationsDelegate(),
+              SaCupertinoLocalizationsDelegate(),
+              SaWidgetsLocalizationsDelegate(),
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            supportedLocales: const [Locale('en'), Locale('ml')],
-            // Keep the device's regional English (e.g. en_IN, en_GB) instead of
-            // letting Flutter strip it to bare `en` (which intl treats as en_US).
-            // This makes built-in widgets like the date picker use the system's
-            // date format. App strings stay English; ml devices keep Malayalam.
-            localeListResolutionCallback: (deviceLocales, supported) {
-              if (deviceLocales != null) {
-                for (final locale in deviceLocales) {
-                  if (locale.languageCode == 'en') return locale;
-                  if (locale.languageCode == 'ml') return const Locale('ml');
-                }
-              }
-              return const Locale('en');
-            },
+            // Standard §8.3: the three mandatory languages, in this fixed order.
+            supportedLocales: const [Locale('en'), Locale('ml'), Locale('sa')],
+            // Standard §8.4: the language saved in Settings wins; null means
+            // follow the system. Changing it rebuilds only this MaterialApp, so
+            // the open screen stays where it is.
+            locale: localeController.locale,
+            // The one authoritative resolver (a localeResolutionCallback would
+            // never be asked while this one returns a locale). Flutter passes
+            // the saved choice here when there is one, otherwise the device
+            // list, so this carries the full §8.4 order: saved choice, then a
+            // device language of en/ml/sa, then English. It also keeps the
+            // device's regional English (e.g. en_IN, en_GB) rather than bare
+            // `en` (which intl treats as en_US), so the date picker keeps the
+            // phone's date format — including when English is picked in-app.
+            localeListResolutionCallback: (preferred, supported) =>
+                LocaleController.resolve(
+                  preferred,
+                  WidgetsBinding.instance.platformDispatcher.locales,
+                ),
             theme: AppTheme.calm(
               settings.lightAccent,
               fontFamily: settings.fontFamily,

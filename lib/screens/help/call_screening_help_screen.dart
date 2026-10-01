@@ -1,6 +1,7 @@
 // lib/screens/help/call_screening_help_screen.dart
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
 class CallScreeningHelpScreen extends StatelessWidget {
@@ -9,101 +10,67 @@ class CallScreeningHelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Call Screening & Blocking')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).helpCallScreeningText),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-        children: const [
-          _Intro(
-            'The app can turn a call away before your phone rings. Blocking is '
-            'a list you build yourself, checked on this phone against the '
-            'incoming number \u2014 nothing is looked up anywhere else.',
-          ),
-          SizedBox(height: 24),
+        children: [
+          _Intro(AppLocalizations.of(context).helpCallScreeningIntro),
+          const SizedBox(height: 24),
 
           _Section(
             icon: Icons.shield_outlined,
-            title: 'How call screening works',
+            title: AppLocalizations.of(context).helpCallScreeningTitle1,
             children: [
-              _Bullet(
-                'When a call arrives, Android hands the number to the app\'s call screening service before the phone rings.',
-              ),
-              _Bullet(
-                'If the number is on your blocked list, the call is rejected straight away \u2014 no ring, no vibration, no incoming screen.',
-              ),
-              _Bullet(
-                'Numbers are matched after being put into full international form using your Default country, so a number blocked as 98765 43210 also blocks +91 98765 43210.',
-              ),
-              _Bullet(
-                'A blocked call is still written into Recents with a "Blocked" mark, so you can see who tried.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpCallScreeningBullet1),
+              _Bullet(AppLocalizations.of(context).helpCallScreeningBullet2),
+              _Bullet(AppLocalizations.of(context).helpCallScreeningBullet3),
+              _Bullet(AppLocalizations.of(context).helpCallScreeningBullet4),
             ],
           ),
 
           _Section(
             icon: Icons.block_outlined,
-            title: 'Blocking a number',
+            title: AppLocalizations.of(context).helpCallScreeningTitle2,
             children: [
-              _Bullet(
-                'From Recents: long-press the call and choose "Block number". The same action then reads "Unblock number".',
-              ),
-              _Bullet(
-                'During a call: tap Block on the call screen. This works while it is ringing and while you are talking.',
-              ),
-              _Bullet(
-                'By hand: Settings \u2192 Contacts \u2192 Blocked numbers, then add the number yourself.',
-              ),
-              _Bullet(
-                'Blocking a number that is on a call right now hangs that call up immediately, wherever you blocked it from.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpCallScreeningBullet5),
+              _Bullet(AppLocalizations.of(context).helpCallScreeningBullet6),
+              _Bullet(AppLocalizations.of(context).helpCallScreeningBullet7),
+              _Bullet(AppLocalizations.of(context).helpCallScreeningBullet8),
             ],
           ),
 
           _Section(
             icon: Icons.no_accounts_outlined,
-            title: 'Callers with no number',
+            title: AppLocalizations.of(context).helpCallScreeningTitle3,
             children: [
-              _Bullet(
-                'Settings \u2192 Contacts \u2192 Blocked numbers also has a "Block unknown callers" switch, for calls that arrive with a hidden or withheld number.',
-              ),
-              _Bullet(
-                'Those calls are rejected before ringing and still recorded in Recents as blocked.',
-              ),
-              _Bullet(
-                'It does not affect ordinary numbers you have not saved \u2014 only calls that carry no number at all.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpCallScreeningBullet9),
+              _Bullet(AppLocalizations.of(context).helpCallScreeningBullet10),
+              _Bullet(AppLocalizations.of(context).helpCallScreeningBullet11),
             ],
           ),
 
           _Section(
             icon: Icons.volume_off_outlined,
-            title: 'Silencing instead of blocking',
+            title: AppLocalizations.of(context).helpCallScreeningTitle4,
             children: [
-              _Bullet(
-                'If you would rather see the call but not be disturbed, use "Filter suspected spam" under Settings \u2192 SIM & calling \u2192 Identification. Flagged callers then ring silently.',
-              ),
-              _Bullet(
-                'See the "Caller ID & spam filter" guide for how a caller gets flagged.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpCallScreeningBullet12),
+              _Bullet(AppLocalizations.of(context).helpCallScreeningBullet13),
             ],
           ),
 
           _Section(
             icon: Icons.phone_android_outlined,
-            title: 'Default phone app is required',
+            title: AppLocalizations.of(context).helpCallScreeningTitle5,
             children: [
-              _Bullet(
-                'Android only lets the default phone app inspect a call before it rings. Without that role, blocking cannot happen early enough.',
-              ),
-              _Bullet(
-                'Settings \u2192 Permissions shows whether the app already holds the role, and lets you ask for it.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpCallScreeningBullet14),
+              _Bullet(AppLocalizations.of(context).helpCallScreeningBullet15),
             ],
           ),
 
-          SizedBox(height: 8),
-          _Footer(
-            'Privacy note: screening happens entirely on this phone, against your own list. No phone number is ever sent to a server, and there is no shared spam database behind it.',
-          ),
+          const SizedBox(height: 8),
+          _Footer(AppLocalizations.of(context).helpCallScreeningFooter),
         ],
       ),
     );

@@ -65,16 +65,16 @@ This stitches data from four decoupled features in ContactSphere:
 
 ## 3. Files to Create & Modify
 
-#### [NEW] [caller_context.dart](file:///l:/Android/SreerajPContactSphere/lib/models/caller_context.dart)
+#### [NEW] [caller_context.dart](../lib/models/caller_context.dart)
 Data model for caller context, holding relationship, last interaction, pending reminders, and upcoming events, with `buildSmartHeadline()`.
 
-#### [NEW] [caller_context_service.dart](file:///l:/Android/SreerajPContactSphere/lib/services/caller_context_service.dart)
+#### [NEW] [caller_context_service.dart](../lib/services/caller_context_service.dart)
 Service stitching SQLite queries across `contacts`, `relationships`, `call_logs`, `interactions`, and `reminders` into `CallerContext`.
 
-#### [MODIFY] [in_call_screen.dart](file:///l:/Android/SreerajPContactSphere/lib/screens/in_call_screen.dart)
+#### [MODIFY] [in_call_screen.dart](../lib/screens/in_call_screen.dart)
 Integrates `CallerContextService` and renders the Smart Context Card on incoming and active call screens.
 
-#### [NEW] [caller_context_service_test.dart](file:///l:/Android/SreerajPContactSphere/test/caller_context_service_test.dart)
+#### [NEW] [caller_context_service_test.dart](../test/caller_context_service_test.dart)
 Unit tests for caller context calculation, formatting, and headline construction.
 
 ---

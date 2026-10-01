@@ -7,6 +7,17 @@ Layered, with a clear dependency direction:
   `ChangeNotifierProvider` for `AppSettings` (persisted preferences), then runs `SmartContactsApp`
   whose home is `HomeShell` (`ContactListScreen`, `DialerScreen`, `CallHistoryScreen`). Local
   screen-specific UI state uses `setState`.
+- `lib/state/locale_controller.dart` — `LocaleController`, the single source of truth for the app
+  language (engineering standard §8.4). `main()` reads its one `SharedPreferences` key
+  (`app_language`: `system` | `en` | `ml` | `sa`) **before** `runApp`, so the first frame is
+  already in the right language; everything else still loads after the first frame. It is
+  provided at the root next to `AppSettings` and drives `MaterialApp.locale` (`null` = follow the
+  system). `LocaleController.resolve` is the app's only resolver (`localeListResolutionCallback`):
+  Flutter passes it the saved choice when there is one, otherwise the device list, so it applies
+  the §8.4 order (saved choice → device `en`/`ml`/`sa` → English) and keeps the device's regional
+  English (`en_IN`, `en_GB`) for date formats, even when English is picked in-app. The picker is
+  `lib/screens/language_settings_screen.dart` (Settings → Language); a change rebuilds only the
+  `MaterialApp`, so the user stays on the picker.
 - `lib/database/database_helper.dart` — singleton wrapper over `sqflite`. Owns the full schema
   (`smart_contacts.db`, **version 2**; the v1→v2 migration in `_onUpgrade` adds the foreign-key
   indexes). All persistence funnels through `DatabaseHelper().database`. **Bump the version number
@@ -41,6 +52,26 @@ Layered, with a clear dependency direction:
   detail screen's Relationships section, and the add/edit form (which stages links and persists
   them after the contact id exists). The add-a-link flow is the shared
   `widgets/relationship_editor.dart` bottom sheet.
+- Per-person call history: `contact_detail_screen` has **Details** and **History** tabs
+  (`ContactDetailTab`; Recents opens it on History, every other caller on Details). An
+  unsaved number tapped in Recents opens `number_detail_screen` with **History** and **Add
+  contact** tabs; the second embeds `AddEditContactScreen(embedded: true)`, whose save pops
+  back to Recents. Both History tabs use the shared `widgets/call_history_list.dart`, fed by
+  `CallLogRepository.callsForContact` (linked calls plus unlinked calls whose number matches
+  one of the contact's by `matchKey`) and `callsForNumber`. The list reloads on
+  `CallLogEvents`. The row helpers there (`callTypeIcon`, `callDayBucket`, …) are shared with
+  Recents.
+- Contact name search (`ContactRepository.searchContactSummaries`) matches an English-typed
+  query against names saved in English or Malayalam. Each contact stores two hidden keys,
+  rebuilt on save and on app open when stale: `name_translit` (`searchKey`, Malayalam
+  romanized with spelling variants folded) and `name_phonetic` (`phoneticCode`, sound only).
+  Results come in three tiers: (1) the SQL match — plain text, phone, email, tag, formal name,
+  and word-start hits on both keys; (2) space-free word-start hits on `name_translit`
+  (`compactKeyMatches`: `sree raj` → ശ്രീരാജ്); (3) similar names within a few typing
+  mistakes (`similarNameDistance`, closest first). Tiers 2 and 3 are computed in Dart over
+  `id` + `name_translit`, as SQLite cannot measure similarity. Matching stays word-anchored on
+  purpose (`Ale` must not find `Gallery`). The in-memory pickers use `nameMatches`, which
+  applies the same rules. All of it lives in `lib/utils/malayalam_transliterator.dart`.
 
 ## Default phone app (Telecom / in-call UI)
 
@@ -96,6 +127,16 @@ the in-call experience with its own UI. This spans a thin native bridge and a Fl
   in-call screen as calls come and go. `CallService.placeCall` routes through Telecom when we
   are default (so outgoing calls use our UI) and falls back to `flutter_phone_direct_caller`
   otherwise. Settings has a "Default phone app" card to request/see the role.
+- **Conference calls** — `CallRegistry` only reports `canMerge` when Telecom says the calls
+  can really be joined (the primary's `conferenceableCalls`, or `CAPABILITY_MERGE_CONFERENCE`),
+  and `merge()` follows that same order, because `Call.conference()` / `mergeConference()` never
+  throw when the network refuses. `canSwap` needs a *held* second call (a ringing call-waiting
+  call doesn't count). A merged conference's snapshot carries `participants` (each child's id,
+  number, state, and whether it can be dropped / split off), which the in-call screen's
+  **Manage** sheet uses for Drop (`disconnectParticipant`) and Private (`separateParticipant`).
+  The screen shows "Conference call" (never the first party's name/photo) and pushes that title
+  to the call notification. An incoming call that was merged is journaled for Recents when it
+  ends, because the snapshot logger stops tracking it once the conference host becomes primary.
 
 ## BLE contact exchange
 
@@ -108,7 +149,7 @@ The payload is the photo-less `VCardService` vCard, pulled with a chunked GATT p
 (`size`/`offset`/`data` characteristics — attribute values cap at 512 bytes) defined in
 `services/ble_protocol.dart` and mirrored in Kotlin. UI: `widgets/ble_share_dialog.dart`
 ("Share via Bluetooth" on the contact detail share sheet; advertises only while open) and
-`screens/ble_receive_screen.dart` ("Receive via Bluetooth" in the contact list menu), which
+`screens/ble_receive_screen.dart` ("Get via Bluetooth" in the contact list menu), which
 funnels received vCards through the same review/import flow as the QR scanner. The contact
 list menu's "Send all via Bluetooth" shares the whole book (multi-contact vCard via
 `toVCardAll`, secret contacts per the export setting) through the same dialog, advertised

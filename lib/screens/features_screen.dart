@@ -1,6 +1,7 @@
 // lib/screens/features_screen.dart
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
 /// One feature item displayed on the Features screen.
@@ -37,539 +38,330 @@ class _FeatureCategory {
 class FeaturesScreen extends StatelessWidget {
   const FeaturesScreen({super.key});
 
-  static const List<_FeatureCategory> _categories = [
+  /// The feature catalog in the app's language. Built per call rather than
+  /// held as a const list, because every string comes from the ARB.
+  static List<_FeatureCategory> _categoriesFor(AppLocalizations l) => [
     _FeatureCategory(
-      name: 'Smart Dialer & Calling',
-      subtitle:
-          'Fast T9 search, dual-SIM controls, and intelligent calling tools',
+      name: l.featureC0Name,
+      subtitle: l.featureC0Subtitle,
       icon: Icons.dialpad_outlined,
       features: [
         _AppFeature(
-          title: 'Multi-Script T9 Keypad Search',
-          description:
-              'Search contacts in milliseconds by typing numbers or letters on the dialpad. Fully supports English, Malayalam (including vowels & chillu letters), Devanagari, and more.',
+          title: l.featureC0F0Title,
+          description: l.featureC0F0Desc,
           icon: Icons.grid_3x3_outlined,
-          highlights: [
-            'English & Malayalam',
-            'Multi-script transliteration',
-            'Matches names either way',
-          ],
+          highlights: [l.featureC0F0H0, l.featureC0F0H1, l.featureC0F0H2],
         ),
         _AppFeature(
-          title: 'Speed Dial',
-          description:
-              'Save a person on keypad keys 1 to 9, then hold that key to call them. Holding works when the number box is empty; assigned keys carry a small dot. Secret contacts can never be put on a key.',
+          title: l.featureC0F1Title,
+          description: l.featureC0F1Desc,
           icon: Icons.touch_app_outlined,
-          highlights: [
-            'Keys 1-9',
-            'Hold a key to call',
-            'Assign from the keypad or Settings',
-          ],
+          highlights: [l.featureC0F1H0, l.featureC0F1H1, l.featureC0F1H2],
         ),
         _AppFeature(
-          title: 'Voice Dial',
-          description:
-              'Tap the microphone on the dialpad and say a number or a name. Speech is turned into text on your phone, in English or Malayalam, and lead-in words like "call" are dropped automatically.',
+          title: l.featureC0F2Title,
+          description: l.featureC0F2Desc,
           icon: Icons.mic_none_outlined,
-          highlights: [
-            'Speak a number or a name',
-            'English & Malayalam',
-            'On-device speech',
-          ],
+          highlights: [l.featureC0F2H0, l.featureC0F2H1, l.featureC0F2H2],
         ),
         _AppFeature(
-          title: 'Editable Dialer & Precision Editing',
-          description:
-              'Freely tap anywhere on the typed number to move your cursor, select digits, copy, or paste phone numbers with ease.',
+          title: l.featureC0F3Title,
+          description: l.featureC0F3Desc,
           icon: Icons.edit_note_outlined,
-          highlights: [
-            'Cursor positioning',
-            'Paste numbers',
-            'Backspace at the cursor',
-          ],
+          highlights: [l.featureC0F3H0, l.featureC0F3H1, l.featureC0F3H2],
         ),
         _AppFeature(
-          title: 'Top Contacts Quick Access',
-          description:
-              'A row right above the dialpad for one-tap calling. Choose what fills it: your most contacted people, the family and friends you have linked, or whoever usually answers at this time of day.',
+          title: l.featureC0F4Title,
+          description: l.featureC0F4Desc,
           icon: Icons.star_outline,
-          highlights: [
-            'Favorites row',
-            'Family & friends filter',
-            'Likely to answer now',
-          ],
+          highlights: [l.featureC0F4H0, l.featureC0F4H1, l.featureC0F4H2],
         ),
         _AppFeature(
-          title: 'Dual-SIM Calling Controls',
-          description:
-              'Choose between SIM 1 and SIM 2 for each call, or set a default SIM so you are not asked every time. A contact can also keep its own preferred SIM, which is used ahead of the default. Each SIM gets its own colour, and Recents shows which one a call used.',
+          title: l.featureC0F5Title,
+          description: l.featureC0F5Desc,
           icon: Icons.sim_card_outlined,
           highlights: [
-            'SIM 1 / SIM 2 picker',
-            'Default SIM or ask each time',
-            'Per-contact preferred SIM',
-            'SIM shown in Recents',
+            l.featureC0F5H0,
+            l.featureC0F5H1,
+            l.featureC0F5H2,
+            l.featureC0F5H3,
           ],
         ),
         _AppFeature(
-          title: 'Smart Redial & "Reach Me" Mode',
-          description:
-              'When a call goes unanswered or busy, schedule a redial after a delay you choose, or send a preset "trying to reach you" text in one tap.',
+          title: l.featureC0F6Title,
+          description: l.featureC0F6Desc,
           icon: Icons.replay_outlined,
-          highlights: [
-            'Redial after your delay',
-            '1-tap SMS prompt',
-            'Cancel a waiting redial',
-          ],
+          highlights: [l.featureC0F6H0, l.featureC0F6H1, l.featureC0F6H2],
         ),
         _AppFeature(
-          title: 'Spoken Caller Announcements',
-          description:
-              'Hear a saved caller\'s name spoken out loud when your phone rings, perfect when driving or wearing headphones. A Malayalam name is announced in Malayalam.',
+          title: l.featureC0F7Title,
+          description: l.featureC0F7Desc,
           icon: Icons.record_voice_over_outlined,
-          highlights: [
-            'Voice caller ID',
-            'Malayalam announcements',
-            'Quiet-hours exception',
-          ],
+          highlights: [l.featureC0F7H0, l.featureC0F7H1, l.featureC0F7H2],
         ),
         _AppFeature(
-          title: 'Quick Reject SMS Replies',
-          description:
-              'Decline incoming calls politely with preset one-tap SMS messages like "In a meeting, will call back soon."',
+          title: l.featureC0F8Title,
+          description: l.featureC0F8Desc,
           icon: Icons.sms_outlined,
-          highlights: [
-            '1-tap decline SMS',
-            'Custom quick templates',
-            'Instant dispatch',
-          ],
+          highlights: [l.featureC0F8H0, l.featureC0F8H1, l.featureC0F8H2],
         ),
       ],
     ),
     _FeatureCategory(
-      name: 'In-Call & Caller Intelligence',
-      subtitle:
-          'Know who is calling with rich context and seamless call controls',
+      name: l.featureC1Name,
+      subtitle: l.featureC1Subtitle,
       icon: Icons.person_search_outlined,
       features: [
         _AppFeature(
-          title: 'Modern In-Call Screen & Conference Calling',
-          description:
-              'A beautiful call screen with mute, loud speaker, call hold, numeric keypad, active call swapping, and merging multi-party conference calls.',
+          title: l.featureC1F0Title,
+          description: l.featureC1F0Desc,
           icon: Icons.call_end_outlined,
           highlights: [
-            'Speaker & mute',
-            'Call hold & swap',
-            'Conference merge',
-            'Full-screen incoming alert',
+            l.featureC1F0H0,
+            l.featureC1F0H1,
+            l.featureC1F0H2,
+            l.featureC1F0H3,
           ],
         ),
         _AppFeature(
-          title: 'Relationship Context Cards',
-          description:
-              'See the caller\'s relationship badge, how long since you last spoke, personal notes, and upcoming birthdays right as the phone rings.',
+          title: l.featureC1F1Title,
+          description: l.featureC1F1Desc,
           icon: Icons.badge_outlined,
-          highlights: [
-            'Relationship badge',
-            'Last spoken days',
-            'Instant notes preview',
-          ],
+          highlights: [l.featureC1F1H0, l.featureC1F1H1, l.featureC1F1H2],
         ),
         _AppFeature(
-          title: 'Pre-Call Summary',
-          description:
-              'Before you ring someone, see when you last spoke, how long that call lasted, what you noted, and the local time in their city if you saved an address.',
+          title: l.featureC1F2Title,
+          description: l.featureC1F2Desc,
           icon: Icons.analytics_outlined,
-          highlights: [
-            'Catch-up reminders',
-            'Their local time',
-            'Interaction timeline',
-          ],
+          highlights: [l.featureC1F2H0, l.featureC1F2H1, l.featureC1F2H2],
         ),
         _AppFeature(
-          title: 'Post-Call Notes & Voice Transcribing',
-          description:
-              'Quickly jot down what you discussed right after hanging up using your keyboard or speaking aloud with automatic voice-to-text.',
+          title: l.featureC1F3Title,
+          description: l.featureC1F3Desc,
           icon: Icons.note_alt_outlined,
-          highlights: [
-            'Voice-to-text input',
-            'Post-call prompt',
-            'Follow-up reminder',
-          ],
+          highlights: [l.featureC1F3H0, l.featureC1F3H1, l.featureC1F3H2],
         ),
       ],
     ),
     _FeatureCategory(
-      name: 'Contact Management & Relations',
-      subtitle: 'Organize your network into meaningful spheres and circles',
+      name: l.featureC2Name,
+      subtitle: l.featureC2Subtitle,
       icon: Icons.people_alt_outlined,
       features: [
         _AppFeature(
-          title: 'Rich Contact Profiles',
-          description:
-              'Store multiple phone numbers, emails, home/work addresses, birthdays, anniversaries, social links, official details, and phonetic names.',
+          title: l.featureC2F0Title,
+          description: l.featureC2F0Desc,
           icon: Icons.account_circle_outlined,
-          highlights: [
-            'Multi-phone & email',
-            'Birthday reminders',
-            'Custom labels',
-          ],
+          highlights: [l.featureC2F0H0, l.featureC2F0H1, l.featureC2F0H2],
         ),
         _AppFeature(
-          title: '7 Relationship Spheres',
-          description:
-              'Every link you save sits in one of seven categories: Immediate Family, Extended Family, Family by Marriage, Professional, Educational, Social, and Service. The label inside it — "Father", "Manager" — is whatever you type.',
+          title: l.featureC2F1Title,
+          description: l.featureC2F1Desc,
           icon: Icons.hub_outlined,
-          highlights: [
-            'Seven fixed categories',
-            'Your own kinship labels',
-            'Saved on both contacts',
-          ],
+          highlights: [l.featureC2F1H0, l.featureC2F1H1, l.featureC2F1H2],
         ),
         _AppFeature(
-          title: 'Relationship Quiet Hours (DND Filter)',
-          description:
-              'Silence calls between the times you set, and list who should still get through — starred contacts, whole relationship categories, a tag, or named individuals. Everyone else stays quiet.',
+          title: l.featureC2F2Title,
+          description: l.featureC2F2Desc,
           icon: Icons.bedtime_outlined,
-          highlights: [
-            'Set your quiet window',
-            'Allow list, not a block list',
-            'By category, tag or person',
-          ],
+          highlights: [l.featureC2F2H0, l.featureC2F2H1, l.featureC2F2H2],
         ),
         _AppFeature(
-          title: 'Tags & Custom Groups',
-          description:
-              'Tag contacts with short words of your own, and build groups (like "Project Team" or "Book Club") that can carry their own ringtone.',
+          title: l.featureC2F3Title,
+          description: l.featureC2F3Desc,
           icon: Icons.label_outline,
-          highlights: [
-            'Tag cloud explorer',
-            'Custom groups',
-            'Group ringtones',
-          ],
+          highlights: [l.featureC2F3H0, l.featureC2F3H1, l.featureC2F3H2],
         ),
         _AppFeature(
-          title: 'Duplicate Contact Finder & Smart Merge',
-          description:
-              'Find duplicates by phone number and by name — including names written in another script — then merge them cleanly without losing any detail.',
+          title: l.featureC2F4Title,
+          description: l.featureC2F4Desc,
           icon: Icons.merge_type_outlined,
-          highlights: [
-            'Name & number matching',
-            'Safe data merge',
-            'Review before merging',
-          ],
+          highlights: [l.featureC2F4H0, l.featureC2F4H1, l.featureC2F4H2],
         ),
         _AppFeature(
-          title: 'Temporary (Ephemeral) Contacts',
-          description:
-              'Save a delivery driver or a one-off seller as a temporary contact and it deletes itself — after 2 hours, 24 hours, 7 days, or a single call.',
+          title: l.featureC2F5Title,
+          description: l.featureC2F5Desc,
           icon: Icons.timer_outlined,
-          highlights: [
-            'Self-deleting entry',
-            'Countdown banner',
-            'Keep it permanently',
-          ],
+          highlights: [l.featureC2F5H0, l.featureC2F5H1, l.featureC2F5H2],
         ),
         _AppFeature(
-          title: 'Connected Messaging Apps',
-          description:
-              'A contact shows the messengers they can be reached on — WhatsApp, Telegram, Arattai and others — read from your phone\'s own address book. Tap one to open the chat there.',
+          title: l.featureC2F6Title,
+          description: l.featureC2F6Desc,
           icon: Icons.apps_outlined,
-          highlights: [
-            'Open chat directly',
-            'Read from your phone',
-            'No account needed',
-          ],
+          highlights: [l.featureC2F6H0, l.featureC2F6H1, l.featureC2F6H2],
         ),
       ],
     ),
     _FeatureCategory(
-      name: 'Privacy, Security & Vault',
-      subtitle: 'Protect your sensitive contacts and private conversations',
+      name: l.featureC3Name,
+      subtitle: l.featureC3Subtitle,
       icon: Icons.shield_outlined,
       features: [
         _AppFeature(
-          title: 'Secret Contacts Vault',
-          description:
-              'Hide sensitive personal or business contacts in a protected vault. They are completely invisible in the main list until unlocked.',
+          title: l.featureC3F0Title,
+          description: l.featureC3F0Desc,
           icon: Icons.lock_outline,
-          highlights: [
-            'Biometric / PIN unlock',
-            'Hidden from main list',
-            'Encrypted database',
-          ],
+          highlights: [l.featureC3F0H0, l.featureC3F0H1, l.featureC3F0H2],
         ),
         _AppFeature(
-          title: 'App Lock: Off, Device Lock or App PIN',
-          description:
-              'Lock the whole app behind your phone\'s fingerprint and face, or behind a separate 4–6 digit App PIN with a one-time recovery code. Secret contacts, backups and sync ask again on top of it.',
+          title: l.featureC3F1Title,
+          description: l.featureC3F1Desc,
           icon: Icons.fingerprint,
-          highlights: [
-            'Fingerprint & Face unlock',
-            'Separate App PIN',
-            'One-time recovery code',
-          ],
+          highlights: [l.featureC3F1H0, l.featureC3F1H1, l.featureC3F1H2],
         ),
         _AppFeature(
-          title: 'Screenshot Guard',
-          description:
-              'Blocks screenshots, screen recording, and the Recents preview while you are on a screen holding private data — contact details, a call in progress, the lock screen, secret contacts, and the audit log.',
+          title: l.featureC3F2Title,
+          description: l.featureC3F2Desc,
           icon: Icons.screenshot_outlined,
-          highlights: [
-            'Screenshot blocking',
-            'Screen recording defense',
-            'Recents preview hidden',
-          ],
+          highlights: [l.featureC3F2H0, l.featureC3F2H1, l.featureC3F2H2],
         ),
         _AppFeature(
-          title: 'Contact Change Audit Log',
-          description:
-              'A private, tamper-evident history of every contact created, edited or deleted, with what it looked like before and after — so an accidental change can be undone.',
+          title: l.featureC3F3Title,
+          description: l.featureC3F3Desc,
           icon: Icons.history_edu_outlined,
-          highlights: [
-            'Before & after snapshots',
-            'Undo a change',
-            'Signed export',
-          ],
+          highlights: [l.featureC3F3H0, l.featureC3F3H1, l.featureC3F3H2],
         ),
       ],
     ),
     _FeatureCategory(
-      name: 'Instant Contact Sharing & Scanning',
-      subtitle: 'Exchange contact cards quickly without typing',
+      name: l.featureC4Name,
+      subtitle: l.featureC4Subtitle,
       icon: Icons.qr_code_scanner_outlined,
       features: [
         _AppFeature(
-          title: 'vCard QR Code Generator & Scanner',
-          description:
-              'Create a QR code of your contact card for others to scan in seconds, or use the camera to scan and save anyone\'s QR contact card.',
+          title: l.featureC4F0Title,
+          description: l.featureC4F0Desc,
           icon: Icons.qr_code_2_outlined,
-          highlights: [
-            'Instant QR vCard',
-            'Built-in camera scanner',
-            '1-tap address book import',
-          ],
+          highlights: [l.featureC4F0H0, l.featureC4F0H1, l.featureC4F0H2],
         ),
         _AppFeature(
-          title: 'AirQR Animated Code Streaming',
-          description:
-              'A photo or a long contact card will not fit in one QR code. AirQR splits it across many frames and plays them as an animation for the other phone\'s camera to read — no Bluetooth, no network, no pairing.',
+          title: l.featureC4F1Title,
+          description: l.featureC4F1Desc,
           icon: Icons.sensors,
-          highlights: [
-            'Sends photos & full cards',
-            'Camera-only transfer',
-            'Live progress while it streams',
-          ],
+          highlights: [l.featureC4F1H0, l.featureC4F1H1, l.featureC4F1H2],
         ),
         _AppFeature(
-          title: 'On-Device Business Card Scanner',
-          description:
-              'Snap a photo of any physical business card to extract name, phone, email, and company details instantly—all processed 100% on your phone without cloud upload.',
+          title: l.featureC4F2Title,
+          description: l.featureC4F2Desc,
           icon: Icons.document_scanner_outlined,
-          highlights: [
-            'On-device AI OCR',
-            'Zero cloud upload',
-            'Selectable field import',
-          ],
+          highlights: [l.featureC4F2H0, l.featureC4F2H1, l.featureC4F2H2],
         ),
         _AppFeature(
-          title: 'Offline Bluetooth LE Share',
-          description:
-              'Discover nearby ContactSphere devices and send contacts directly over Bluetooth Low Energy without needing internet or pairing codes.',
+          title: l.featureC4F3Title,
+          description: l.featureC4F3Desc,
           icon: Icons.bluetooth_outlined,
-          highlights: [
-            'Zero internet required',
-            'Auto device discovery',
-            'Receiver must confirm',
-          ],
+          highlights: [l.featureC4F3H0, l.featureC4F3H1, l.featureC4F3H2],
         ),
         _AppFeature(
-          title: 'CSV & vCard Import / Export',
-          description:
-              'Bring contacts in from a CSV or vCard (.vcf) file, or write your address book out as one, then choose where it goes through the system share sheet.',
+          title: l.featureC4F4Title,
+          description: l.featureC4F4Desc,
           icon: Icons.import_export_outlined,
-          highlights: [
-            'CSV in and out',
-            'vCard (.vcf) in and out',
-            'Secret contacts left out',
-          ],
+          highlights: [l.featureC4F4H0, l.featureC4F4H1, l.featureC4F4H2],
         ),
       ],
     ),
     _FeatureCategory(
-      name: 'Data Sync & Backup',
-      subtitle:
-          'Keep your contacts safe, synchronized, and recoverable anywhere',
+      name: l.featureC5Name,
+      subtitle: l.featureC5Subtitle,
       icon: Icons.cloud_sync_outlined,
       features: [
         _AppFeature(
-          title: 'Device Contacts & Call Log Sync',
-          description:
-              'Copy contacts between the app and your phone\'s address book in whichever direction you choose — you run each one yourself. The phone\'s call log flows into Recents on its own.',
+          title: l.featureC5F0Title,
+          description: l.featureC5F0Desc,
           icon: Icons.sync,
-          highlights: [
-            'Either direction, on demand',
-            'Adds and updates, never deletes',
-            'Call log arrives automatically',
-          ],
+          highlights: [l.featureC5F0H0, l.featureC5F0H1, l.featureC5F0H2],
         ),
         _AppFeature(
-          title: 'Local Wi-Fi Device-to-Device Sync',
-          description:
-              'Transfer contacts between two phones on the same Wi-Fi network, encrypted with a pairing code that never leaves the screen. Nothing is uploaded, and nothing on the receiving phone is deleted.',
+          title: l.featureC5F1Title,
+          description: l.featureC5F1Desc,
           icon: Icons.wifi_tethering,
-          highlights: [
-            'Direct phone to phone',
-            'Encrypted with a QR pairing code',
-            'No cloud needed',
-          ],
+          highlights: [l.featureC5F1H0, l.featureC5F1H1, l.featureC5F1H2],
         ),
         _AppFeature(
-          title: 'Online Provider Sync & Encrypted Cloud Backup',
-          description:
-              'Optionally sync contacts with Google, Microsoft or a CardDAV server, and upload a password-encrypted backup file to Google Drive, OneDrive or your own WebDAV storage.',
+          title: l.featureC5F2Title,
+          description: l.featureC5F2Desc,
           icon: Icons.cloud_outlined,
-          highlights: [
-            'Google, Microsoft & WebDAV',
-            'Password-encrypted file',
-            'Secret contacts never uploaded',
-          ],
+          highlights: [l.featureC5F2H0, l.featureC5F2H1, l.featureC5F2H2],
         ),
         _AppFeature(
-          title: 'Offline Backup & Restore Files',
-          description:
-              'Save everything — contacts, call history, photos, settings and the emergency card — into one password-locked file, and restore it on any phone. The password is the only key; the app never stores it.',
+          title: l.featureC5F3Title,
+          description: l.featureC5F3Desc,
           icon: Icons.backup_outlined,
-          highlights: [
-            'Export to file',
-            'Safe encrypted format',
-            'Restore replaces everything',
-          ],
+          highlights: [l.featureC5F3H0, l.featureC5F3H1, l.featureC5F3H2],
         ),
       ],
     ),
     _FeatureCategory(
-      name: 'Call Defense & Spam Blocking',
-      subtitle: 'Shield yourself from spam calls and unwanted numbers',
+      name: l.featureC6Name,
+      subtitle: l.featureC6Subtitle,
       icon: Icons.shield_outlined,
       features: [
         _AppFeature(
-          title: 'Automatic Call Screening',
-          description:
-              'A built-in screening service inspects every incoming number before your phone rings and turns away anything on your blocked list — checked entirely on this phone, against your own list.',
+          title: l.featureC6F0Title,
+          description: l.featureC6F0Desc,
           icon: Icons.phone_disabled_outlined,
-          highlights: [
-            'Rejected before it rings',
-            'Nothing looked up online',
-            'Default dialer integration',
-          ],
+          highlights: [l.featureC6F0H0, l.featureC6F0H1, l.featureC6F0H2],
         ),
         _AppFeature(
-          title: 'Blocked Numbers Manager',
-          description:
-              'Block a number with a long-press in Recents, from the Block control during a call, or by typing it in yourself. Blocking during a live call hangs it up at once, and blocked calls still appear in Recents so you can see who tried.',
+          title: l.featureC6F1Title,
+          description: l.featureC6F1Desc,
           icon: Icons.block_outlined,
-          highlights: [
-            'Block from Recents or in-call',
-            'Blocklist manager',
-            'Unblock anytime',
-          ],
+          highlights: [l.featureC6F1H0, l.featureC6F1H1, l.featureC6F1H2],
         ),
         _AppFeature(
-          title: 'Block Unknown Callers',
-          description:
-              'Turn away calls that arrive with no number or a withheld one. They are rejected before ringing and still written into Recents as blocked.',
+          title: l.featureC6F2Title,
+          description: l.featureC6F2Desc,
           icon: Icons.no_accounts_outlined,
-          highlights: [
-            'Hidden numbers rejected',
-            'Still logged in Recents',
-            'One switch to turn on',
-          ],
+          highlights: [l.featureC6F2H0, l.featureC6F2H1, l.featureC6F2H2],
         ),
         _AppFeature(
-          title: 'Caller Identification & Spam Filter',
-          description:
-              'Label callers who are not in your contacts using what can be worked out locally — telemarketing and service number series, numbers you marked as spam, and the network\'s verified-caller flag. Flagged callers can ring silently instead of loudly.',
+          title: l.featureC6F3Title,
+          description: l.featureC6F3Desc,
           icon: Icons.label_outline,
-          highlights: [
-            'Labels unknown callers',
-            'Ring spam silently',
-            'Mark a number as spam',
-          ],
+          highlights: [l.featureC6F3H0, l.featureC6F3H1, l.featureC6F3H2],
         ),
       ],
     ),
     _FeatureCategory(
-      name: 'Personalization & Accessibility',
-      subtitle:
-          'Customize the appearance, audio, and regional settings to your taste',
+      name: l.featureC7Name,
+      subtitle: l.featureC7Subtitle,
       icon: Icons.palette_outlined,
       features: [
         _AppFeature(
-          title: 'Theme, Accent Color & Typography',
-          description:
-              'Switch between Light, Dark, or System mode, choose an accent colour, and set the font and text size. Three bundled fonts cover both Malayalam and English.',
+          title: l.featureC7F0Title,
+          description: l.featureC7F0Desc,
           icon: Icons.color_lens_outlined,
-          highlights: [
-            'Dark & Light mode',
-            'Curated color palettes',
-            'Font & text size',
-          ],
+          highlights: [l.featureC7F0H0, l.featureC7F0H1, l.featureC7F0H2],
         ),
         _AppFeature(
-          title: 'Per-SIM, Group & Contact Ringtones',
-          description:
-              'Assign distinctive ringtones to SIM 1 vs SIM 2, to a group, or to a single contact. The most specific one wins: the contact\'s tone, then their group\'s, then the SIM\'s.',
+          title: l.featureC7F1Title,
+          description: l.featureC7F1Desc,
           icon: Icons.notifications_active_outlined,
-          highlights: [
-            'Distinct ringtone per SIM',
-            'Group ringtones',
-            'Per-contact ringtones',
-          ],
+          highlights: [l.featureC7F1H0, l.featureC7F1H1, l.featureC7F1H2],
         ),
         _AppFeature(
-          title: 'Emergency Info Lock-Screen Card',
-          description:
-              'Set vital medical info (blood group, allergies, emergency contacts) visible on your lock screen for first responders without unlocking.',
+          title: l.featureC7F2Title,
+          description: l.featureC7F2Desc,
           icon: Icons.medical_information_outlined,
-          highlights: [
-            'Lock-screen access',
-            'Per-field privacy toggle',
-            'Direct emergency dial',
-          ],
+          highlights: [l.featureC7F2H0, l.featureC7F2H1, l.featureC7F2H2],
         ),
         _AppFeature(
-          title: 'Default Country Dialing Code',
-          description:
-              'Tell the app which country your plain, un-prefixed numbers belong to. It is what lets a call from +91 98765 43210 be recognised as the 98765 43210 in your contacts, and it is used to match blocked numbers too.',
+          title: l.featureC7F3Title,
+          description: l.featureC7F3Desc,
           icon: Icons.public_outlined,
-          highlights: [
-            'Auto country prefix',
-            'International format',
-            'Matches callers to contacts',
-          ],
+          highlights: [l.featureC7F3H0, l.featureC7F3H1, l.featureC7F3H2],
         ),
         _AppFeature(
-          title: 'Contact Counts & Search Index',
-          description:
-              'See how many contacts sit on the phone and in the app, and check the health of the search index that makes T9 and name search fast. Rebuild it in seconds if a contact stops turning up.',
+          title: l.featureC7F4Title,
+          description: l.featureC7F4Desc,
           icon: Icons.manage_search_outlined,
-          highlights: [
-            'Device vs app counts',
-            'Index health check',
-            'One-tap rebuild',
-          ],
+          highlights: [l.featureC7F4H0, l.featureC7F4H1, l.featureC7F4H2],
         ),
         _AppFeature(
-          title: 'In-App Help & Guides',
-          description:
-              'Over twenty plain-English guides covering every feature here — calling, blocking, sync, backups, privacy, sharing and more — plus a FAQ and troubleshooting page. All offline, inside the app.',
+          title: l.featureC7F5Title,
+          description: l.featureC7F5Desc,
           icon: Icons.help_center_outlined,
-          highlights: [
-            'Guide for every feature',
-            'FAQ & troubleshooting',
-            'Works offline',
-          ],
+          highlights: [l.featureC7F5H0, l.featureC7F5H1, l.featureC7F5H2],
         ),
       ],
     ),
@@ -581,13 +373,15 @@ class FeaturesScreen extends StatelessWidget {
     final colors = theme.extension<AppColors>()!;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Features')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).titleFeatures)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           _buildHeaderCard(context, colors),
           const SizedBox(height: 20),
-          for (final category in _categories) ...[
+          for (final category in _categoriesFor(
+            AppLocalizations.of(context),
+          )) ...[
             _buildCategoryHeader(context, category, colors),
             const SizedBox(height: 10),
             _buildCategoryCard(context, category, colors),
@@ -643,14 +437,14 @@ class FeaturesScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'SreerajP Contacts Sphere Features',
+                    AppLocalizations.of(context).titleFeaturesHeader,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Explore every intelligent tool, privacy safeguard, and calling feature designed for you.',
+                    AppLocalizations.of(context).descFeaturesHeader,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colors.mutedText,
                       height: 1.35,

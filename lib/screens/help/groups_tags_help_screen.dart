@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/screens/help/help_article.dart';
 
 class GroupsTagsHelpScreen extends StatelessWidget {
@@ -14,88 +15,46 @@ class GroupsTagsHelpScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const HelpArticleScaffold(
-      title: 'Groups & tags',
+    return HelpArticleScaffold(
+      title: AppLocalizations.of(context).helpGroupsTagsTitle1,
       children: [
-        HelpIntro(
-          'Groups and tags are two different ways to sort the same address '
-          'book. A contact belongs to groups you build by hand, and carries '
-          'tags you type as short labels. Both are yours — the app never '
-          'creates one on its own.',
-        ),
-        SizedBox(height: 24),
+        HelpIntro(AppLocalizations.of(context).helpGroupsTagsIntro),
+        const SizedBox(height: 24),
 
         HelpSection(
           icon: Icons.group_outlined,
-          title: 'Groups',
+          title: AppLocalizations.of(context).helpGroupsTagsTitle2,
           children: [
-            HelpBullet(
-              'Open the Contacts tab and tap the group icon in the top bar to '
-              'see all your groups.',
-            ),
-            HelpBullet(
-              'Create a group, give it a name, and add members. A contact can '
-              'be in more than one group.',
-            ),
-            HelpBullet(
-              'A group can carry its own ringtone. Pick one from the phone\'s '
-              'ringtones or from an audio file in your folders.',
-            ),
-            HelpBullet(
-              'The group ringtone is used for members who do not have their '
-              'own ringtone set. A ringtone on the contact always wins.',
-            ),
+            HelpBullet(AppLocalizations.of(context).helpGroupsTagsBullet1),
+            HelpBullet(AppLocalizations.of(context).helpGroupsTagsBullet2),
+            HelpBullet(AppLocalizations.of(context).helpGroupsTagsBullet3),
+            HelpBullet(AppLocalizations.of(context).helpGroupsTagsBullet4),
           ],
         ),
 
         HelpSection(
           icon: Icons.sell_outlined,
-          title: 'Tags',
+          title: AppLocalizations.of(context).helpGroupsTagsTitle3,
           children: [
-            HelpBullet(
-              'A tag is a short word you attach to a contact while editing '
-              'them — "plumber", "school", "trek group". There is no fixed '
-              'list; type whatever fits.',
-            ),
-            HelpBullet(
-              'The Tags tab at the bottom of the app shows every tag in use as '
-              'a cloud. A tag used by more contacts is drawn larger.',
-            ),
-            HelpBullet(
-              'Tap a tag to see everyone who carries it. From there you can '
-              'call, message, or open any of them.',
-            ),
-            HelpBullet(
-              'Tags also work as an exception list for quiet hours, so a whole '
-              'tag can be allowed to ring through.',
-            ),
+            HelpBullet(AppLocalizations.of(context).helpGroupsTagsBullet5),
+            HelpBullet(AppLocalizations.of(context).helpGroupsTagsBullet6),
+            HelpBullet(AppLocalizations.of(context).helpGroupsTagsBullet7),
+            HelpBullet(AppLocalizations.of(context).helpGroupsTagsBullet8),
           ],
         ),
 
         HelpSection(
           icon: Icons.checklist_outlined,
-          title: 'Working on many contacts at once',
+          title: AppLocalizations.of(context).helpGroupsTagsTitle4,
           children: [
-            HelpBullet(
-              'Long-press a contact in the list to start selecting. Tap more '
-              'contacts to add them to the selection.',
-            ),
-            HelpBullet(
-              'The top bar then offers "Select all" and "Delete selected", so '
-              'you can clear out many contacts in one step.',
-            ),
-            HelpBullet(
-              'Tap the cross in the top bar to leave selection mode without '
-              'changing anything.',
-            ),
+            HelpBullet(AppLocalizations.of(context).helpGroupsTagsBullet9),
+            HelpBullet(AppLocalizations.of(context).helpGroupsTagsBullet10),
+            HelpBullet(AppLocalizations.of(context).helpGroupsTagsBullet11),
           ],
         ),
 
-        SizedBox(height: 8),
-        HelpFooter(
-          'Tip: use a group when the set is fixed and you want one ringtone for '
-          'it. Use a tag when you only want to find those people again later.',
-        ),
+        const SizedBox(height: 8),
+        HelpFooter(AppLocalizations.of(context).helpGroupsTagsFooter),
       ],
     );
   }

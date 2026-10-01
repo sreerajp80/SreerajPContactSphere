@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
@@ -16,13 +17,19 @@ class ContactDisplaySettingsScreen extends StatelessWidget {
     final settings = context.watch<AppSettings>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Display & Formatting')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).labelDisplayFormatting),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           _SortOrderCard(colors: colors, accent: accent, settings: settings),
           const SizedBox(height: 12),
-          _HideWithoutPhoneCard(colors: colors, accent: accent, settings: settings),
+          _HideWithoutPhoneCard(
+            colors: colors,
+            accent: accent,
+            settings: settings,
+          ),
         ],
       ),
     );
@@ -49,25 +56,25 @@ class _SortOrderCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Sort order',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            Text(
+              AppLocalizations.of(context).labelSortOrder,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 2),
             Text(
-              'How contacts are ordered in lists',
+              AppLocalizations.of(context).descSortOrder,
               style: TextStyle(color: colors.mutedText, fontSize: 13),
             ),
             const SizedBox(height: 8),
             SegmentedButton<ContactSortOrder>(
-              segments: const [
+              segments: [
                 ButtonSegment(
                   value: ContactSortOrder.firstName,
-                  label: Text('First name'),
+                  label: Text(AppLocalizations.of(context).labelFirstName),
                 ),
                 ButtonSegment(
                   value: ContactSortOrder.lastName,
-                  label: Text('Last name'),
+                  label: Text(AppLocalizations.of(context).labelLastName),
                 ),
               ],
               selected: {settings.contactSortOrder},
@@ -102,12 +109,12 @@ class _HideWithoutPhoneCard extends StatelessWidget {
         activeThumbColor: accent,
         onChanged: (v) =>
             context.read<AppSettings>().setHideContactsWithoutPhone(v),
-        title: const Text(
-          'Hide contacts without phone numbers',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        title: Text(
+          AppLocalizations.of(context).labelHideNoPhone,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
         subtitle: Text(
-          'Contacts with only emails or addresses won\'t show in the main list',
+          AppLocalizations.of(context).descHideNoPhone,
           style: TextStyle(color: colors.mutedText, fontSize: 13),
         ),
       ),

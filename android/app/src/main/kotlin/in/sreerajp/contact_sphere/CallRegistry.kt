@@ -137,9 +137,26 @@ object CallRegistry {
      *  (incoming, never active) from an answered one when a call is removed. */
     private val sawActiveCalls = mutableSetOf<Call>()
 
+    /** Calls currently known to sit inside a conference (they have a parent).
+     *  Such a call is never the primary the Flutter snapshot logger tracks — the
+     *  conference host is — so [maybeJournalCallWaiting] journals it for Recents.
+     *  A call split back out ("Private") leaves the set, because it can then end
+     *  as the primary and be logged by the Flutter side instead. */
+    private val conferenceChildren = mutableSetOf<Call>()
+
     private var audioState: CallAudioState? = null
 
     private val callback = object : Call.Callback() {
+        override fun onParentChanged(c: Call, parent: Call?) {
+            if (parent != null) conferenceChildren.add(c) else conferenceChildren.remove(c)
+            notifyChange()
+        }
+        override fun onChildrenChanged(c: Call, children: MutableList<Call>) {
+            conferenceChildren.addAll(children)
+            notifyChange()
+        }
+        override fun onConferenceableCallsChanged(c: Call, calls: MutableList<Call>) =
+            notifyChange()
         override fun onStateChanged(c: Call, state: Int) {
             if (state == Call.STATE_RINGING) {
                 sawRingingCalls.add(c)
@@ -242,6 +259,8 @@ object CallRegistry {
         callIds[c] = callCounter
         // A call that arrives already ringing is incoming.
         if (stateOf(c) == Call.STATE_RINGING) sawRingingCalls.add(c)
+        // A conference child can be handed to us already attached to its host.
+        if (c.parent != null) conferenceChildren.add(c)
         c.registerCallback(callback)
         // An outgoing call placed with no chosen SIM (in-app "System default") can
         // arrive already needing an account. Resolve it before anyone waits on it.
@@ -263,6 +282,7 @@ object CallRegistry {
         callIds.remove(c)
         sawRingingCalls.remove(c)
         sawActiveCalls.remove(c)
+        conferenceChildren.remove(c)
         if (noneRinging()) stopRingingIfNeeded()
         notifyChange()
     }
@@ -285,13 +305,20 @@ object CallRegistry {
      * is deliberately skipped here — the snapshot logger already writes its row, so
      * journaling it too would double-count it.
      *
+     * An incoming call that was merged into a conference is journaled too, even
+     * when it is the last call to end: once merged, the primary became the
+     * conference host, so the snapshot logger stopped tracking it. The Flutter
+     * drain writes through `logCallIfNew`, so a row the device-log import already
+     * wrote is matched rather than doubled.
+     *
      * Runs before [c] is removed from [calls], so "another call live" is a simple
      * presence check.
      */
     private fun maybeJournalCallWaiting(c: Call) {
         if (!isIncoming(c)) return
         val callWaiting = calls.any { it !== c }
-        if (!callWaiting) return
+        val wasConferenced = conferenceChildren.contains(c) || c.parent != null
+        if (!callWaiting && !wasConferenced) return
         val wasActive = sawActiveCalls.contains(c)
         val connectTime = c.details?.connectTimeMillis ?: 0L
         val durationSeconds =
@@ -644,25 +671,72 @@ object CallRegistry {
     }
 
     /**
-     * Conferences the primary and background calls, when the carrier/call reports
-     * it can. Handles both "merge two independent calls" ([Call.conference]) and
-     * "merge into an existing conference" ([Call.mergeConference]). Best-effort:
-     * no-ops on networks without conference support (the UI hides the button then).
+     * Conferences the primary call with the background call, following the same
+     * order as the platform dialer:
+     *
+     * 1. Telecom lists calls the primary can be conferenced with
+     *    ([Call.getConferenceableCalls]) → [Call.conference] with the background
+     *    call when it is listed, else the first listed call;
+     * 2. the primary reports [Call.Details.CAPABILITY_MERGE_CONFERENCE] (a
+     *    network-managed conference, e.g. CDMA) → [Call.mergeConference];
+     * 3. the background call lists the primary → conference from that side.
+     *
+     * [Call.conference] and [Call.mergeConference] never throw when the network
+     * refuses — they quietly do nothing — so the choice has to be made up front
+     * from what Telecom reports, not by trying one and catching a failure.
+     * No-op when none applies ([snapshot] hides Merge then).
      */
     fun merge() {
         val p = primaryCall() ?: return
         val s = secondaryCall()
         try {
-            if (s != null) p.conference(s) else p.mergeConference()
-        } catch (e: Exception) {
-            try {
-                if (s != null) s.conference(p) else p.mergeConference()
-            } catch (e2: Exception) {
-                try {
-                    p.mergeConference()
-                } catch (e3: Exception) {
-                }
+            val candidates = p.conferenceableCalls
+            if (candidates.isNotEmpty()) {
+                p.conference(if (s != null && candidates.contains(s)) s else candidates[0])
+                return
             }
+            if (p.details?.can(Call.Details.CAPABILITY_MERGE_CONFERENCE) == true) {
+                p.mergeConference()
+                return
+            }
+            if (s != null && s.conferenceableCalls.contains(p)) s.conference(p)
+        } catch (e: Exception) {
+            // Best-effort; the calls simply stay separate.
+        }
+    }
+
+    /** Whether the primary call can be conferenced right now (see [merge]). */
+    private fun canMergeNow(p: Call): Boolean {
+        if (p.conferenceableCalls.isNotEmpty()) return true
+        if (p.details?.can(Call.Details.CAPABILITY_MERGE_CONFERENCE) == true) return true
+        val s = secondaryCall() ?: return false
+        return s.conferenceableCalls.contains(p)
+    }
+
+    /** The live child call of the primary conference with Flutter-side id [id]. */
+    private fun participant(id: Long): Call? {
+        val host = primaryCall() ?: return null
+        return host.children.firstOrNull { callIds[it] == id }
+    }
+
+    /** Drops one person from the conference, when the network allows it. */
+    fun disconnectParticipant(id: Long) {
+        val c = participant(id) ?: return
+        if (c.details?.can(Call.Details.CAPABILITY_DISCONNECT_FROM_CONFERENCE) != true) return
+        try {
+            c.disconnect()
+        } catch (e: Exception) {
+        }
+    }
+
+    /** Splits one person off the conference for a private talk (the rest of the
+     *  conference goes on hold), when the network allows it. */
+    fun separateParticipant(id: Long) {
+        val c = participant(id) ?: return
+        if (c.details?.can(Call.Details.CAPABILITY_SEPARATE_FROM_CONFERENCE) != true) return
+        try {
+            c.splitFromConference()
+        } catch (e: Exception) {
         }
     }
 
@@ -739,14 +813,38 @@ object CallRegistry {
         val state = stateOf(c)
         val secondary = secondaryCall()
 
-        // Multi-call / conference capabilities. Telecom sets MERGE/SWAP on the call
-        // when the network can conference; when it can't, the flags stay false and
-        // the Flutter UI simply doesn't show those buttons.
+        // Multi-call / conference capabilities. Merge shows only when Telecom says
+        // the calls can really be conferenced (see [merge]); Swap only when there
+        // is a held call to switch to (or a network-managed conference swap). A
+        // ringing call-waiting call is neither, so neither button shows for it.
         val isConference = details?.hasProperty(Call.Details.PROPERTY_CONFERENCE) ?: false
-        val canMergeCapability = details?.can(Call.Details.CAPABILITY_MERGE_CONFERENCE) ?: false
-        val canMerge = canMergeCapability || secondary != null
+        val canMerge = state == Call.STATE_ACTIVE && canMergeNow(c)
         val canSwapCapability = details?.can(Call.Details.CAPABILITY_SWAP_CONFERENCE) ?: false
-        val canSwap = canSwapCapability || secondary != null
+        val canSwap = canSwapCapability ||
+            (secondary != null && stateOf(secondary) == Call.STATE_HOLDING)
+        val heldIsConference =
+            secondary?.details?.hasProperty(Call.Details.PROPERTY_CONFERENCE) ?: false
+        val participants = if (isConference) {
+            c.children
+                .filter {
+                    val s = stateOf(it)
+                    s != Call.STATE_DISCONNECTED && s != Call.STATE_DISCONNECTING
+                }
+                .map { child ->
+                    val cd = child.details
+                    mapOf(
+                        "callId" to (callIds[child] ?: 0L),
+                        "number" to cd?.handle?.schemeSpecificPart,
+                        "state" to stateName(stateOf(child)),
+                        "canDisconnect" to
+                            (cd?.can(Call.Details.CAPABILITY_DISCONNECT_FROM_CONFERENCE) ?: false),
+                        "canSeparate" to
+                            (cd?.can(Call.Details.CAPABILITY_SEPARATE_FROM_CONFERENCE) ?: false),
+                    )
+                }
+        } else {
+            emptyList()
+        }
         val busyLeg = topLevel().any {
             stateOf(it) == Call.STATE_RINGING ||
                 stateOf(it) == Call.STATE_DIALING ||
@@ -800,6 +898,9 @@ object CallRegistry {
             "canDtmf" to canDtmf,
             "heldNumber" to secondary?.details?.handle?.schemeSpecificPart,
             "heldState" to secondary?.let { stateName(stateOf(it)) },
+            "heldIsConference" to heldIsConference,
+            // The people in the conference (empty unless [isConference]).
+            "participants" to participants,
             "verificationStatus" to verificationStatus,
         )
     }

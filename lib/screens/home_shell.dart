@@ -1,6 +1,7 @@
 // lib/screens/home_shell.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show SystemNavigator;
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 import 'package:smart_contacts_dialer/screens/call_history_screen.dart';
@@ -116,8 +117,8 @@ class _HomeShellState extends State<HomeShell> {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
-        const SnackBar(
-          content: Text('Swipe right again to exit'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).msgSwipeAgainToExit),
           duration: _exitWindow,
         ),
       );
@@ -128,6 +129,7 @@ class _HomeShellState extends State<HomeShell> {
     final theme = Theme.of(context);
     final colors = theme.extension<AppColors>()!;
     final accent = theme.colorScheme.primary;
+    final l10n = AppLocalizations.of(context);
 
     final bodyWidget = GestureDetector(
       behavior: HitTestBehavior.translucent,
@@ -164,13 +166,13 @@ class _HomeShellState extends State<HomeShell> {
                                 Navigator.of(context).pop();
                               }
                             },
-                            tooltip: 'Return to call',
+                            tooltip: l10n.tooltipReturnToCall,
                           ),
                           const SizedBox(width: 4),
-                          const Expanded(
+                          Expanded(
                             child: Text(
-                              'Adding call to ongoing call…',
-                              style: TextStyle(
+                              l10n.msgAddingCallToOngoing,
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -209,7 +211,7 @@ class _HomeShellState extends State<HomeShell> {
                   index: 0,
                   icon: Icons.people_outline,
                   selectedIcon: Icons.people,
-                  label: 'Contacts',
+                  label: l10n.navContacts,
                 ),
                 _navItem(
                   colors,
@@ -217,7 +219,7 @@ class _HomeShellState extends State<HomeShell> {
                   index: _dialerIndex,
                   icon: Icons.dialpad,
                   selectedIcon: Icons.dialpad,
-                  label: 'Dialer',
+                  label: l10n.navDialer,
                 ),
                 _navItem(
                   colors,
@@ -225,7 +227,7 @@ class _HomeShellState extends State<HomeShell> {
                   index: _recentsIndex,
                   icon: Icons.history,
                   selectedIcon: Icons.history,
-                  label: 'Recents',
+                  label: l10n.navRecents,
                 ),
                 _navItem(
                   colors,
@@ -233,7 +235,7 @@ class _HomeShellState extends State<HomeShell> {
                   index: _tagsIndex,
                   icon: Icons.sell_outlined,
                   selectedIcon: Icons.sell,
-                  label: 'Tags',
+                  label: l10n.navTags,
                 ),
               ],
             ),

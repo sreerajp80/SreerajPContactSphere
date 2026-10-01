@@ -15,7 +15,7 @@ Read it before making any change. See the docs table below for full architectura
 | Package / org id | `in.sreerajp.contact_sphere` |
 | Flutter SDK | `3.24.x` or higher |
 | Dart SDK | `^3.12.0` |
-| State management | `Provider` (`AppSettings`) + `setState` (local screen state) |
+| State management | `Provider` (`AppSettings`, `LocaleController`) + `setState` (local screen state) |
 | Navigation | Flutter `Navigator` (`MaterialPageRoute` + swipe gestures) |
 | Database | `sqflite` + `sqflite_sqlcipher` (AES-256 encrypted at rest) |
 | Orientation | Portrait only |
@@ -56,7 +56,7 @@ Read it before making any change. See the docs table below for full architectura
 - **Layer boundaries**: UI widgets must not execute raw SQL queries, inspect SharedPreferences keys directly, or invoke platform channel methods directly. All data access funnels through `ContactRepository`, `RelationshipRepository`, or dedicated services.
 - **Database singleton**: `DatabaseHelper` owns the SQLCipher schema and database instance. Database keys reside in Android Keystore via `flutter_secure_storage`.
 - **Models**: Plain immutable Dart data classes with defensive `fromMap` and `toMap` converters.
-- **State management**: `AppSettings` is provided at app root via `ChangeNotifierProvider` for global settings (theme, accent color, fonts, SIM choices). Individual screens manage their transient UI state using `setState`.
+- **State management**: `AppSettings` is provided at app root via `ChangeNotifierProvider` for global settings (theme, accent color, fonts, SIM choices). The app language lives only in `LocaleController` (`lib/state/locale_controller.dart`), also provided at the root; it drives `MaterialApp.locale`. Individual screens manage their transient UI state using `setState`.
 
 ---
 
@@ -112,8 +112,13 @@ flutter build appbundle --flavor prod --release \
 ## Localization rules
 
 - Minimum setup requirement: declare `GlobalMaterialLocalizations`, `GlobalWidgetsLocalizations`, and `GlobalCupertinoLocalizations` delegates in `MaterialApp` (configured in `lib/main.dart`).
-- Supported locales: `en` (base) and `ml` (Malayalam).
+- Supported locales (standard §8.3, fixed order): `en` (base, ultimate fallback), `ml` (Malayalam), `sa` (Sanskrit, Devanagari script).
 - Malayalam fonts (`Manjari`, `Anek Malayalam`, `Noto Sans Malayalam`) are bundled in `assets/fonts/` for Malayalam script rendering.
+- `Noto Sans Devanagari` is bundled as a `fontFamilyFallback` (set in `lib/theme/app_theme.dart`) so Sanskrit renders under every pickable font.
+- `flutter_localizations` has no `sa`: the `Sa*` delegates in `lib/l10n/sa_material_localizations.dart` serve English framework strings and must stay ahead of the Global delegates.
+- `intl` has no `sa` date data: pass every display `DateFormat` / `NumberFormat` locale through `formattingLocale(...)` (`lib/l10n/formatting_locale.dart`). It falls back to English, never Hindi.
+- In-app language picker (standard §8.4): Settings → Language (`lib/screens/language_settings_screen.dart`). The choice is saved in `SharedPreferences` key `app_language` (`system` | `en` | `ml` | `sa`) and read in `main()` **before** `runApp`. Screens read the language only from `LocaleController` / `Localizations.localeOf`.
+- `LocaleController.resolve` is the one locale resolver (`localeListResolutionCallback`): saved choice, then a device language of `en`/`ml`/`sa`, then English. It keeps the device's regional English (`en_IN`, `en_GB`) for date formats. Do not add a `localeResolutionCallback` beside it.
 - Section indexing and avatar generation use `characters` package for grapheme-cluster safety.
 
 ---

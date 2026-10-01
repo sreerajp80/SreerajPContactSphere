@@ -265,6 +265,10 @@ Complete before every release.
       suffix). Confirm the install actually replaced the old build.
 - [ ] Version name and build number correct in the installed app (About screen).
 - [ ] Tested end-to-end on the **release** build, not just debug.
+- [ ] App Bundle language splitting still disabled — `bundle { language { enableSplit = false } }`
+      is present in `android/app/build.gradle.kts`. Without it Play ships only the device's own
+      language, and the in-app language picker would show missing strings. Confirm on a Play
+      internal-test install that switching the app language still shows translated text.
 
 ---
 

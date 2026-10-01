@@ -1,11 +1,11 @@
 # Change Log: Audit and Update Features Reference Document (`docs/features.md`)
 
-**Plan Implemented**: [plans/20260810_083414_complete_and_audit_features_md.md](file:///l:/Android/SreerajPContactSphere/plans/20260810_083414_complete_and_audit_features_md.md)
+**Plan Implemented**: [plans/20260810_083414_complete_and_audit_features_md.md](../plans/20260810_083414_complete_and_audit_features_md.md)
 
 ## Summary of Changes
 
 1. **Updated Settings Hub Documentation (Section 12)**:
-   - Updated Section 12 of [docs/features.md](file:///l:/Android/SreerajPContactSphere/docs/features.md) to accurately document the modular sub-page architecture of the Settings hub:
+   - Updated Section 12 of [docs/features.md](../docs/features.md) to accurately document the modular sub-page architecture of the Settings hub:
      - **Security** (`SecurityScreen`): App Lock mode chooser, Screenshot Guard, and Audit Log.
      - **Top contacts source & Dialpad script**: Inline cards on the Settings hub.
      - **Contacts** (`ContactsSettingsScreen`): Preferences, index health, device sync, blocked numbers, relationship settings.
@@ -22,4 +22,4 @@
 
 ## Files Changed
 
-- [docs/features.md](file:///l:/Android/SreerajPContactSphere/docs/features.md)
+- [docs/features.md](../docs/features.md)

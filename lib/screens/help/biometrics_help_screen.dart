@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
 class BiometricsHelpScreen extends StatelessWidget {
@@ -15,90 +16,50 @@ class BiometricsHelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Biometric lock')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).helpBiometricsText),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-        children: const [
-          _Intro(
-            'SreerajP Contacts Sphere can ask for your fingerprint or face before it shows '
-            'or moves your most private data. It uses your phone\'s own lock — '
-            'the app never sees or stores your fingerprint or face.',
-          ),
-          SizedBox(height: 24),
+        children: [
+          _Intro(AppLocalizations.of(context).helpBiometricsIntro),
+          const SizedBox(height: 24),
 
           _Section(
             icon: Icons.lock_person_outlined,
-            title: 'Where you are asked',
+            title: AppLocalizations.of(context).helpBiometricsTitle1,
             children: [
-              _Bullet(
-                'Viewing your secret contacts. These are hidden from the '
-                'normal contact list until you unlock them.',
-              ),
-              _Bullet(
-                'Exporting secret contacts, so a private contact cannot be '
-                'sent out of the app without your say-so.',
-              ),
-              _Bullet(
-                'Opening "Sync to Another Device", because a sync can include '
-                'your secret contacts.',
-              ),
-              _Bullet(
-                'Opening "Backup & Restore", because a backup can include them '
-                'too.',
-              ),
-              _Bullet(
-                'Opening the audit log, which holds a full before-and-after '
-                'record of your contacts.',
-              ),
-              _Bullet('Accepting a contact someone sends you over Bluetooth.'),
-              _Bullet(
-                'Opening the app at all, if you set App lock to "Device lock" '
-                'under Settings → Security.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpBiometricsBullet1),
+              _Bullet(AppLocalizations.of(context).helpBiometricsBullet2),
+              _Bullet(AppLocalizations.of(context).helpBiometricsBullet3),
+              _Bullet(AppLocalizations.of(context).helpBiometricsBullet4),
+              _Bullet(AppLocalizations.of(context).helpBiometricsBullet5),
+              _Bullet(AppLocalizations.of(context).helpBiometricsBullet6),
+              _Bullet(AppLocalizations.of(context).helpBiometricsBullet7),
             ],
           ),
 
           _Section(
             icon: Icons.fingerprint,
-            title: 'What counts as "you"',
+            title: AppLocalizations.of(context).helpBiometricsTitle2,
             children: [
-              _Bullet(
-                'Any fingerprint or face you have set up on the phone is '
-                'accepted.',
-              ),
-              _Bullet(
-                'If you have not set up a fingerprint or face, the phone falls '
-                'back to your screen-lock PIN, pattern, or password.',
-              ),
-              _Bullet(
-                'App lock can instead use an App PIN, which is separate from '
-                'the phone\'s lock. That one is checked by the app itself — '
-                'see the "App lock & PIN" guide.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpBiometricsBullet8),
+              _Bullet(AppLocalizations.of(context).helpBiometricsBullet9),
+              _Bullet(AppLocalizations.of(context).helpBiometricsBullet10),
             ],
           ),
 
           _Section(
             icon: Icons.shield_outlined,
-            title: 'Your privacy',
+            title: AppLocalizations.of(context).helpBiometricsTitle3,
             children: [
-              _Bullet(
-                'The check is handled by Android, not by SreerajP Contacts Sphere. The '
-                'app only learns whether the unlock passed or failed.',
-              ),
-              _Bullet(
-                'This works offline. Nothing about your fingerprint or face '
-                'ever leaves the phone.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpBiometricsBullet11),
+              _Bullet(AppLocalizations.of(context).helpBiometricsBullet12),
             ],
           ),
 
-          SizedBox(height: 8),
-          _Footer(
-            'Tip: set up a screen lock (fingerprint, face, or PIN) in Android '
-            'settings. With no lock at all the check cannot run, so sync and '
-            'backup warn you and then let you decide whether to go on.',
-          ),
+          const SizedBox(height: 8),
+          _Footer(AppLocalizations.of(context).helpBiometricsFooter),
         ],
       ),
     );

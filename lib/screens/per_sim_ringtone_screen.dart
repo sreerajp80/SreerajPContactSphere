@@ -1,4 +1,5 @@
 // lib/screens/per_sim_ringtone_screen.dart
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -59,11 +60,11 @@ class _PerSimRingtoneScreenState extends State<PerSimRingtoneScreen> {
     final colors = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Per-SIM Ringtones'),
+        title: Text(AppLocalizations.of(context).titlePerSimRingtones),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh SIMs',
+            tooltip: AppLocalizations.of(context).tooltipRefreshSims,
             onPressed: _loading ? null : () => _load(refresh: true),
           ),
         ],
@@ -93,9 +94,7 @@ class _PerSimRingtoneScreenState extends State<PerSimRingtoneScreen> {
               const SizedBox(width: 14),
               Expanded(
                 child: Text(
-                  'No SIMs detected. Per-SIM ringtones need phone permission and '
-                  'a device with at least one SIM. Grant the phone permission and '
-                  'tap refresh.',
+                  AppLocalizations.of(context).emptyNoSimsRingtone,
                   style: TextStyle(color: colors.mutedText, fontSize: 13.5),
                 ),
               ),
@@ -113,13 +112,13 @@ class _PerSimRingtoneScreenState extends State<PerSimRingtoneScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Per-SIM ringtone',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            Text(
+              AppLocalizations.of(context).labelPerSimRingtone,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 2),
             Text(
-              'A ringtone for calls received on each SIM',
+              AppLocalizations.of(context).descPerSimRingtone,
               style: TextStyle(color: colors.mutedText, fontSize: 13),
             ),
             const SizedBox(height: 8),
@@ -183,20 +182,24 @@ class _PerSimRingtoneScreenState extends State<PerSimRingtoneScreen> {
           ),
           if (tone != null)
             IconButton(
-              tooltip: playing ? 'Stop' : 'Preview',
+              tooltip: playing
+                  ? AppLocalizations.of(context).tooltipStop
+                  : AppLocalizations.of(context).tooltipPreview,
               icon: Icon(playing ? Icons.stop : Icons.play_arrow),
               color: playing ? accent : colors.mutedText,
               onPressed: () => _togglePreview(sim.phoneAccountId, tone.path),
             ),
           IconButton(
-            tooltip: tone != null ? 'Change ringtone' : 'Pick ringtone',
+            tooltip: tone != null
+                ? AppLocalizations.of(context).tooltipChangeRingtone
+                : AppLocalizations.of(context).tooltipPickRingtone,
             icon: const Icon(Icons.folder_open),
             color: colors.mutedText,
             onPressed: () => _pickForSim(sim.phoneAccountId, tone),
           ),
           if (tone != null)
             IconButton(
-              tooltip: 'Clear',
+              tooltip: AppLocalizations.of(context).actionClear,
               icon: const Icon(Icons.close),
               color: colors.mutedText,
               onPressed: () => _clearForSim(sim.phoneAccountId),
@@ -214,8 +217,7 @@ class _PerSimRingtoneScreenState extends State<PerSimRingtoneScreen> {
         const SizedBox(width: 8),
         Expanded(
           child: Text(
-            'A ringtone set on an individual contact takes precedence over the '
-            'per-SIM ringtone. Set one from a contact’s edit screen.',
+            AppLocalizations.of(context).descPerContactRingtoneNote,
             style: TextStyle(color: colors.mutedText, fontSize: 12.5),
           ),
         ),
@@ -224,8 +226,10 @@ class _PerSimRingtoneScreenState extends State<PerSimRingtoneScreen> {
   }
 
   String _defaultSubtitle(String slot) => _defaultToneLabel == null
-      ? '$slot · default ringtone'
-      : '$slot · Default · $_defaultToneLabel';
+      ? AppLocalizations.of(context).descSlotDefaultRingtone(slot)
+      : AppLocalizations.of(
+          context,
+        ).descSlotDefaultTone(slot, _defaultToneLabel!);
 
   Future<void> _pickForSim(String phoneAccountId, RingtoneRef? current) async {
     final source = await _chooseRingtoneSource();
@@ -243,7 +247,7 @@ class _PerSimRingtoneScreenState extends State<PerSimRingtoneScreen> {
         picked = RingtoneRef(path: file.path, label: file.label);
       }
     } catch (e) {
-      _showMessage('Could not pick ringtone: $e');
+      _say((l) => l.errorCouldNotPickRingtone('$e'));
       return;
     }
 
@@ -266,14 +270,14 @@ class _PerSimRingtoneScreenState extends State<PerSimRingtoneScreen> {
                 Icons.notifications_active_outlined,
                 color: colors.mutedText,
               ),
-              title: const Text('Phone ringtones'),
-              subtitle: const Text('Choose from the ringtones on this device'),
+              title: Text(AppLocalizations.of(context).titlePhoneRingtones),
+              subtitle: Text(AppLocalizations.of(context).descPhoneRingtones),
               onTap: () => Navigator.pop(sheetContext, _RingtoneSource.phone),
             ),
             ListTile(
               leading: Icon(Icons.folder_open, color: colors.mutedText),
-              title: const Text('Audio file'),
-              subtitle: const Text('Pick an audio file from your folders'),
+              title: Text(AppLocalizations.of(context).titleAudioFile),
+              subtitle: Text(AppLocalizations.of(context).descAudioFile),
               onTap: () => Navigator.pop(sheetContext, _RingtoneSource.file),
             ),
           ],
@@ -299,7 +303,7 @@ class _PerSimRingtoneScreenState extends State<PerSimRingtoneScreen> {
         await _revertMissingTone(phoneAccountId);
         return;
       case RingtonePreviewStatus.muted:
-        _showMessage('Ring volume is muted — turn it up to hear the preview.');
+        _say((l) => l.errorRingVolumeMuted);
       case RingtonePreviewStatus.playing:
         break;
     }
@@ -308,9 +312,7 @@ class _PerSimRingtoneScreenState extends State<PerSimRingtoneScreen> {
 
   Future<void> _revertMissingTone(String phoneAccountId) async {
     if (mounted) setState(() => _previewingId = null);
-    _showMessage(
-      'This ringtone is no longer available — reverting to default.',
-    );
+    _say((l) => l.errorRingtoneRevert);
     if (!mounted) return;
     await context.read<AppSettings>().setSimRingtone(phoneAccountId, null);
   }
@@ -326,6 +328,13 @@ class _PerSimRingtoneScreenState extends State<PerSimRingtoneScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// Shows a translated snackbar. The message is built only after the
+  /// `mounted` check, so this is safe to call after an `await`.
+  void _say(String Function(AppLocalizations l) message) {
+    if (!mounted) return;
+    _showMessage(message(AppLocalizations.of(context)));
   }
 }
 

@@ -1,4 +1,5 @@
 // lib/screens/app_pin_setup_screen.dart
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 
@@ -33,17 +34,15 @@ class _AppPinSetupScreenState extends State<AppPinSetupScreen> {
   String? _recoveryCode;
 
   String get _title => switch (_phase) {
-    _Phase.enter => 'Set an app PIN',
-    _Phase.confirm => 'Confirm your PIN',
-    _Phase.recovery => 'Save your recovery code',
+    _Phase.enter => AppLocalizations.of(context).titleSetAppPin,
+    _Phase.confirm => AppLocalizations.of(context).titleConfirmPin,
+    _Phase.recovery => AppLocalizations.of(context).titleSaveRecoveryCode,
   };
 
   String get _subtitle => switch (_phase) {
-    _Phase.enter => 'Choose a 4 to 6 digit PIN to unlock the app',
-    _Phase.confirm => 'Enter the same PIN again',
-    _Phase.recovery =>
-      'If you forget your PIN, this code lets you back in. '
-          'Write it down and keep it safe — it is shown only once.',
+    _Phase.enter => AppLocalizations.of(context).descChoosePin,
+    _Phase.confirm => AppLocalizations.of(context).descEnterSamePin,
+    _Phase.recovery => AppLocalizations.of(context).descRecoveryCodeInfo,
   };
 
   void _onDigit(int d) {
@@ -98,7 +97,9 @@ class _AppPinSetupScreenState extends State<AppPinSetupScreen> {
         _phase = _Phase.enter;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Couldn't save the PIN. Try again.")),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).errorCouldNotSavePin),
+        ),
       );
     }
   }
@@ -134,7 +135,7 @@ class _AppPinSetupScreenState extends State<AppPinSetupScreen> {
         if (_error) ...[
           const SizedBox(height: 12),
           Text(
-            "PINs didn't match — start again",
+            AppLocalizations.of(context).errorPinsDidntMatch,
             style: TextStyle(color: theme.colorScheme.error, fontSize: 13),
           ),
         ],
@@ -149,7 +150,11 @@ class _AppPinSetupScreenState extends State<AppPinSetupScreen> {
             onPressed: (_entry.length >= _minLen && !_saving)
                 ? _onContinue
                 : null,
-            child: Text(_phase == _Phase.enter ? 'Continue' : 'Confirm'),
+            child: Text(
+              _phase == _Phase.enter
+                  ? AppLocalizations.of(context).actionContinue
+                  : AppLocalizations.of(context).actionConfirm,
+            ),
           ),
         ),
       ],
@@ -190,11 +195,15 @@ class _AppPinSetupScreenState extends State<AppPinSetupScreen> {
                   await Clipboard.setData(ClipboardData(text: code));
                   if (!mounted) return;
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Recovery code copied')),
+                    SnackBar(
+                      content: Text(
+                        AppLocalizations.of(context).msgRecoveryCodeCopied,
+                      ),
+                    ),
                   );
                 },
                 icon: const Icon(Icons.copy, size: 18),
-                label: const Text('Copy'),
+                label: Text(AppLocalizations.of(context).actionCopy),
               ),
             ],
           ),
@@ -202,7 +211,7 @@ class _AppPinSetupScreenState extends State<AppPinSetupScreen> {
         const Spacer(),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(true),
-          child: const Text("I've saved it — turn on App lock"),
+          child: Text(AppLocalizations.of(context).actionSavedTurnOnLock),
         ),
       ],
     );

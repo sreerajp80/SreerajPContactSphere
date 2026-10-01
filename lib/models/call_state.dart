@@ -70,6 +70,53 @@ enum CallDirection {
   }
 }
 
+/// One person inside a merged conference call, as reported by the native
+/// bridge. [callId] is the id to pass back to
+/// `TelecomService.disconnectParticipant` / `separateParticipant`.
+class ConferenceParticipant {
+  final int callId;
+  final String? number;
+  final CallPhase phase;
+
+  /// The network lets this person be dropped from the conference alone.
+  final bool canDisconnect;
+
+  /// The network lets this person be split off for a private talk.
+  final bool canSeparate;
+
+  const ConferenceParticipant({
+    required this.callId,
+    required this.number,
+    required this.phase,
+    this.canDisconnect = false,
+    this.canSeparate = false,
+  });
+
+  /// Parses one participant entry; returns null for a malformed entry (no id),
+  /// since an entry without an id can't be acted on.
+  static ConferenceParticipant? fromMap(Map<dynamic, dynamic> map) {
+    final id = (map['callId'] as num?)?.toInt() ?? 0;
+    if (id <= 0) return null;
+    final number = map['number'];
+    return ConferenceParticipant(
+      callId: id,
+      number: number is String ? number : null,
+      phase: CallPhase.fromName(map['state'] as String?),
+      canDisconnect: map['canDisconnect'] == true,
+      canSeparate: map['canSeparate'] == true,
+    );
+  }
+
+  static List<ConferenceParticipant> listFrom(Object? raw) {
+    if (raw is! List) return const [];
+    return raw
+        .whereType<Map<dynamic, dynamic>>()
+        .map(ConferenceParticipant.fromMap)
+        .whereType<ConferenceParticipant>()
+        .toList(growable: false);
+  }
+}
+
 /// Immutable snapshot of the active call as reported by the native Telecom
 /// bridge. A null snapshot on the channel maps to [CallState.none].
 class CallState {
@@ -115,8 +162,15 @@ class CallState {
   final bool canMerge;
 
   /// The foreground and background calls can be swapped ("Swap"): either a
-  /// conference swap, or two independent calls to toggle between.
+  /// conference swap, or a held call to switch to.
   final bool canSwap;
+
+  /// The people in the conference when [isConference]; empty otherwise.
+  final List<ConferenceParticipant> participants;
+
+  /// The background/held call is itself a merged conference (it has no single
+  /// number, so the "on hold" banner names it as a conference).
+  final bool heldIsConference;
 
   /// DTMF touch-tones can be sent right now (the primary call is connected).
   final bool canDtmf;
@@ -157,6 +211,8 @@ class CallState {
     this.canAddCall = false,
     this.canMerge = false,
     this.canSwap = false,
+    this.participants = const [],
+    this.heldIsConference = false,
     this.canDtmf = false,
     this.heldNumber,
     this.heldPhase = CallPhase.none,
@@ -193,6 +249,8 @@ class CallState {
       canAddCall: map['canAddCall'] as bool? ?? false,
       canMerge: map['canMerge'] as bool? ?? false,
       canSwap: map['canSwap'] as bool? ?? false,
+      participants: ConferenceParticipant.listFrom(map['participants']),
+      heldIsConference: map['heldIsConference'] as bool? ?? false,
       canDtmf: map['canDtmf'] as bool? ?? false,
       heldNumber: map['heldNumber'] as String?,
       heldPhase: CallPhase.fromName(map['heldState'] as String?),

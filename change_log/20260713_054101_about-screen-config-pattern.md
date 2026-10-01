@@ -3,7 +3,7 @@
 Implements plan `plans/20260713_054101_about-screen-config-pattern.md`.
 
 Conforms the About screen to the master guideline §1 (folder-structure guideline
-at `l:\Android\Flutter_Guidelines\guideline.md`, pointed to by
+in the shared guidelines repository (now `docs/guidelines/guideline.md`), pointed to by
 `docs/GUIDELINES_MANIFEST.md`). An earlier pass used a reconstructed schema; this
 change replaces it with the exact spec shape.
 
@@ -43,7 +43,7 @@ change replaces it with the exact spec shape.
   a version/build-mismatch note against the real package build — expected until a
   `version:` is added to `pubspec.yaml` (left out of scope).
 - `description` taken from the pubspec description; `Email` set to
-  `sreerajp@zohomail.in`.
+  `<author email>`.
 
 ## Verification
 - `flutter pub get` succeeded (after the `package_info_plus` bump).

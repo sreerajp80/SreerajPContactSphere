@@ -7,6 +7,8 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
+import 'package:smart_contacts_dialer/l10n/relationship_labels.dart';
 import 'package:smart_contacts_dialer/models/relationship.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
@@ -16,116 +18,115 @@ class RelationshipCategoriesHelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Relationship categories')),
+      appBar: AppBar(
+        title: Text(
+          AppLocalizations.of(context).helpRelationshipCategoriesText1,
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
         children: [
-          const _Intro(
-            'Every relationship you save has two parts: a category and a label. '
-            'The category is one of seven fixed buckets. The label is whatever '
-            'you want to call it — "Father", "Cousin Brother", "Manager".',
-          ),
+          _Intro(AppLocalizations.of(context).helpRelationshipCategoriesIntro),
           const SizedBox(height: 24),
 
-          const _Section(
+          _Section(
             icon: Icons.hub_outlined,
-            title: 'Why categories exist',
+            title: AppLocalizations.of(
+              context,
+            ).helpRelationshipCategoriesTitle1,
             children: [
               _Bullet(
-                'The sphere used to draw one node for every different label. '
-                'With twenty or more links it turned into a crowd.',
+                AppLocalizations.of(context).helpRelationshipCategoriesBullet1,
               ),
               _Bullet(
-                'Now the sphere draws at most seven nodes — one per category. '
-                'The number inside a node is how many contacts sit in it.',
+                AppLocalizations.of(context).helpRelationshipCategoriesBullet2,
               ),
               _Bullet(
-                'Tap a node to see everyone inside it, each with their own '
-                'label. Nothing is hidden; it is only tidier.',
+                AppLocalizations.of(context).helpRelationshipCategoriesBullet3,
               ),
             ],
           ),
 
-          const _Section(
+          _Section(
             icon: Icons.edit_outlined,
-            title: 'Adding a relationship',
+            title: AppLocalizations.of(
+              context,
+            ).helpRelationshipCategoriesTitle2,
             children: [
-              _Bullet('Pick the contact you want to link.'),
-              _Bullet('Pick one of the seven categories.'),
               _Bullet(
-                'Type the label, or tap one of the suggested chips. The chips '
-                'are only shortcuts — any wording you like is accepted.',
+                AppLocalizations.of(context).helpRelationshipCategoriesBullet4,
+              ),
+              _Bullet(
+                AppLocalizations.of(context).helpRelationshipCategoriesBullet5,
+              ),
+              _Bullet(
+                AppLocalizations.of(context).helpRelationshipCategoriesBullet6,
               ),
             ],
           ),
 
           _Section(
             icon: Icons.category_outlined,
-            title: 'The seven categories',
+            title: AppLocalizations.of(
+              context,
+            ).helpRelationshipCategoriesTitle3,
             children: [
               for (final c in RelationshipCategory.values)
                 _CategoryRow(category: c),
             ],
           ),
 
-          const _Section(
+          _Section(
             icon: Icons.swap_horiz,
-            title: 'Both sides, one category',
+            title: AppLocalizations.of(
+              context,
+            ).helpRelationshipCategoriesTitle4,
             children: [
               _Bullet(
-                'A link is saved on both contacts. If you save someone as your '
-                'Father, you show up on their side as their Son or Daughter.',
+                AppLocalizations.of(context).helpRelationshipCategoriesBullet7,
               ),
               _Bullet(
-                'The reverse side keeps the same category, so the pair always '
-                'sits in the same bucket on both spheres.',
+                AppLocalizations.of(context).helpRelationshipCategoriesBullet8,
               ),
             ],
           ),
 
-          const _Section(
+          _Section(
             icon: Icons.update,
-            title: 'Relationships you saved earlier',
+            title: AppLocalizations.of(
+              context,
+            ).helpRelationshipCategoriesTitle5,
             children: [
               _Bullet(
-                'Old links had no category. On the first launch after this '
-                'update, each one is sorted by its label — "Father" goes to '
-                'Immediate Family, "Colleague" to Professional, and so on.',
+                AppLocalizations.of(context).helpRelationshipCategoriesBullet9,
               ),
               _Bullet(
-                'A label the app does not recognise goes to Social. Nothing is '
-                'deleted, and you can move any link to another category by '
-                'tapping it and choosing "Change".',
+                AppLocalizations.of(context).helpRelationshipCategoriesBullet10,
               ),
             ],
           ),
 
-          const _Section(
+          _Section(
             icon: Icons.bedtime_outlined,
-            title: 'Quiet hours use these categories',
+            title: AppLocalizations.of(
+              context,
+            ).helpRelationshipCategoriesTitle6,
             children: [
               _Bullet(
-                'Settings → SIM & calling → Relationship-tier quiet hours '
-                'silences calls between the times you set.',
+                AppLocalizations.of(context).helpRelationshipCategoriesBullet11,
               ),
               _Bullet(
-                'It is an allow list, not a block list. Everyone is silenced '
-                'except the people you add — starred contacts, whole '
-                'categories such as Immediate Family, a tag, or named '
-                'individuals.',
+                AppLocalizations.of(context).helpRelationshipCategoriesBullet12,
               ),
               _Bullet(
-                'This is why the category matters: allowing "Immediate '
-                'Family" lets every contact in that bucket ring through, '
-                'whatever label you gave each one.',
+                AppLocalizations.of(context).helpRelationshipCategoriesBullet13,
               ),
             ],
           ),
 
           const SizedBox(height: 8),
-          const _Footer(
-            'Tip: if you are unsure where someone belongs, pick the category '
-            'you would look under later. The label carries the detail.',
+          _Footer(
+            AppLocalizations.of(context).helpRelationshipCategoriesFooter,
           ),
         ],
       ),
@@ -143,6 +144,7 @@ class _CategoryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.extension<AppColors>()!;
+    final l = AppLocalizations.of(context);
     final examples = category.suggestedLabels.take(5).join(', ');
 
     return Padding(
@@ -157,14 +159,17 @@ class _CategoryRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  category.displayName,
+                  relationshipCategoryLabel(l, category),
                   style: theme.textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '${category.description} e.g. $examples.',
+                  l.helpRelationshipCategoriesExample(
+                    relationshipCategoryDescription(l, category),
+                    examples,
+                  ),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: colors.mutedText,
                     height: 1.45,

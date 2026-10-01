@@ -584,6 +584,17 @@ class TelecomService {
   /// Swaps which of two calls (or a conference and its held call) is foreground.
   Future<void> swapCalls() => _invokeVoid('swap');
 
+  /// Drops one person ([ConferenceParticipant.callId]) from the conference.
+  /// No-op unless the network allows it for that person.
+  Future<void> disconnectParticipant(int callId) =>
+      _invokeVoid('disconnectParticipant', {'callId': callId});
+
+  /// Splits one person ([ConferenceParticipant.callId]) off the conference for
+  /// a private talk; the rest of the conference goes on hold. No-op unless the
+  /// network allows it for that person.
+  Future<void> separateParticipant(int callId) =>
+      _invokeVoid('separateParticipant', {'callId': callId});
+
   /// One-shot snapshot of the current call (or [CallState.none]).
   Future<CallState> activeCall() async {
     if (!_supported) return CallState.none;

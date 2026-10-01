@@ -1,7 +1,7 @@
 # Smart Redial & "Reach Me" Mode Change Log
 
 **Date**: 2026-07-27 20:17:49
-**Implements Plan**: [plans/20260727_201654_smart-redial-reach-me-mode.md](file:///l:/Android/SreerajPContactSphere/plans/20260727_201654_smart-redial-reach-me-mode.md)
+**Implements Plan**: [plans/20260727_201654_smart-redial-reach-me-mode.md](../plans/20260727_201654_smart-redial-reach-me-mode.md)
 
 ## Summary of Changes
 

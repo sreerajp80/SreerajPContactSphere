@@ -27,6 +27,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/database/database_helper.dart';
 import 'package:smart_contacts_dialer/screens/dialer_screen.dart';
 import 'package:smart_contacts_dialer/services/telecom_service.dart';
@@ -66,6 +67,8 @@ Future<void> _pumpDialer(
       value: settings,
       child: MaterialApp(
         theme: AppTheme.calm(const Color(0xFF007A78)),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(
             context,

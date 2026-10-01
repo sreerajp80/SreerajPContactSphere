@@ -1,8 +1,10 @@
 // lib/screens/permissions_screen.dart
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'package:smart_contacts_dialer/core/constants/app_permissions.dart';
+import 'package:smart_contacts_dialer/l10n/permission_labels.dart';
 import 'package:smart_contacts_dialer/services/contact_sync_service.dart';
 import 'package:smart_contacts_dialer/services/telecom_service.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
@@ -80,11 +82,11 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Permissions'),
+        title: Text(AppLocalizations.of(context).titlePermissions),
         actions: [
-          const IconButton(
-            tooltip: 'Open system settings',
-            icon: Icon(Icons.settings_outlined),
+          IconButton(
+            tooltip: AppLocalizations.of(context).tooltipOpenSystemSettings,
+            icon: const Icon(Icons.settings_outlined),
             onPressed: openAppSettings,
           ),
         ],
@@ -96,15 +98,15 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
           children: [
             _sectionHeader(
               context,
-              'Explicit',
-              'Permissions and system roles requiring user interaction or runtime approval.',
+              AppLocalizations.of(context).labelExplicitPerms,
+              AppLocalizations.of(context).descExplicitPerms,
             ),
             _group(context, explicit),
             const SizedBox(height: 24),
             _sectionHeader(
               context,
-              'Implicit',
-              'Declared in the manifest; granted automatically by system at install.',
+              AppLocalizations.of(context).labelImplicitPerms,
+              AppLocalizations.of(context).descImplicitPerms,
             ),
             _group(context, implicit),
             if (_loading)
@@ -170,8 +172,14 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
     final status = p.handle != null ? _statuses[p.handle] : null;
     return ListTile(
       leading: Icon(p.icon, color: theme.colorScheme.primary),
-      title: Text(p.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-      subtitle: Text(p.reason, style: TextStyle(color: colors.mutedText)),
+      title: Text(
+        permissionTitle(AppLocalizations.of(context), p),
+        style: const TextStyle(fontWeight: FontWeight.w600),
+      ),
+      subtitle: Text(
+        permissionReason(AppLocalizations.of(context), p),
+        style: TextStyle(color: colors.mutedText),
+      ),
       trailing: p.isDefaultDialerRole
           ? _dialerChip(context)
           : _statusChip(context, status),
@@ -220,7 +228,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
     if (status == null) {
       // No runtime status to show (implicit / system-managed).
       return Text(
-        'System',
+        AppLocalizations.of(context).labelSystem,
         style: TextStyle(
           color: Theme.of(context).extension<AppColors>()!.mutedText,
           fontSize: 12,
@@ -231,15 +239,15 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
     final granted = status.isGranted || status.isLimited;
     final color = granted ? const Color(0xFF10B981) : const Color(0xFFFB7185);
     final label = granted
-        ? 'Granted'
+        ? AppLocalizations.of(context).labelGranted
         : status.isPermanentlyDenied
-        ? 'Blocked'
-        : 'Denied';
+        ? AppLocalizations.of(context).labelBlocked
+        : AppLocalizations.of(context).labelDenied;
     return _chip(label, color);
   }
 
   /// Live chip for the default-dialer row: a spinner until the first query
-  /// resolves, then "Default" (green) when set or "Not set" (rose) when not.
+  /// resolves, then AppLocalizations.of(context).labelScaleDefault (green) when set or AppLocalizations.of(context).labelNotSet (rose) when not.
   Widget _dialerChip(BuildContext context) {
     final isDefault = _isDefaultDialer;
     if (isDefault == null) {
@@ -250,8 +258,14 @@ class _PermissionsScreenState extends State<PermissionsScreen> {
       );
     }
     return isDefault
-        ? _chip('Default', const Color(0xFF10B981))
-        : _chip('Not set', const Color(0xFFFB7185));
+        ? _chip(
+            AppLocalizations.of(context).labelScaleDefault,
+            const Color(0xFF10B981),
+          )
+        : _chip(
+            AppLocalizations.of(context).labelNotSet,
+            const Color(0xFFFB7185),
+          );
   }
 
   Widget _chip(String label, Color color) {

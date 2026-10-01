@@ -1,4 +1,5 @@
 // lib/screens/spoken_announcements_screen.dart
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -15,8 +16,7 @@ class SpokenAnnouncementsScreen extends StatefulWidget {
       _SpokenAnnouncementsScreenState();
 }
 
-class _SpokenAnnouncementsScreenState
-    extends State<SpokenAnnouncementsScreen> {
+class _SpokenAnnouncementsScreenState extends State<SpokenAnnouncementsScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
@@ -26,7 +26,9 @@ class _SpokenAnnouncementsScreenState
     final quietHours = settings.spokenCallerQuietHoursEnabled;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Spoken Caller Announcement')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).titleSpokenAnnouncement),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
@@ -46,15 +48,15 @@ class _SpokenAnnouncementsScreenState
                     onChanged: (v) => context
                         .read<AppSettings>()
                         .setSpokenCallerAnnouncementEnabled(v),
-                    title: const Text(
-                      'Spoken caller announcement',
-                      style: TextStyle(
+                    title: Text(
+                      AppLocalizations.of(context).labelSpokenAnnouncement,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     subtitle: Text(
-                      'Announce caller\'s name over ringtone ("Amma calling" / "അമ്മ വിളിക്കുന്നു")',
+                      AppLocalizations.of(context).descSpokenAnnouncementSwitch,
                       style: TextStyle(color: colors.mutedText, fontSize: 13),
                     ),
                   ),
@@ -70,15 +72,15 @@ class _SpokenAnnouncementsScreenState
                       onChanged: (v) => context
                           .read<AppSettings>()
                           .setSpokenCallerQuietHoursEnabled(v),
-                      title: const Text(
-                        'Quiet-hours exception',
-                        style: TextStyle(
+                      title: Text(
+                        AppLocalizations.of(context).featureC0F7H2,
+                        style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       subtitle: Text(
-                        'Suppress spoken announcements during quiet hours',
+                        AppLocalizations.of(context).descSuppressDuringQuiet,
                         style: TextStyle(
                           color: colors.mutedText,
                           fontSize: 12.5,
@@ -91,7 +93,9 @@ class _SpokenAnnouncementsScreenState
                           horizontal: 16,
                         ),
                         leading: Icon(Icons.bedtime_outlined, color: accent),
-                        title: const Text('Quiet hours range'),
+                        title: Text(
+                          AppLocalizations.of(context).labelQuietHoursRange,
+                        ),
                         trailing: Text(
                           '${settings.spokenCallerQuietHoursStart} – ${settings.spokenCallerQuietHoursEnd}',
                           style: TextStyle(
@@ -109,9 +113,11 @@ class _SpokenAnnouncementsScreenState
                         Icons.record_voice_over_outlined,
                         color: accent,
                       ),
-                      title: const Text('Test spoken announcement'),
+                      title: Text(
+                        AppLocalizations.of(context).labelTestAnnouncement,
+                      ),
                       subtitle: Text(
-                        'Preview English or Malayalam voice announcement',
+                        AppLocalizations.of(context).descTestAnnouncement,
                         style: TextStyle(
                           color: colors.mutedText,
                           fontSize: 12.5,
@@ -145,7 +151,7 @@ class _SpokenAnnouncementsScreenState
         hour: startParts[0],
         minute: startParts.length > 1 ? startParts[1] : 0,
       ),
-      helpText: 'SELECT QUIET HOURS START TIME',
+      helpText: AppLocalizations.of(context).hintQuietStartTimeGeneric,
     );
     if (startTime == null || !mounted) return;
 
@@ -155,7 +161,7 @@ class _SpokenAnnouncementsScreenState
         hour: endParts[0],
         minute: endParts.length > 1 ? endParts[1] : 0,
       ),
-      helpText: 'SELECT QUIET HOURS END TIME',
+      helpText: AppLocalizations.of(context).hintQuietEndTimeGeneric,
     );
     if (endTime == null || !mounted) return;
 
@@ -172,17 +178,17 @@ class _SpokenAnnouncementsScreenState
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Test Spoken Announcement'),
+        title: Text(AppLocalizations.of(context).labelTestAnnouncement),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Enter caller name to test:'),
+            Text(AppLocalizations.of(context).descEnterCallerNameToTest),
             const SizedBox(height: 8),
             TextField(
               controller: controller,
-              decoration: const InputDecoration(
-                hintText: 'e.g. Amma or അമ്മ',
+              decoration: InputDecoration(
+                hintText: AppLocalizations.of(context).hintCallerNameExample,
               ),
             ),
             const SizedBox(height: 12),
@@ -204,7 +210,7 @@ class _SpokenAnnouncementsScreenState
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           FilledButton.icon(
             onPressed: () {
@@ -215,7 +221,7 @@ class _SpokenAnnouncementsScreenState
               Navigator.pop(ctx);
             },
             icon: const Icon(Icons.volume_up),
-            label: const Text('Play Test'),
+            label: Text(AppLocalizations.of(context).actionPlayTest),
           ),
         ],
       ),

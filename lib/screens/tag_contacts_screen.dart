@@ -12,6 +12,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/contact.dart';
 import 'package:smart_contacts_dialer/utils/malayalam_transliterator.dart';
 import 'package:smart_contacts_dialer/services/contact_sync_service.dart';
@@ -72,6 +73,13 @@ class _TagContactsScreenState extends State<TagContactsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  /// Shows a translated snackbar. The message is built only after the
+  /// `mounted` check, so this is safe to call after an `await`.
+  void _say(String Function(AppLocalizations l) message) {
+    if (!mounted) return;
+    _showMessage(message(AppLocalizations.of(context)));
+  }
+
   /// Adds contacts to this tag through the shared picker, which suggests people
   /// sharing a house or employer with whoever is already selected.
   Future<void> _addContacts() async {
@@ -79,18 +87,15 @@ class _TagContactsScreenState extends State<TagContactsScreen> {
     try {
       all = await _sync.localSummaries();
     } catch (e) {
-      _showMessage('Could not load contacts: $e');
+      _say((l) => l.errorCouldNotLoadContacts('$e'));
       return;
     }
     if (!mounted) return;
 
-    final existing = _contacts
-        .map((c) => c.id)
-        .whereType<int>()
-        .toSet();
+    final existing = _contacts.map((c) => c.id).whereType<int>().toSet();
     final selectable = all.where((c) => c.id != null).toList();
     if (selectable.isEmpty) {
-      _showMessage('No contacts to add');
+      _say((l) => l.errorNoContactsToAdd);
       return;
     }
 
@@ -98,7 +103,7 @@ class _TagContactsScreenState extends State<TagContactsScreen> {
       context: context,
       isScrollControlled: true,
       builder: (_) => ContactMultiPickerSheet(
-        title: 'Add to #$_tag',
+        title: AppLocalizations.of(context).titleAddToTag(_tag),
         contacts: selectable,
         alreadyIn: existing,
       ),
@@ -107,15 +112,15 @@ class _TagContactsScreenState extends State<TagContactsScreen> {
 
     final toAdd = picked.difference(existing);
     if (toAdd.isEmpty) {
-      _showMessage('No new contacts added');
+      _say((l) => l.msgNoNewContactsAdded);
       return;
     }
     try {
       final added = await _sync.addTagToContacts(_tag, toAdd);
       await _load();
-      _showMessage('$added contact(s) added to #$_tag');
+      _say((l) => l.msgContactsAddedToTag(added, _tag));
     } catch (e) {
-      _showMessage('Could not add contacts: $e');
+      _say((l) => l.errorCouldNotAddContacts('$e'));
     }
   }
 
@@ -126,19 +131,22 @@ class _TagContactsScreenState extends State<TagContactsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Remove #$_tag?'),
+        title: Text(AppLocalizations.of(context).titleRemoveTagConfirm(_tag)),
         content: Text(
-          'Removes the tag from ${contact.fullName.isEmpty ? 'this contact' : contact.fullName}. '
-          'The contact itself is not deleted.',
+          contact.fullName.isEmpty
+              ? AppLocalizations.of(context).descRemoveTagFromThis
+              : AppLocalizations.of(
+                  context,
+                ).descRemoveTagFrom(contact.fullName),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Remove'),
+            child: Text(AppLocalizations.of(context).actionRemove),
           ),
         ],
       ),
@@ -147,9 +155,9 @@ class _TagContactsScreenState extends State<TagContactsScreen> {
     try {
       await _sync.removeTagFromContacts(_tag, {id});
       await _load();
-      _showMessage('Removed #$_tag');
+      _say((l) => l.msgRemovedTag(_tag));
     } catch (e) {
-      _showMessage('Could not remove: $e');
+      _say((l) => l.errorCouldNotRemove('$e'));
     }
   }
 
@@ -192,7 +200,7 @@ class _TagContactsScreenState extends State<TagContactsScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.more_vert),
-            tooltip: 'Rename, merge or delete tag',
+            tooltip: AppLocalizations.of(context).tooltipRenameMergeDeleteTag,
             onPressed: _loading ? null : _editTag,
           ),
         ],
@@ -200,7 +208,7 @@ class _TagContactsScreenState extends State<TagContactsScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _loading ? null : _addContacts,
         icon: const Icon(Icons.person_add_alt_1),
-        label: const Text('Add contacts'),
+        label: Text(AppLocalizations.of(context).actionAddContacts),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -211,8 +219,7 @@ class _TagContactsScreenState extends State<TagContactsScreen> {
                 child: Text(
                   // An empty tag exists only until this screen closes, so say
                   // what the two ways forward are.
-                  'No contacts have this tag.\n\n'
-                  'Add some below, or delete the tag from the menu above.',
+                  AppLocalizations.of(context).emptyTagNoContacts,
                   textAlign: TextAlign.center,
                   style: TextStyle(color: colors.mutedText, fontSize: 14),
                 ),
@@ -303,7 +310,9 @@ class _TagContactsScreenState extends State<TagContactsScreen> {
               ),
               IconButton(
                 icon: const Icon(Icons.remove_circle_outline),
-                tooltip: 'Remove this tag from the contact',
+                tooltip: AppLocalizations.of(
+                  context,
+                ).tooltipRemoveTagFromContact,
                 color: colors.mutedText,
                 onPressed: () => _removeContact(contact),
               ),

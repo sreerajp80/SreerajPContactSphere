@@ -4,7 +4,7 @@
 
 ## The issue
 
-Guideline §1 (master copy at `l:\Android\Flutter_Guidelines\guideline.md`) mandates
+Guideline §1 (master copy in the shared guidelines repository, now `docs/guidelines/guideline.md`) mandates
 the About screen be driven by a JSON config, through an exact set of paths and
 class names. My first pass (already on disk) used a **reconstructed** schema that
 does NOT match the real spec. This plan corrects it to conform exactly.
@@ -38,7 +38,7 @@ does NOT match the real spec. This plan corrects it to conform exactly.
      "build": "1",
      "details": {
        "Author": "Sreeraj P",
-       "Email": "sreerajp@zohomail.in",
+       "Email": "<author email>",
        "License": "All libraries used are open source.",
        "AI used": "Anthropic Claude",
        "IDE used": "Visual Studio Code"

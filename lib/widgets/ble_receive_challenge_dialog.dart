@@ -10,6 +10,7 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/services/app_pin_service.dart';
 import 'package:smart_contacts_dialer/services/auth_service.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
@@ -56,17 +57,17 @@ class _BleReceiveChallengeDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (lockMode) {
       LockMode.appPin => _PinChallengeDialog(
-          senderName: senderName,
-          signalLabel: signalLabel,
-        ),
+        senderName: senderName,
+        signalLabel: signalLabel,
+      ),
       LockMode.deviceLock => _BiometricChallengeDialog(
-          senderName: senderName,
-          signalLabel: signalLabel,
-        ),
+        senderName: senderName,
+        signalLabel: signalLabel,
+      ),
       LockMode.none => _ConsentChallengeDialog(
-          senderName: senderName,
-          signalLabel: signalLabel,
-        ),
+        senderName: senderName,
+        signalLabel: signalLabel,
+      ),
     };
   }
 }
@@ -87,29 +88,27 @@ class _ConsentChallengeDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
       icon: Icon(
         Icons.bluetooth_connected,
         size: 40,
         color: theme.colorScheme.primary,
       ),
-      title: const Text('Incoming transfer'),
+      title: Text(l10n.titleIncomingTransfer),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'A nearby device wants to send you contacts.',
+            l10n.descNearbyDeviceWantsToSend,
             style: theme.textTheme.bodyMedium,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 16),
-          _SenderInfoCard(
-            senderName: senderName,
-            signalLabel: signalLabel,
-          ),
+          _SenderInfoCard(senderName: senderName, signalLabel: signalLabel),
           const SizedBox(height: 12),
           Text(
-            'Do you want to receive this transfer?',
+            l10n.descReceiveThisTransfer,
             style: theme.textTheme.bodySmall,
             textAlign: TextAlign.center,
           ),
@@ -118,11 +117,11 @@ class _ConsentChallengeDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Decline'),
+          child: Text(l10n.actionDecline),
         ),
         FilledButton(
           onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('Accept'),
+          child: Text(l10n.actionAccept),
         ),
       ],
     );
@@ -166,7 +165,7 @@ class _BiometricChallengeDialogState extends State<_BiometricChallengeDialog> {
       _failed = false;
     });
     final ok = await _auth.authenticate(
-      reason: 'Authenticate to receive a Bluetooth transfer',
+      reason: AppLocalizations.of(context).descAuthReasonBleReceive,
     );
     if (!mounted) return;
     if (ok) {
@@ -182,13 +181,14 @@ class _BiometricChallengeDialogState extends State<_BiometricChallengeDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
       icon: Icon(
         Icons.fingerprint,
         size: 40,
         color: _failed ? theme.colorScheme.error : theme.colorScheme.primary,
       ),
-      title: const Text('Authenticate to receive'),
+      title: Text(l10n.titleAuthenticateToReceive),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -198,9 +198,7 @@ class _BiometricChallengeDialogState extends State<_BiometricChallengeDialog> {
           ),
           const SizedBox(height: 16),
           Text(
-            _failed
-                ? 'Authentication failed. Try again or decline the transfer.'
-                : 'Verify your identity to accept this Bluetooth transfer.',
+            _failed ? l10n.errorAuthFailedBle : l10n.descVerifyIdentityBle,
             style: theme.textTheme.bodyMedium,
             textAlign: TextAlign.center,
           ),
@@ -209,7 +207,7 @@ class _BiometricChallengeDialogState extends State<_BiometricChallengeDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Decline'),
+          child: Text(l10n.actionDecline),
         ),
         FilledButton.icon(
           onPressed: _authenticating ? null : _authenticate,
@@ -220,7 +218,9 @@ class _BiometricChallengeDialogState extends State<_BiometricChallengeDialog> {
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : const Icon(Icons.lock_open_outlined, size: 18),
-          label: Text(_authenticating ? 'Verifying…' : 'Try again'),
+          label: Text(
+            _authenticating ? l10n.labelVerifying : l10n.actionTryAgain,
+          ),
         ),
       ],
     );
@@ -291,13 +291,14 @@ class _PinChallengeDialogState extends State<_PinChallengeDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
       icon: Icon(
         Icons.pin_outlined,
         size: 40,
         color: _error ? theme.colorScheme.error : theme.colorScheme.primary,
       ),
-      title: const Text('Enter PIN to receive'),
+      title: Text(l10n.titleEnterPinToReceive),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -307,9 +308,7 @@ class _PinChallengeDialogState extends State<_PinChallengeDialog> {
           ),
           const SizedBox(height: 16),
           Text(
-            _error
-                ? 'Wrong PIN — try again'
-                : 'Enter your app PIN to accept this Bluetooth transfer.',
+            _error ? l10n.errorWrongPinTryAgain : l10n.descEnterPinBle,
             style: theme.textTheme.bodySmall?.copyWith(
               color: _error ? theme.colorScheme.error : null,
             ),
@@ -324,7 +323,7 @@ class _PinChallengeDialogState extends State<_PinChallengeDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(false),
-          child: const Text('Decline'),
+          child: Text(l10n.actionDecline),
         ),
       ],
     );
@@ -339,10 +338,7 @@ class _SenderInfoCard extends StatelessWidget {
   final String senderName;
   final String signalLabel;
 
-  const _SenderInfoCard({
-    required this.senderName,
-    required this.signalLabel,
-  });
+  const _SenderInfoCard({required this.senderName, required this.signalLabel});
 
   @override
   Widget build(BuildContext context) {

@@ -14,7 +14,7 @@ Verified on the connected device (adb / ContactsContract):
   `deleted=1`** (soft-deleted). There are **zero live** raw contacts, so the
   aggregated `contacts` table is empty. The app is reading 0 correctly.
 - The app's created contacts went into the **`com.google` account**
-  (`tosreerajp@gmail.com`), whose `ungrouped_visible=0` in the contacts
+  (the phone's Google account), whose `ungrouped_visible=0` in the contacts
   `settings` table, and they have since been soft-deleted.
 - The device's **local account is `NULL`/`NULL` with `ungrouped_visible=1`**
   (visible). A raw contact inserted with a `NULL` (or empty-string, which the

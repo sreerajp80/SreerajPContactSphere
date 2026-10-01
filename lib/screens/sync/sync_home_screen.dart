@@ -1,12 +1,13 @@
 // lib/screens/sync/sync_home_screen.dart
 //
-// "Sync to Another Device" hub, reached from Settings behind a biometric check
+// AppLocalizations.of(context).titleSyncToAnotherDevice hub, reached from Settings behind a biometric check
 // (the payload can include secret contacts). Two choices: send this phone's
 // data to another phone, or receive another phone's data onto this one. The
 // heavy lifting lives in the two screens this pushes.
 
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 import 'package:smart_contacts_dialer/screens/sync/receive_from_device_screen.dart';
 import 'package:smart_contacts_dialer/screens/sync/send_to_device_screen.dart';
@@ -17,24 +18,23 @@ class SyncHomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sync to Another Device')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).titleSyncToAnotherDevice),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           _SyncOptionCard(
             icon: Icons.upload_outlined,
-            title: 'Send to Another Device',
-            subtitle:
-                'Share your contacts (and more) with another phone over Wi-Fi.',
+            title: AppLocalizations.of(context).titleSendToDevice,
+            subtitle: AppLocalizations.of(context).descSendToDevice,
             onTap: () => _push(context, const SendToDeviceScreen()),
           ),
           const SizedBox(height: 12),
           _SyncOptionCard(
             icon: Icons.download_outlined,
-            title: 'Receive from Another Device',
-            subtitle:
-                'Add another phone\'s contacts to this phone. Nothing already '
-                'here is changed or removed.',
+            title: AppLocalizations.of(context).titleReceiveFromDevice,
+            subtitle: AppLocalizations.of(context).descReceiveFromDevice,
             onTap: () => _push(context, const ReceiveFromDeviceScreen()),
           ),
           const SizedBox(height: 20),
@@ -51,7 +51,7 @@ class SyncHomeScreen extends StatelessWidget {
   Widget _footer(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
     return Text(
-      'Both phones must be on the same Wi-Fi network and running this app.',
+      AppLocalizations.of(context).descSyncFooter,
       style: TextStyle(color: colors.mutedText, fontSize: 12.5),
       textAlign: TextAlign.center,
     );

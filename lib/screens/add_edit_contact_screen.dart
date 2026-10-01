@@ -11,9 +11,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:smart_contacts_dialer/core/constants/blood_groups.dart';
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
+import 'package:smart_contacts_dialer/l10n/formatting_locale.dart';
+import 'package:smart_contacts_dialer/l10n/stored_labels.dart';
 import 'package:smart_contacts_dialer/models/address.dart';
 import 'package:smart_contacts_dialer/models/contact.dart';
 import 'package:smart_contacts_dialer/models/email.dart';
@@ -123,11 +127,18 @@ class AddEditContactScreen extends StatefulWidget {
   /// editing an existing contact (its own [Contact.isSelf] is used instead).
   final bool initialIsSelf;
 
+  /// True when the form sits inside another screen's tab (the unsaved-number
+  /// screen's "Add contact" tab). That screen's app bar already has a back
+  /// arrow, so the form hides its own. Saving still pops with `true`, which
+  /// closes the host screen.
+  final bool embedded;
+
   const AddEditContactScreen({
     super.key,
     this.contact,
     this.initialNumber,
     this.initialIsSelf = false,
+    this.embedded = false,
   });
 
   @override
@@ -140,20 +151,8 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   final _relationshipRepository = RelationshipRepository();
   final _picker = ImagePicker();
 
-  static const _months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
+  // Preset labels are saved as these English words; storedLabelText() shows
+  // them in the app's language (see lib/l10n/stored_labels.dart).
   static const _phoneLabels = [
     'Mobile',
     'Home',
@@ -178,14 +177,20 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
     'Non-binary',
     'Prefer not to say',
   ];
-  static const _tagPool = [
-    'VIP',
-    'Mentor',
-    'Client',
-    'Investor',
-    'Neighbor',
-    'Family',
-  ];
+
+  /// Starter tag suggestions. Tags are the user's own text, so a suggestion is
+  /// saved in the language it is shown in.
+  List<String> get _tagPool {
+    final l10n = AppLocalizations.of(context);
+    return [
+      l10n.labelTagSuggestVip,
+      l10n.labelTagSuggestMentor,
+      l10n.labelTagSuggestClient,
+      l10n.labelTagSuggestInvestor,
+      l10n.labelTagSuggestNeighbor,
+      l10n.labelIntentFamily,
+    ];
+  }
 
   late final TextEditingController _salutation;
   late final TextEditingController _firstName;
@@ -273,7 +278,8 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   bool _isSecret = false;
   bool _isSelf = false;
   bool _isEphemeral = false;
-  EphemeralExpiryOption _ephemeralOption = EphemeralExpiryOption.twentyFourHours;
+  EphemeralExpiryOption _ephemeralOption =
+      EphemeralExpiryOption.twentyFourHours;
   bool _saving = false;
   bool _firstNameInvalid = false;
 
@@ -608,6 +614,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   /// copied into the app's documents dir (camera captures land in an evictable
   /// cache) so the path stays valid — see [_persistPhoto].
   Future<void> _pickPhoto() async {
+    final l10n = AppLocalizations.of(context);
     final source = await _chooseImageSource();
     if (source == null) return;
     if (source == ImageSource.camera && !await _ensureCamera()) return;
@@ -618,7 +625,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
       if (!mounted) return;
       setState(() => _photoPath = stored);
     } catch (e) {
-      _showMessage('Could not pick image: $e');
+      _showMessage(l10n.errorCouldNotPickImage('$e'));
     }
   }
 
@@ -628,6 +635,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   /// app's documents dir (camera captures land in an evictable cache) so the
   /// path stays valid — see [_persistPhoto].
   Future<void> _pickCardPhoto() async {
+    final l10n = AppLocalizations.of(context);
     final source = await _chooseImageSource();
     if (source == null) return;
     if (source == ImageSource.camera && !await _ensureCamera()) return;
@@ -638,13 +646,14 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
       if (!mounted) return;
       setState(() => _cardPhotoPath = stored);
     } catch (e) {
-      _showMessage('Could not pick calling card: $e');
+      _showMessage(l10n.errorCouldNotPickCard('$e'));
     }
   }
 
   /// Shows the shared Camera / Gallery chooser sheet. Returns the chosen
   /// [ImageSource], or null if the user dismissed the sheet.
   Future<ImageSource?> _chooseImageSource() {
+    final l10n = AppLocalizations.of(context);
     return showModalBottomSheet<ImageSource>(
       context: context,
       backgroundColor: _t.bg,
@@ -654,13 +663,16 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
           children: [
             ListTile(
               leading: Icon(Icons.photo_camera_outlined, color: _t.accent),
-              title: Text('Take photo', style: TextStyle(color: _t.text)),
+              title: Text(
+                l10n.actionTakePhoto,
+                style: TextStyle(color: _t.text),
+              ),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             ListTile(
               leading: Icon(Icons.photo_library_outlined, color: _t.accent),
               title: Text(
-                'Choose from gallery',
+                l10n.actionChooseFromGallery,
                 style: TextStyle(color: _t.text),
               ),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
@@ -676,8 +688,9 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   /// needs it granted or the capture fails. Shows a message and returns false
   /// when the user denies it.
   Future<bool> _ensureCamera() async {
+    final l10n = AppLocalizations.of(context);
     final granted = await PermissionService().ensureCamera();
-    if (!granted) _showMessage('Camera permission is needed to take a photo.');
+    if (!granted) _showMessage(l10n.errorCameraPermission);
     return granted;
   }
 
@@ -711,6 +724,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   /// Lets the user pick a tone from the phone's built-in ringtones or an audio
   /// file, then stores it on the contact.
   Future<void> _pickRingtone() async {
+    final l10n = AppLocalizations.of(context);
     final source = await _chooseRingtoneSource();
     if (source == null || !mounted) return;
 
@@ -730,7 +744,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
         label = file.label;
       }
     } catch (e) {
-      _showMessage('Could not pick ringtone: $e');
+      _showMessage(l10n.errorCouldNotPickRingtone('$e'));
       return;
     }
 
@@ -745,6 +759,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   /// Bottom-sheet chooser: pick from the phone's ringtones or an audio file.
   /// Returns null if dismissed.
   Future<_RingtoneSource?> _chooseRingtoneSource() {
+    final l10n = AppLocalizations.of(context);
     return showModalBottomSheet<_RingtoneSource>(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -753,14 +768,14 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.notifications_active_outlined),
-              title: const Text('Phone ringtones'),
-              subtitle: const Text('Choose from the ringtones on this device'),
+              title: Text(l10n.titlePhoneRingtones),
+              subtitle: Text(l10n.descPhoneRingtones),
               onTap: () => Navigator.pop(sheetContext, _RingtoneSource.phone),
             ),
             ListTile(
               leading: const Icon(Icons.folder_open),
-              title: const Text('Audio file'),
-              subtitle: const Text('Pick an audio file from your folders'),
+              title: Text(l10n.titleAudioFile),
+              subtitle: Text(l10n.descAudioFile),
               onTap: () => Navigator.pop(sheetContext, _RingtoneSource.file),
             ),
           ],
@@ -783,6 +798,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   Future<void> _toggleRingtonePreview() async {
     final path = _ringtonePath;
     if (path == null) return;
+    final l10n = AppLocalizations.of(context);
     if (_previewPlaying) {
       await _stopPreview();
       return;
@@ -793,7 +809,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
         _revertMissingTone();
         return;
       case RingtonePreviewStatus.muted:
-        _showMessage('Ring volume is muted — turn it up to hear the preview.');
+        _showMessage(l10n.errorRingVolumeMuted);
       case RingtonePreviewStatus.playing:
         break;
     }
@@ -809,9 +825,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
       _ringtonePath = null;
       _ringtoneLabel = null;
     });
-    _showMessage(
-      'This ringtone is no longer available — reverting to default.',
-    );
+    _showMessage(AppLocalizations.of(context).errorRingtoneRevert);
   }
 
   Future<void> _stopPreview() async {
@@ -890,25 +904,28 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   }
 
   /// Confirms and removes a repeater row. Invoked from the row's swipe-to-delete
-  /// action. [noun] names what's being removed in the prompt (e.g. "phone").
+  /// action. [title] and [body] are the whole translated prompt (a noun cannot
+  /// be slotted into a sentence in every language).
   Future<void> _confirmRemoveEntry(
     List<_LabeledEntry> list,
     _LabeledEntry entry,
-    String noun,
+    String title,
+    String body,
   ) async {
+    final l10n = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Remove $noun?'),
-        content: Text('This $noun will be removed from the contact.'),
+        title: Text(title),
+        content: Text(body),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Remove'),
+            child: Text(l10n.actionRemove),
           ),
         ],
       ),
@@ -1011,10 +1028,11 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
 
   Future<void> _save() async {
     if (_saving) return;
+    final l10n = AppLocalizations.of(context);
     final firstName = _firstName.text.trim();
     if (firstName.isEmpty) {
       setState(() => _firstNameInvalid = true);
-      _showMessage('First name is required');
+      _showMessage(l10n.errorFirstNameRequired);
       return;
     }
     setState(() => _saving = true);
@@ -1045,8 +1063,11 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
         ..isSelf = _isSelf
         ..isEphemeral = _isEphemeral
         ..ephemeralAutoDeleteCall =
-            _isEphemeral && (_ephemeralOption == EphemeralExpiryOption.autoDeleteCall)
-        ..ephemeralExpiresAt = (_isEphemeral && _ephemeralOption != EphemeralExpiryOption.autoDeleteCall)
+            _isEphemeral &&
+            (_ephemeralOption == EphemeralExpiryOption.autoDeleteCall)
+        ..ephemeralExpiresAt =
+            (_isEphemeral &&
+                _ephemeralOption != EphemeralExpiryOption.autoDeleteCall)
             ? DateTime.now().add(_ephemeralOption.duration!)
             : null;
 
@@ -1062,7 +1083,12 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
             defaultIso: p.countryIso ?? _homeCountryIso,
           );
           if (!res.isPossible && res.errorReason != null) {
-            _showMessage('Invalid phone number: ${p.value.text} (${res.errorReason})');
+            _showMessage(
+              l10n.errorInvalidPhoneNumber(
+                p.value.text,
+                _phoneReasonText(res.errorReason!),
+              ),
+            );
             setState(() => _saving = false);
             return;
           }
@@ -1145,12 +1171,42 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
       await _persistRelationships(contactId);
       if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
-      _showMessage('Save failed: $e');
+      _showMessage(l10n.errorSaveFailed('$e'));
       if (mounted) setState(() => _saving = false);
     }
   }
 
   String? _entryLabel(_LabeledEntry e) => _nullIfEmpty(e.label.text);
+
+  /// PhoneNormalizer reports why a number is wrong in fixed English (its unit
+  /// tests check that text); this shows the reason in the app's language.
+  String _phoneReasonText(String reason) {
+    final l10n = AppLocalizations.of(context);
+    const formatFor = 'Invalid number format for +';
+    if (reason.startsWith(formatFor)) {
+      return l10n.errorPhoneInvalidFormatFor(
+        reason.substring(formatFor.length),
+      );
+    }
+    return switch (reason) {
+      'Empty number' => l10n.errorPhoneEmpty,
+      'Number is too short' => l10n.errorPhoneTooShort,
+      'Number is too long' => l10n.errorPhoneTooLong,
+      'Invalid number format' => l10n.errorPhoneInvalidFormat,
+      _ => reason,
+    };
+  }
+
+  /// The chip text for an ephemeral expiry choice.
+  String _expiryLabel(EphemeralExpiryOption opt) {
+    final l10n = AppLocalizations.of(context);
+    return switch (opt) {
+      EphemeralExpiryOption.twoHours => l10n.labelExpiry2Hours,
+      EphemeralExpiryOption.twentyFourHours => l10n.labelExpiry24Hours,
+      EphemeralExpiryOption.sevenDays => l10n.labelExpiry7Days,
+      EphemeralExpiryOption.autoDeleteCall => l10n.labelExpiryAfterOneCall,
+    };
+  }
 
   String? _nullIfEmpty(String s) => s.trim().isEmpty ? null : s.trim();
 
@@ -1196,28 +1252,34 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
                       const SizedBox(height: 22),
                     ],
                     _repeaterSection(
-                      title: 'Phone numbers',
+                      title: AppLocalizations.of(context).labelPhoneNumbers,
                       list: _phones,
                       presets: _phoneLabels,
                       valueHint: '555 0123',
                       keyboardType: TextInputType.phone,
                       hasPrimary: true,
                       defaultLabel: 'Mobile',
-                      addLabel: 'Add phone',
-                      removeNoun: 'phone',
+                      addLabel: AppLocalizations.of(context).actionAddPhone,
+                      removeTitle: AppLocalizations.of(
+                        context,
+                      ).titleRemovePhone,
+                      removeBody: AppLocalizations.of(context).descRemovePhone,
                       showCountryCode: true,
                     ),
                     const SizedBox(height: 22),
                     _repeaterSection(
-                      title: 'Emails',
+                      title: AppLocalizations.of(context).labelEmails,
                       list: _emails,
                       presets: _emailLabels,
                       valueHint: 'name@email.com',
                       keyboardType: TextInputType.emailAddress,
                       hasPrimary: true,
                       defaultLabel: 'Personal',
-                      addLabel: 'Add email',
-                      removeNoun: 'email',
+                      addLabel: AppLocalizations.of(context).actionAddEmail,
+                      removeTitle: AppLocalizations.of(
+                        context,
+                      ).titleRemoveEmail,
+                      removeBody: AppLocalizations.of(context).descRemoveEmail,
                     ),
                     const SizedBox(height: 22),
                     _tagsSection(),
@@ -1227,15 +1289,22 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
                     _relationshipsSection(),
                     const SizedBox(height: 22),
                     _repeaterSection(
-                      title: 'Social links',
+                      title: AppLocalizations.of(context).labelSocialLinks,
                       list: _socials,
                       presets: _socialLabels,
-                      valueHint: 'URL or @handle',
+                      valueHint: AppLocalizations.of(context).hintUrlOrHandle,
                       keyboardType: TextInputType.url,
                       hasPrimary: false,
                       defaultLabel: 'LinkedIn',
-                      addLabel: 'Add social link',
-                      removeNoun: 'social link',
+                      addLabel: AppLocalizations.of(
+                        context,
+                      ).actionAddSocialLink,
+                      removeTitle: AppLocalizations.of(
+                        context,
+                      ).titleRemoveSocialLink,
+                      removeBody: AppLocalizations.of(
+                        context,
+                      ).descRemoveSocialLink,
                       labelWidth: 128,
                     ),
                     const SizedBox(height: 22),
@@ -1264,16 +1333,24 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _circleIconButton(
-            icon: Icons.arrow_back,
-            background: Colors.transparent,
-            foreground: _t.text,
-            onTap: () => Navigator.of(context).maybePop(),
-          ),
+          // Same width as the back button, so the title stays centred.
+          if (widget.embedded)
+            const SizedBox(width: 40)
+          else
+            _circleIconButton(
+              icon: Icons.arrow_back,
+              background: Colors.transparent,
+              foreground: _t.text,
+              onTap: () => Navigator.of(context).maybePop(),
+            ),
           Text(
             _isSelf
-                ? (_isEditing ? 'Edit me' : 'Add me')
-                : (_isEditing ? 'Edit contact' : 'Add contact'),
+                ? (_isEditing
+                      ? AppLocalizations.of(context).titleEditMe
+                      : AppLocalizations.of(context).titleAddMe)
+                : (_isEditing
+                      ? AppLocalizations.of(context).titleEditContact
+                      : AppLocalizations.of(context).titleAddContact),
             style: TextStyle(
               color: _t.text,
               fontSize: 18,
@@ -1376,7 +1453,9 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
           ),
           const SizedBox(height: 9),
           Text(
-            hasPhoto ? 'Change photo' : 'Add photo',
+            hasPhoto
+                ? AppLocalizations.of(context).actionChangePhoto
+                : AppLocalizations.of(context).actionAddPhoto,
             style: TextStyle(
               color: _t.accentText,
               fontSize: 12.5,
@@ -1391,17 +1470,18 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   // ----- sections ------------------------------------------------------------
 
   Widget _nameSection() {
-    return _section('Name', [
+    final l10n = AppLocalizations.of(context);
+    return _section(l10n.labelFieldName, [
       _inputField(
-        caption: 'Salutation',
+        caption: l10n.labelSalutation,
         controller: _salutation,
-        hint: 'Mr / Ms / Dr',
+        hint: l10n.hintSalutation,
       ),
       const SizedBox(height: 10),
       _inputField(
-        caption: 'First name *',
+        caption: l10n.labelFirstNameRequired,
         controller: _firstName,
-        hint: 'Enter first name',
+        hint: l10n.hintEnterFirstName,
         error: _firstNameInvalid,
         onChanged: (_) {
           if (_firstNameInvalid) setState(() => _firstNameInvalid = false);
@@ -1413,26 +1493,26 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
         children: [
           Expanded(
             child: _inputField(
-              caption: 'Middle name',
+              caption: l10n.labelMiddleName,
               controller: _middleName,
-              hint: 'Optional',
+              hint: l10n.hintOptional,
             ),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: _inputField(
-              caption: 'Last name',
+              caption: l10n.labelLastName,
               controller: _lastName,
-              hint: 'Optional',
+              hint: l10n.hintOptional,
             ),
           ),
         ],
       ),
       const SizedBox(height: 10),
       _inputField(
-        caption: 'Formal name',
+        caption: l10n.labelFormalName,
         controller: _formalName,
-        hint: 'How the contact is formally addressed',
+        hint: l10n.hintFormalName,
       ),
       const SizedBox(height: 10),
       _bloodGroupField(),
@@ -1440,7 +1520,8 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   }
 
   Widget _personalSection() {
-    return _section('Personal details', [
+    final l10n = AppLocalizations.of(context);
+    return _section(l10n.labelPersonalDetails, [
       _genderField(),
       const SizedBox(height: 10),
       Row(
@@ -1448,7 +1529,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
         children: [
           Expanded(
             child: _dateField(
-              caption: 'Date of birth',
+              caption: l10n.labelDateOfBirth,
               value: _dob,
               onPick: (d) => _dob = d,
             ),
@@ -1456,7 +1537,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: _dateField(
-              caption: 'Anniversary',
+              caption: l10n.labelAnniversary,
               value: _anniversary,
               onPick: (d) => _anniversary = d,
             ),
@@ -1467,7 +1548,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
       if (!_isSelf) ...[
         const SizedBox(height: 10),
         _dateField(
-          caption: 'Meetiversary · the day you met',
+          caption: l10n.labelMeetiversaryDayYouMet,
           value: _meetiversary,
           onPick: (d) => _meetiversary = d,
         ),
@@ -1482,16 +1563,16 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   /// stored alongside the id so the contact screen can name the SIM even before
   /// the SIM list has loaded.
   Widget _preferredSimSection() {
-    return _section('Preferred SIM', [
+    final l10n = AppLocalizations.of(context);
+    return _section(l10n.labelPreferredSim, [
       Text(
-        'Which SIM to call this person on. Leave it on Default to use your '
-        'usual SIM.',
+        l10n.descPreferredSim,
         style: TextStyle(color: _t.sub, fontSize: 12.5),
       ),
       const SizedBox(height: 10),
       _preferredSimOption(
-        title: 'Default SIM',
-        subtitle: 'Use the SIM set in Settings',
+        title: l10n.labelDefaultSim,
+        subtitle: l10n.descUseSimInSettings,
         selected: _preferredSimId == null,
         onTap: () => setState(() {
           _preferredSimId = null;
@@ -1504,7 +1585,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
           title: sim.displayLabel,
           subtitle: sim.slotIndex != null
               ? 'SIM ${sim.slotIndex! + 1}'
-              : 'On this phone',
+              : l10n.labelOnThisPhone,
           selected: _preferredSimId == sim.phoneAccountId,
           onTap: () => setState(() {
             _preferredSimId = sim.phoneAccountId;
@@ -1560,14 +1641,15 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
 
   Widget _ringtoneSection() {
     final hasTone = _ringtonePath != null;
-    return _section('Ringtone', [
+    final l10n = AppLocalizations.of(context);
+    return _section(l10n.labelRingtone, [
       IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
               child: _shell(
-                caption: 'Ringtone',
+                caption: l10n.labelRingtone,
                 onTap: _pickRingtone,
                 child: Row(
                   children: [
@@ -1579,7 +1661,9 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        hasTone ? (_ringtoneLabel ?? 'Selected') : 'None',
+                        hasTone
+                            ? (_ringtoneLabel ?? l10n.labelSelected)
+                            : l10n.labelNone,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: hasTone
@@ -1625,7 +1709,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   Widget _cardPhotoSection() {
     final hasCard =
         _cardPhotoPath != null && File(_cardPhotoPath!).existsSync();
-    return _section('Calling card', [
+    return _section(AppLocalizations.of(context).labelCallingCard, [
       // A small phone-shaped thumbnail — just a representation of the calling card,
       // not a life-size preview. The real thing is shown full-screen during calls.
       SizedBox(
@@ -1675,7 +1759,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
                         Icon(Icons.wallpaper_outlined, size: 30, color: _t.sub),
                         const SizedBox(height: 8),
                         Text(
-                          'Add calling card',
+                          AppLocalizations.of(context).actionAddCallingCard,
                           style: TextStyle(
                             color: _t.accentText,
                             fontSize: 13,
@@ -1684,7 +1768,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'Photo shown full-screen during calls',
+                          AppLocalizations.of(context).descCallingCardShown,
                           style: TextStyle(color: _t.caption, fontSize: 11.5),
                         ),
                       ],
@@ -1700,12 +1784,13 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   /// field, but with no "Custom" option — the eight groups are the only valid
   /// answers, and free text is what caused typos like "0+" in the first place.
   Widget _bloodGroupField() {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _menuButton(
-          caption: 'Blood group',
-          value: _bloodGroup.isEmpty ? 'Select' : _bloodGroup,
+          caption: l10n.labelBloodGroup,
+          value: _bloodGroup.isEmpty ? l10n.labelSelect : _bloodGroup,
           onTap: () => setState(() => _bloodMenuOpen = !_bloodMenuOpen),
         ),
         if (_bloodMenuOpen) ...[
@@ -1722,7 +1807,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
               ),
             if (_bloodGroup.isNotEmpty)
               _chip(
-                'Clear',
+                l10n.actionClear,
                 selected: false,
                 onTap: () => setState(() {
                   _bloodGroup = '';
@@ -1736,15 +1821,21 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   }
 
   Widget _genderField() {
+    final l10n = AppLocalizations.of(context);
     final Widget head = _genderCustom
         ? _shell(
-            caption: 'Gender',
+            caption: l10n.labelGender,
             accentBorder: true,
-            child: _bareTextField(controller: _genderText, hint: 'Describe'),
+            child: _bareTextField(
+              controller: _genderText,
+              hint: l10n.hintDescribe,
+            ),
           )
         : _menuButton(
-            caption: 'Gender',
-            value: _gender.isEmpty ? 'Select' : _gender,
+            caption: l10n.labelGender,
+            value: _gender.isEmpty
+                ? l10n.labelSelect
+                : storedLabelText(l10n, _gender),
             onTap: () => setState(() => _genderMenuOpen = !_genderMenuOpen),
           );
 
@@ -1757,7 +1848,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
           _chipWrap([
             for (final o in _genderLabels)
               _chip(
-                o,
+                storedLabelText(l10n, o),
                 selected: !_genderCustom && _gender == o,
                 onTap: () => setState(() {
                   _gender = o;
@@ -1787,7 +1878,8 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
     required bool hasPrimary,
     required String defaultLabel,
     required String addLabel,
-    required String removeNoun,
+    required String removeTitle,
+    required String removeBody,
     double labelWidth = 120,
     bool showCountryCode = false,
   }) {
@@ -1806,7 +1898,8 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
                 valueHint: valueHint,
                 keyboardType: keyboardType,
                 hasPrimary: hasPrimary,
-                removeNoun: removeNoun,
+                removeTitle: removeTitle,
+                removeBody: removeBody,
                 labelWidth: labelWidth,
                 showCountryCode: showCountryCode,
               ),
@@ -1827,22 +1920,24 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
     required String valueHint,
     required TextInputType keyboardType,
     required bool hasPrimary,
-    required String removeNoun,
+    required String removeTitle,
+    required String removeBody,
     required double labelWidth,
     bool showCountryCode = false,
   }) {
     final String? phoneVal =
         showCountryCode && entry.value.text.trim().isNotEmpty
-            ? PhoneNormalizer.validateNumber(
-                PhoneNormalizer.compose(
-                  iso: entry.countryIso ?? _homeCountryIso,
-                  national: entry.value.text,
-                ),
-                defaultIso: entry.countryIso ?? _homeCountryIso,
-              ).errorReason
-            : null;
+        ? PhoneNormalizer.validateNumber(
+            PhoneNormalizer.compose(
+              iso: entry.countryIso ?? _homeCountryIso,
+              national: entry.value.text,
+            ),
+            defaultIso: entry.countryIso ?? _homeCountryIso,
+          ).errorReason
+        : null;
 
     final canRemove = list.length > 1;
+    final l10n = AppLocalizations.of(context);
     // Primary is positional: row 0 of a section that has a primary concept.
     // Indicated by colour (accent border + soft fill) rather than a star.
     final isPrimaryRow = hasPrimary && index == 0;
@@ -1857,12 +1952,12 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
                     accentBorder: true,
                     child: _bareTextField(
                       controller: entry.label,
-                      hint: 'Custom',
+                      hint: l10n.hintCustom,
                       bold: true,
                     ),
                   )
                 : _menuButton(
-                    value: entry.label.text,
+                    value: storedLabelText(l10n, entry.label.text),
                     bold: true,
                     primary: isPrimaryRow,
                     onTap: () => _toggleMenu(list, entry),
@@ -1911,11 +2006,11 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
               children: [
                 SlidableAction(
                   onPressed: (_) =>
-                      _confirmRemoveEntry(list, entry, removeNoun),
+                      _confirmRemoveEntry(list, entry, removeTitle, removeBody),
                   backgroundColor: Colors.redAccent,
                   foregroundColor: Colors.white,
                   icon: Icons.delete_outline,
-                  label: 'Delete',
+                  label: l10n.actionDelete,
                   borderRadius: BorderRadius.circular(14),
                 ),
               ],
@@ -1932,7 +2027,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
                 const Icon(Icons.info_outline, size: 13, color: Colors.orange),
                 const SizedBox(width: 4),
                 Text(
-                  phoneVal,
+                  _phoneReasonText(phoneVal),
                   style: const TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
@@ -1947,7 +2042,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
           _chipWrap([
             for (final o in presets)
               _chip(
-                o,
+                storedLabelText(l10n, o),
                 selected: !entry.custom && entry.label.text == o,
                 onTap: () => _chooseLabel(entry, o),
               ),
@@ -1983,7 +2078,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
           .take(6)
           .toList();
     }
-    return _section('Tags', [
+    return _section(AppLocalizations.of(context).navTags, [
       if (_tags.isNotEmpty) ...[
         Wrap(
           spacing: 8,
@@ -2025,10 +2120,10 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
           children: [
             Expanded(
               child: _shell(
-                caption: 'Add tag',
+                caption: AppLocalizations.of(context).labelAddTag,
                 child: _bareTextField(
                   controller: _tagInput,
-                  hint: 'Type and press enter',
+                  hint: AppLocalizations.of(context).hintTypeAndEnter,
                   onSubmitted: (_) => _addTag(),
                 ),
               ),
@@ -2085,10 +2180,12 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
         ? const <_GroupChip>[]
         : (query == '*'
                   ? unselected
-                  : unselected.where((g) => g.name.toLowerCase().contains(query)))
+                  : unselected.where(
+                      (g) => g.name.toLowerCase().contains(query),
+                    ))
               .take(20)
               .toList();
-    return _section('Add to group', [
+    return _section(AppLocalizations.of(context).labelAddToGroup, [
       if (selected.isNotEmpty) ...[
         Wrap(
           spacing: 8,
@@ -2132,10 +2229,10 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
           children: [
             Expanded(
               child: _shell(
-                caption: 'Add to group',
+                caption: AppLocalizations.of(context).labelAddToGroup,
                 child: _bareTextField(
                   controller: _groupInput,
-                  hint: 'Type to search, * for all, or add new',
+                  hint: AppLocalizations.of(context).hintGroupSearch,
                   onSubmitted: (_) => _addGroup(),
                 ),
               ),
@@ -2182,12 +2279,12 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   }
 
   Widget _relationshipsSection() {
-    return _section('Relationships', [
+    return _section(AppLocalizations.of(context).labelRelationships, [
       if (_relations.isEmpty)
         Padding(
           padding: const EdgeInsets.only(bottom: 10),
           child: Text(
-            'Link this contact to people they know.',
+            AppLocalizations.of(context).descLinkToPeople,
             style: TextStyle(color: _t.sub, fontSize: 12.5),
           ),
         )
@@ -2229,23 +2326,27 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
               ),
           ],
         ),
-      _addButton('Add relationship', _addRelationship),
+      _addButton(
+        AppLocalizations.of(context).tooltipAddRelationship,
+        _addRelationship,
+      ),
     ]);
   }
 
   Widget _personalAddressSection() {
-    return _section('Personal address', [
+    return _section(AppLocalizations.of(context).labelAddressPersonal, [
       for (int i = 0; i < _addresses.length; i++) ...[
         _addressCard(_addresses[i], i + 1),
         const SizedBox(height: 10),
       ],
-      _addButton('Add address', () {
+      _addButton(AppLocalizations.of(context).actionAddAddress, () {
         setState(() => _addresses.add(_AddressEntry(_nextId())));
       }),
     ]);
   }
 
   Widget _addressCard(_AddressEntry a, int index) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2268,7 +2369,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'ADDRESS $index',
+                      l10n.labelAddressNumber(index),
                       style: TextStyle(
                         color: _t.accentText,
                         fontSize: 10.5,
@@ -2292,7 +2393,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
                     Icon(Icons.remove, size: 14, color: _t.sub),
                     const SizedBox(width: 4),
                     Text(
-                      'Remove',
+                      l10n.actionRemove,
                       style: TextStyle(
                         color: _t.sub,
                         fontSize: 11.5,
@@ -2307,20 +2408,26 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
         if (a.open) ...[
           const SizedBox(height: 10),
           _inputField(
-            caption: 'Street',
+            caption: l10n.labelFieldStreet,
             controller: a.street,
-            hint: 'House no, street',
+            hint: l10n.hintStreet,
           ),
           const SizedBox(height: 10),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _inputField(caption: 'City / Town', controller: a.city),
+                child: _inputField(
+                  caption: l10n.labelCityTown,
+                  controller: a.city,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _inputField(caption: 'State', controller: a.state),
+                child: _inputField(
+                  caption: l10n.labelFieldState,
+                  controller: a.state,
+                ),
               ),
             ],
           ),
@@ -2330,13 +2437,16 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
             children: [
               Expanded(
                 child: _inputField(
-                  caption: 'Postal code',
+                  caption: l10n.labelFieldPostalCode,
                   controller: a.postal,
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: _inputField(caption: 'Country', controller: a.country),
+                child: _inputField(
+                  caption: l10n.labelFieldCountry,
+                  controller: a.country,
+                ),
               ),
             ],
           ),
@@ -2346,28 +2456,35 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   }
 
   Widget _workAddressSection() {
-    return _section('Work address', [
+    final l10n = AppLocalizations.of(context);
+    return _section(l10n.labelAddressOfficial, [
       _inputField(
-        caption: 'Company name',
+        caption: l10n.labelCompanyName,
         controller: _workCompany,
-        hint: 'Where they work',
+        hint: l10n.hintWhereTheyWork,
       ),
       const SizedBox(height: 10),
       _inputField(
-        caption: 'Office / Street',
+        caption: l10n.labelOfficeStreet,
         controller: _workStreet,
-        hint: 'Building, street',
+        hint: l10n.hintBuildingStreet,
       ),
       const SizedBox(height: 10),
       Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: _inputField(caption: 'City / Town', controller: _workCity),
+            child: _inputField(
+              caption: l10n.labelCityTown,
+              controller: _workCity,
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: _inputField(caption: 'State', controller: _workState),
+            child: _inputField(
+              caption: l10n.labelFieldState,
+              controller: _workState,
+            ),
           ),
         ],
       ),
@@ -2376,11 +2493,17 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: _inputField(caption: 'Postal code', controller: _workPostal),
+            child: _inputField(
+              caption: l10n.labelFieldPostalCode,
+              controller: _workPostal,
+            ),
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: _inputField(caption: 'Country', controller: _workCountry),
+            child: _inputField(
+              caption: l10n.labelFieldCountry,
+              controller: _workCountry,
+            ),
           ),
         ],
       ),
@@ -2388,23 +2511,24 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   }
 
   Widget _officialSection() {
-    return _section('Official details', [
+    final l10n = AppLocalizations.of(context);
+    return _section(l10n.labelOfficialDetails, [
       Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             child: _inputField(
-              caption: 'Designation',
+              caption: l10n.labelFieldDesignation,
               controller: _designation,
-              hint: 'Title',
+              hint: l10n.hintJobTitle,
             ),
           ),
           const SizedBox(width: 10),
           Expanded(
             child: _inputField(
-              caption: 'Department',
+              caption: l10n.labelDepartment,
               controller: _department,
-              hint: 'Team',
+              hint: l10n.hintTeam,
             ),
           ),
         ],
@@ -2413,6 +2537,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   }
 
   Widget _ephemeralSection() {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -2433,7 +2558,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '⏱️ Ephemeral contact',
+                      l10n.labelEphemeralToggle,
                       style: TextStyle(
                         color: _t.text,
                         fontSize: 14,
@@ -2442,7 +2567,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Temporary entry. Self-destructs automatically.',
+                      l10n.descEphemeralToggle,
                       style: TextStyle(
                         color: _t.caption,
                         fontSize: 12,
@@ -2466,7 +2591,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
           if (_isEphemeral) ...[
             const SizedBox(height: 14),
             Text(
-              'Expiry options',
+              l10n.labelExpiryOptions,
               style: TextStyle(
                 color: _t.sub,
                 fontSize: 12,
@@ -2481,7 +2606,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
                 final isSel = _ephemeralOption == opt;
                 return ChoiceChip(
                   label: Text(
-                    opt.label,
+                    _expiryLabel(opt),
                     style: TextStyle(
                       color: isSel ? _t.onAccent : _t.text,
                       fontSize: 12,
@@ -2508,11 +2633,15 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.lock_clock_outlined, size: 16, color: _t.accentText),
+                  Icon(
+                    Icons.lock_clock_outlined,
+                    size: 16,
+                    color: _t.accentText,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Stored exclusively in local SQLCipher DB. Never synced to Google or phone contacts.',
+                      l10n.descEphemeralStorage,
                       style: TextStyle(
                         color: _t.accentText,
                         fontSize: 11.5,
@@ -2530,6 +2659,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
   }
 
   Widget _secretSection() {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -2544,7 +2674,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Secret contact',
+                  l10n.labelSecretContact,
                   style: TextStyle(
                     color: _t.text,
                     fontSize: 14,
@@ -2553,7 +2683,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Hidden behind authentication',
+                  l10n.descHiddenBehindAuth,
                   style: TextStyle(
                     color: _t.caption,
                     fontSize: 12,
@@ -2761,7 +2891,9 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
       caption: caption,
       onTap: () => _pickDate(value, onPick),
       child: Text(
-        value == null ? 'Select' : _fmtDate(value),
+        value == null
+            ? AppLocalizations.of(context).labelSelect
+            : _fmtDate(value),
         style: TextStyle(
           color: value == null ? _t.caption.withValues(alpha: 0.7) : _t.text,
           fontSize: 14,
@@ -2854,7 +2986,7 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
       radius: 10,
       onTap: onTap,
       child: Text(
-        '+ Custom',
+        AppLocalizations.of(context).actionCustomLabel,
         style: TextStyle(
           color: _t.accentText,
           fontSize: 12,
@@ -2864,7 +2996,12 @@ class _AddEditContactScreenState extends State<AddEditContactScreen> {
     );
   }
 
-  String _fmtDate(DateTime d) => '${d.day} ${_months[d.month - 1]} ${d.year}';
+  /// "5 Mar 2026" in the app's language; Sanskrit falls back to English
+  /// patterns because intl has no Sanskrit date data.
+  String _fmtDate(DateTime d) => DateFormat(
+    'd MMM y',
+    formattingLocale(Localizations.localeOf(context)),
+  ).format(d);
 
   // ----- small generic helpers ----------------------------------------------
 
@@ -3150,13 +3287,17 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
               child: Row(
                 children: [
-                  const Text(
-                    'Select country code',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  Text(
+                    AppLocalizations.of(context).titleSelectCountryCode,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.close),
+                    tooltip: AppLocalizations.of(context).actionClose,
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ],
@@ -3176,7 +3317,7 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
                   autofocus: true,
                   onChanged: (v) => setState(() => _query = v),
                   decoration: InputDecoration(
-                    hintText: 'Search country or code',
+                    hintText: AppLocalizations.of(context).hintSearchCountry,
                     prefixIcon: Icon(Icons.search, color: accent),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 16),
@@ -3188,7 +3329,9 @@ class _CountryPickerSheetState extends State<_CountryPickerSheet> {
               child: items.isEmpty
                   ? Center(
                       child: Text(
-                        'No countries match "$_query"',
+                        AppLocalizations.of(
+                          context,
+                        ).emptyNoCountriesMatch(_query),
                         style: TextStyle(color: colors.mutedText),
                       ),
                     )

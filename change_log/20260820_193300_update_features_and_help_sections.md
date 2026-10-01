@@ -1,7 +1,7 @@
 # Change Log: Update Features & Help Sections in Settings
 
 **Timestamp:** 2026-08-20 19:33:00 +05:30
-**Plan Implemented:** [plans/20260820_191601_update_features_and_help_sections.md](file:///L:/Android/SreerajPContactSphere/plans/20260820_191601_update_features_and_help_sections.md)
+**Plan Implemented:** [plans/20260820_191601_update_features_and_help_sections.md](../plans/20260820_191601_update_features_and_help_sections.md)
 
 ---
 

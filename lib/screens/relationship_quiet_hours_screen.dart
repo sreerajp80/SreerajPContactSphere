@@ -1,4 +1,5 @@
 // lib/screens/relationship_quiet_hours_screen.dart
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -29,21 +30,25 @@ class _RelationshipQuietHoursScreenState
     final enabled = settings.relationshipQuietHoursEnabled;
     final allowedTiers = settings.relationshipQuietHoursAllowedTiers.toSet();
     final allowedTags = settings.relationshipQuietHoursAllowedTags.toSet();
-    final allowedContactIds =
-        settings.relationshipQuietHoursAllowedContactIds.toSet();
+    final allowedContactIds = settings.relationshipQuietHoursAllowedContactIds
+        .toSet();
 
     final customRelationships = allowedTiers
-        .where((t) =>
-            t != QuietHoursTiers.emergency &&
-            t != QuietHoursTiers.starred &&
-            t != QuietHoursTiers.immediateFamily &&
-            t != QuietHoursTiers.extendedFamily &&
-            t != QuietHoursTiers.friends &&
-            t != QuietHoursTiers.work)
+        .where(
+          (t) =>
+              t != QuietHoursTiers.emergency &&
+              t != QuietHoursTiers.starred &&
+              t != QuietHoursTiers.immediateFamily &&
+              t != QuietHoursTiers.extendedFamily &&
+              t != QuietHoursTiers.friends &&
+              t != QuietHoursTiers.work,
+        )
         .toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Relationship-tier quiet hours')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).labelTierQuietHours),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
@@ -64,15 +69,15 @@ class _RelationshipQuietHoursScreenState
                     onChanged: (v) => context
                         .read<AppSettings>()
                         .setRelationshipQuietHoursEnabled(v),
-                    title: const Text(
-                      'Relationship-tier quiet hours',
-                      style: TextStyle(
+                    title: Text(
+                      AppLocalizations.of(context).labelTierQuietHours,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     subtitle: Text(
-                      'Silence calls at night except for chosen allowed contacts',
+                      AppLocalizations.of(context).descQuietHoursSwitch,
                       style: TextStyle(color: colors.mutedText, fontSize: 13),
                     ),
                   ),
@@ -83,7 +88,9 @@ class _RelationshipQuietHoursScreenState
                         horizontal: 16,
                       ),
                       leading: Icon(Icons.nightlight_round, color: accent),
-                      title: const Text('Quiet hours range'),
+                      title: Text(
+                        AppLocalizations.of(context).labelQuietHoursRange,
+                      ),
                       trailing: Text(
                         '${settings.relationshipQuietHoursStart} – ${settings.relationshipQuietHoursEnd}',
                         style: TextStyle(
@@ -99,16 +106,18 @@ class _RelationshipQuietHoursScreenState
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Allowed Contacts (Ring Through)',
-                            style: TextStyle(
+                          Text(
+                            AppLocalizations.of(
+                              context,
+                            ).labelAllowedRingThrough,
+                            style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Callers in allowed relationships, tags, or individual contacts ring loudly; all others are silenced.',
+                            AppLocalizations.of(context).descAllowedRingThrough,
                             style: TextStyle(
                               color: colors.mutedText,
                               fontSize: 12,
@@ -118,7 +127,9 @@ class _RelationshipQuietHoursScreenState
 
                           // --- Category 1: Specific Relationships & Presets ---
                           Text(
-                            'Allowed Relationships & Categories',
+                            AppLocalizations.of(
+                              context,
+                            ).labelAllowedRelationships,
                             style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w700,
@@ -132,13 +143,20 @@ class _RelationshipQuietHoursScreenState
                             crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               FilterChip(
-                                label: const Text('Emergency Contacts (ICE)'),
-                                selected: allowedTiers
-                                    .contains(QuietHoursTiers.emergency),
+                                label: Text(
+                                  AppLocalizations.of(
+                                    context,
+                                  ).labelEmergencyContactsIce,
+                                ),
+                                selected: allowedTiers.contains(
+                                  QuietHoursTiers.emergency,
+                                ),
                                 selectedColor: accent.withValues(alpha: 0.2),
                                 checkmarkColor: accent,
                                 onSelected: (selected) {
-                                  final updated = Set<String>.from(allowedTiers);
+                                  final updated = Set<String>.from(
+                                    allowedTiers,
+                                  );
                                   if (selected) {
                                     updated.add(QuietHoursTiers.emergency);
                                   } else {
@@ -152,13 +170,20 @@ class _RelationshipQuietHoursScreenState
                                 },
                               ),
                               FilterChip(
-                                label: const Text('Starred Contacts'),
-                                selected: allowedTiers
-                                    .contains(QuietHoursTiers.starred),
+                                label: Text(
+                                  AppLocalizations.of(
+                                    context,
+                                  ).labelStarredContacts,
+                                ),
+                                selected: allowedTiers.contains(
+                                  QuietHoursTiers.starred,
+                                ),
                                 selectedColor: accent.withValues(alpha: 0.2),
                                 checkmarkColor: accent,
                                 onSelected: (selected) {
-                                  final updated = Set<String>.from(allowedTiers);
+                                  final updated = Set<String>.from(
+                                    allowedTiers,
+                                  );
                                   if (selected) {
                                     updated.add(QuietHoursTiers.starred);
                                   } else {
@@ -174,15 +199,17 @@ class _RelationshipQuietHoursScreenState
                               ...customRelationships.map((rel) {
                                 return Chip(
                                   label: Text(rel),
-                                  backgroundColor:
-                                      accent.withValues(alpha: 0.15),
+                                  backgroundColor: accent.withValues(
+                                    alpha: 0.15,
+                                  ),
                                   labelStyle: TextStyle(
                                     color: accent,
                                     fontWeight: FontWeight.w600,
                                   ),
                                   onDeleted: () {
-                                    final updated = Set<String>.from(allowedTiers)
-                                      ..remove(rel);
+                                    final updated = Set<String>.from(
+                                      allowedTiers,
+                                    )..remove(rel);
                                     context
                                         .read<AppSettings>()
                                         .setRelationshipQuietHoursAllowedTiers(
@@ -194,7 +221,11 @@ class _RelationshipQuietHoursScreenState
                               }),
                               ActionChip(
                                 avatar: const Icon(Icons.add, size: 18),
-                                label: const Text('Add Relationship'),
+                                label: Text(
+                                  AppLocalizations.of(
+                                    context,
+                                  ).actionAddRelationship,
+                                ),
                                 onPressed: () => _showAddRelationshipSheet(
                                   settings,
                                   allowedTiers,
@@ -205,10 +236,9 @@ class _RelationshipQuietHoursScreenState
 
                           const SizedBox(height: 16),
 
-
                           // --- Category 2: Tags ---
                           Text(
-                            'Allowed Tags',
+                            AppLocalizations.of(context).labelAllowedTags,
                             style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w700,
@@ -224,14 +254,17 @@ class _RelationshipQuietHoursScreenState
                               ...allowedTags.map((tag) {
                                 return Chip(
                                   label: Text('#$tag'),
-                                  backgroundColor: accent.withValues(alpha: 0.15),
+                                  backgroundColor: accent.withValues(
+                                    alpha: 0.15,
+                                  ),
                                   labelStyle: TextStyle(
                                     color: accent,
                                     fontWeight: FontWeight.w600,
                                   ),
                                   onDeleted: () {
-                                    final updated = Set<String>.from(allowedTags)
-                                      ..remove(tag);
+                                    final updated = Set<String>.from(
+                                      allowedTags,
+                                    )..remove(tag);
                                     context
                                         .read<AppSettings>()
                                         .setRelationshipQuietHoursAllowedTags(
@@ -243,7 +276,9 @@ class _RelationshipQuietHoursScreenState
                               }),
                               ActionChip(
                                 avatar: const Icon(Icons.add, size: 18),
-                                label: const Text('Add Tag'),
+                                label: Text(
+                                  AppLocalizations.of(context).actionAddTag,
+                                ),
                                 onPressed: () => _showAddTagSheet(
                                   settings,
                                   allowedTags.toList(),
@@ -256,7 +291,7 @@ class _RelationshipQuietHoursScreenState
 
                           // --- Category 3: Specific Contacts ---
                           Text(
-                            'Specific Contacts',
+                            AppLocalizations.of(context).labelSpecificContacts,
                             style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w700,
@@ -272,7 +307,9 @@ class _RelationshipQuietHoursScreenState
                                 for (final c in allContacts)
                                   if (c.id != null)
                                     c.id!: c.fullName.isEmpty
-                                        ? '(No name)'
+                                        ? AppLocalizations.of(
+                                            context,
+                                          ).labelNoName
                                         : c.fullName,
                               };
 
@@ -283,12 +320,17 @@ class _RelationshipQuietHoursScreenState
                                 children: [
                                   ...allowedContactIds.map((cid) {
                                     final name =
-                                        contactMap[cid] ?? 'Contact #$cid';
+                                        contactMap[cid] ??
+                                        AppLocalizations.of(
+                                          context,
+                                        ).labelContactNumber(cid);
                                     return Chip(
                                       avatar: CircleAvatar(
                                         backgroundColor: accent,
                                         child: Text(
-                                          name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                          name.isNotEmpty
+                                              ? name[0].toUpperCase()
+                                              : '?',
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 10,
@@ -297,9 +339,9 @@ class _RelationshipQuietHoursScreenState
                                       ),
                                       label: Text(name),
                                       onDeleted: () {
-                                        final updated =
-                                            Set<int>.from(allowedContactIds)
-                                              ..remove(cid);
+                                        final updated = Set<int>.from(
+                                          allowedContactIds,
+                                        )..remove(cid);
                                         context
                                             .read<AppSettings>()
                                             .setRelationshipQuietHoursAllowedContactIds(
@@ -313,7 +355,11 @@ class _RelationshipQuietHoursScreenState
                                       Icons.person_add_alt_1,
                                       size: 18,
                                     ),
-                                    label: const Text('Add Contact'),
+                                    label: Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      ).actionAddContact,
+                                    ),
                                     onPressed: () => _showAddContactPicker(
                                       settings,
                                       allContacts,
@@ -339,7 +385,9 @@ class _RelationshipQuietHoursScreenState
                         return Padding(
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                           child: Text(
-                            'Allowed active numbers: $count',
+                            AppLocalizations.of(
+                              context,
+                            ).labelAllowedActiveNumbers(count),
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
@@ -360,7 +408,9 @@ class _RelationshipQuietHoursScreenState
   }
 
   Future<void> _showAddRelationshipSheet(
-      AppSettings settings, Set<String> currentAllowedTiers) async {
+    AppSettings settings,
+    Set<String> currentAllowedTiers,
+  ) async {
     final accent = Theme.of(context).colorScheme.primary;
     final availablePresets = settings.relationshipNames;
 
@@ -386,9 +436,11 @@ class _RelationshipQuietHoursScreenState
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
-                            'Select Allowed Relationships',
-                            style: TextStyle(
+                          Text(
+                            AppLocalizations.of(
+                              context,
+                            ).titleSelectAllowedRelationships,
+                            style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w700,
                             ),
@@ -400,7 +452,9 @@ class _RelationshipQuietHoursScreenState
                               );
                               Navigator.pop(context);
                             },
-                            child: const Text('Done'),
+                            child: Text(
+                              AppLocalizations.of(context).actionDone,
+                            ),
                           ),
                         ],
                       ),
@@ -413,7 +467,8 @@ class _RelationshipQuietHoursScreenState
                           spacing: 8,
                           runSpacing: 8,
                           children: availablePresets.map((rel) {
-                            final isSelected = selected.contains(rel) ||
+                            final isSelected =
+                                selected.contains(rel) ||
                                 selected.contains(rel.toLowerCase());
                             return FilterChip(
                               label: Text(rel),
@@ -446,7 +501,9 @@ class _RelationshipQuietHoursScreenState
   }
 
   Future<void> _showAddTagSheet(
-      AppSettings settings, List<String> currentTags) async {
+    AppSettings settings,
+    List<String> currentTags,
+  ) async {
     final colors = Theme.of(context).extension<AppColors>()!;
     final syncService = ContactSyncService();
     final tagCounts = await syncService.tagCounts();
@@ -471,60 +528,63 @@ class _RelationshipQuietHoursScreenState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Select Allowed Tags',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          AppLocalizations.of(context).titleSelectAllowedTags,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          settings.setRelationshipQuietHoursAllowedTags(
-                            selectedTags.toList(),
-                          );
-                          Navigator.pop(context);
-                        },
-                        child: const Text('Done'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  if (tagCounts.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      child: Text(
-                        'No tags found in contacts. Create tags on contacts first.',
-                        style: TextStyle(color: colors.mutedText, fontSize: 13),
-                      ),
-                    )
-                  else
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: tagCounts.map((t) {
-                        final isAdded = selectedTags.contains(t.name);
-                        return FilterChip(
-                          label: Text('#${t.name} (${t.count})'),
-                          selected: isAdded,
-                          onSelected: (selected) {
-                            setSheetState(() {
-                              if (selected) {
-                                selectedTags.add(t.name);
-                              } else {
-                                selectedTags.remove(t.name);
-                              }
-                            });
+                        TextButton(
+                          onPressed: () {
+                            settings.setRelationshipQuietHoursAllowedTags(
+                              selectedTags.toList(),
+                            );
+                            Navigator.pop(context);
                           },
-                        );
-                      }).toList(),
+                          child: Text(AppLocalizations.of(context).actionDone),
+                        ),
+                      ],
                     ),
-                ],
+                    const SizedBox(height: 12),
+                    if (tagCounts.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Text(
+                          AppLocalizations.of(context).emptyNoTagsInContacts,
+                          style: TextStyle(
+                            color: colors.mutedText,
+                            fontSize: 13,
+                          ),
+                        ),
+                      )
+                    else
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: tagCounts.map((t) {
+                          final isAdded = selectedTags.contains(t.name);
+                          return FilterChip(
+                            label: Text('#${t.name} (${t.count})'),
+                            selected: isAdded,
+                            onSelected: (selected) {
+                              setSheetState(() {
+                                if (selected) {
+                                  selectedTags.add(t.name);
+                                } else {
+                                  selectedTags.remove(t.name);
+                                }
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+                  ],
+                ),
               ),
-            ),
-          );
+            );
           },
         );
       },
@@ -540,7 +600,7 @@ class _RelationshipQuietHoursScreenState
       context: context,
       isScrollControlled: true,
       builder: (_) => ContactMultiPickerSheet(
-        title: 'Select Allowed Contacts',
+        title: AppLocalizations.of(context).titleSelectAllowedContacts,
         contacts: allContacts,
         alreadyIn: currentContactIds,
       ),
@@ -567,7 +627,7 @@ class _RelationshipQuietHoursScreenState
         hour: startParts[0],
         minute: startParts.length > 1 ? startParts[1] : 0,
       ),
-      helpText: 'SELECT RELATIONSHIP QUIET HOURS START TIME',
+      helpText: AppLocalizations.of(context).hintQuietStartTime,
     );
     if (startTime == null || !mounted) return;
 
@@ -577,7 +637,7 @@ class _RelationshipQuietHoursScreenState
         hour: endParts[0],
         minute: endParts.length > 1 ? endParts[1] : 0,
       ),
-      helpText: 'SELECT RELATIONSHIP QUIET HOURS END TIME',
+      helpText: AppLocalizations.of(context).hintQuietEndTime,
     );
     if (endTime == null || !mounted) return;
 
@@ -589,4 +649,3 @@ class _RelationshipQuietHoursScreenState
     settings.setRelationshipQuietHoursRange(formattedStart, formattedEnd);
   }
 }
-

@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/call_state.dart';
 import 'package:smart_contacts_dialer/models/caller_context.dart';
 import 'package:smart_contacts_dialer/utils/malayalam_transliterator.dart';
@@ -39,7 +40,7 @@ class InCallScreen extends StatefulWidget {
 }
 
 class _InCallScreenState extends State<InCallScreen>
-    with ScreenshotGuard<InCallScreen> {
+    with WidgetsBindingObserver, ScreenshotGuard<InCallScreen> {
   final TelecomService _telecom = TelecomService();
   final ContactRepository _contacts = ContactRepository();
   final SimService _sim = SimService();
@@ -73,9 +74,16 @@ class _InCallScreenState extends State<InCallScreen>
   String? _resolvedSimFor;
 
   /// Full-bleed background image for the call: the contact's calling card if set,
-  /// else their profile photo, else null (then [_resolvedMoodGradient], then the
-  /// brand gradient).
-  String? _resolvedImagePath;
+  /// else their profile photo, else null (then [_resolvedMood]'s gradient, then
+  /// the brand gradient). Set only once the image has actually decoded (see
+  /// [_loadBackdrop]), so the screen never shows the dark photo scrim with no
+  /// photo behind it.
+  ImageProvider? _backdropImage;
+
+  /// A backdrop image that failed to decode — typically because the call
+  /// arrived while the app was in the background — and the call number it was
+  /// for. Retried when the app next comes to the front.
+  ({String path, String number})? _failedBackdrop;
 
   /// Backdrop mood for a caller with no photo of either kind, derived from their
   /// relationship to the phone owner (see `theme/caller_backdrop.dart`). The
@@ -103,10 +111,16 @@ class _InCallScreenState extends State<InCallScreen>
   bool _showKeypad = false;
   String _dtmfEntry = '';
 
+  /// Whether the call notification was last given the conference title, so
+  /// the name is re-pushed only when the call enters or leaves a conference.
+  bool _notifiedConference = false;
+
   @override
   void initState() {
     super.initState();
     _state = widget.initialState;
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncConferenceName());
     _resolveRingtone(_state);
     _resolveName(_state.number);
     _resolveHeldName(_state.heldNumber);
@@ -122,6 +136,7 @@ class _InCallScreenState extends State<InCallScreen>
       _resolveName(s.number);
       _resolveHeldName(s.heldNumber);
       _resolveSim(s.phoneAccountId);
+      _syncConferenceName();
     });
     // Refresh the duration label once a second while connected.
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -131,9 +146,46 @@ class _InCallScreenState extends State<InCallScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _sub?.cancel();
     _ticker?.cancel();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Back in front: retry a backdrop that failed while we were hidden, as long
+    // as it is still for the call on screen.
+    final failed = _failedBackdrop;
+    if (state == AppLifecycleState.resumed &&
+        failed != null &&
+        failed.number == _resolvedFor) {
+      _failedBackdrop = null;
+      unawaited(_loadBackdrop(failed.path, failed.number));
+    }
+  }
+
+  /// Keeps the call notification's title in step with a merge: "Conference
+  /// call" while the primary is a conference, and the resolved contact name
+  /// again once it isn't (e.g. one person left and the call collapsed back to
+  /// one-to-one). The caller-ID label belongs to one person, so it is cleared
+  /// for a conference.
+  void _syncConferenceName() {
+    if (!mounted || _state.isConference == _notifiedConference) return;
+    _notifiedConference = _state.isConference;
+    if (_notifiedConference) {
+      unawaited(
+        _telecom.setCallerName(
+          AppLocalizations.of(context).labelConferenceCall,
+        ),
+      );
+      unawaited(_telecom.setCallerLabel(''));
+    } else {
+      unawaited(_telecom.setCallerName(_resolvedName ?? ''));
+      if (_callerId != null) {
+        unawaited(_telecom.setCallerLabel(_callerId!.label));
+      }
+    }
   }
 
   /// Applies the per-SIM ringtone for a ringing call (once per physical call),
@@ -200,7 +252,8 @@ class _InCallScreenState extends State<InCallScreen>
       // resolve it). An empty push clears a stale name when the number changes
       // (add call / swap) and the new number has no match. Native no-ops once
       // the call has ended.
-      unawaited(_telecom.setCallerName(name ?? ''));
+      // A conference keeps its own title (see [_syncConferenceName]).
+      if (!_state.isConference) unawaited(_telecom.setCallerName(name ?? ''));
       // A saved contact needs no identification badge; otherwise see what the
       // local caller-ID rules can say about the number.
       if (match == null) {
@@ -215,19 +268,20 @@ class _InCallScreenState extends State<InCallScreen>
         final contact = await _contacts.getContactById(match.contactId);
         if (!mounted) return;
         final image = contact?.cardPhotoPath ?? contact?.photoPath;
-        final resolvedImage = (image != null && File(image).existsSync())
-            ? image
-            : null;
         setState(() {
-          _resolvedImagePath = resolvedImage;
+          _backdropImage = null;
+          _failedBackdrop = null;
           _resolvedMood = null;
         });
-        // No photo of either kind: fall back to a gradient keyed on how this
-        // caller relates to the phone owner, so the screen still says something
-        // about who is calling. Only runs in the photo-less case.
-        if (resolvedImage == null) {
-          unawaited(_resolveMoodBackdrop(match.contactId, number));
+        // The photo only takes over once it has decoded; until then (and for
+        // good if it fails) the screen shows the gradient and avatar.
+        if (image != null && File(image).existsSync()) {
+          unawaited(_loadBackdrop(image, number));
         }
+        // A gradient keyed on how this caller relates to the phone owner, so
+        // the screen still says something about who is calling when there is
+        // no photo, or while the photo is still loading.
+        unawaited(_resolveMoodBackdrop(match.contactId, number));
         // If this caller has a custom ringtone — their own, else their group's
         // (same fallback as the mirror, see ContactRepository.
         // ringtoneMirrorEntries) — and the call is still ringing, swap the
@@ -251,10 +305,7 @@ class _InCallScreenState extends State<InCallScreen>
         // Resolve Smart Caller Context ("Why is this person calling?")
         unawaited(
           _callerContextService
-              .getCallerContextByContactId(
-                match.contactId,
-                contactName: name,
-              )
+              .getCallerContextByContactId(match.contactId, contactName: name)
               .then((ctx) {
                 if (mounted && _resolvedFor == number) {
                   setState(() => _callerContext = ctx);
@@ -264,7 +315,8 @@ class _InCallScreenState extends State<InCallScreen>
         );
       } else {
         setState(() {
-          _resolvedImagePath = null;
+          _backdropImage = null;
+          _failedBackdrop = null;
           _resolvedMood = null;
           _callerContext = null;
         });
@@ -274,9 +326,66 @@ class _InCallScreenState extends State<InCallScreen>
     }
   }
 
-  /// Picks the relationship-based backdrop mood for [contactId] — the last step
-  /// before the brand gradient, used only when the contact has neither a calling
-  /// card photo nor a profile photo.
+  /// Decodes the backdrop photo at [path] and only then shows it.
+  ///
+  /// The photo is decoded at screen size, not its stored size: calling cards
+  /// are often full camera photos, and decoding one of those at full size
+  /// (tens of MB) is slow or fails outright when another app holds the memory.
+  /// A call that arrives while the app is in the background can also fail to
+  /// decode because there is no drawing surface yet; that failure is parked in
+  /// [_failedBackdrop] and retried on resume (see [didChangeAppLifecycleState]).
+  /// [number] guards against the call's number changing while it decoded.
+  Future<void> _loadBackdrop(String path, String number) async {
+    final provider = ResizeImage(
+      FileImage(File(path)),
+      width: _backdropDecodeSize,
+      height: _backdropDecodeSize,
+      policy: ResizeImagePolicy.fit,
+    );
+    final ok = await _decode(provider);
+    if (!mounted || _resolvedFor != number) return;
+    if (ok) {
+      setState(() => _backdropImage = provider);
+    } else {
+      // Drop anything cached for it so the retry decodes afresh.
+      unawaited(provider.evict());
+      _failedBackdrop = (path: path, number: number);
+    }
+  }
+
+  /// The longest side, in physical pixels, a backdrop photo is decoded to: the
+  /// screen's longer side, so a portrait photo covers the screen sharply. The
+  /// view can report a zero size while the app is in the background; a typical
+  /// phone height stands in then.
+  static int get _backdropDecodeSize {
+    final views = WidgetsBinding.instance.platformDispatcher.views;
+    final size = views.isEmpty ? Size.zero : views.first.physicalSize;
+    final longest = size.longestSide.round();
+    return longest > 0 ? longest : 2400;
+  }
+
+  /// Resolves [provider] and completes with whether it decoded. The decoded
+  /// image stays in the image cache, so painting it afterwards is instant.
+  static Future<bool> _decode(ImageProvider provider) {
+    final done = Completer<bool>();
+    final stream = provider.resolve(ImageConfiguration.empty);
+    late final ImageStreamListener listener;
+    void finish(bool ok) {
+      if (!done.isCompleted) done.complete(ok);
+      stream.removeListener(listener);
+    }
+
+    listener = ImageStreamListener(
+      (_, _) => finish(true),
+      onError: (_, _) => finish(false),
+    );
+    stream.addListener(listener);
+    return done.future;
+  }
+
+  /// Picks the relationship-based backdrop mood for [contactId]. It is shown
+  /// when the contact has neither a calling card photo nor a profile photo, and
+  /// while their photo is still loading.
   ///
   /// The label is the one the phone owner recorded for this contact, so "family"
   /// means family *of the owner*. Contacts with no relationship on record (the
@@ -335,7 +444,9 @@ class _InCallScreenState extends State<InCallScreen>
       final info = await CallerIdService().identify(number);
       if (!mounted || _resolvedFor != number) return;
       setState(() => _callerId = info);
-      unawaited(_telecom.setCallerLabel(info?.label ?? ''));
+      if (!_state.isConference) {
+        unawaited(_telecom.setCallerLabel(info?.label ?? ''));
+      }
     } catch (_) {
       // Best-effort; the call shows the bare number.
     }
@@ -367,24 +478,38 @@ class _InCallScreenState extends State<InCallScreen>
     }
   }
 
+  /// The primary call is a merged conference. Its identity is "Conference
+  /// call", never the first party's name/photo (which would still be cached
+  /// from before the merge).
+  bool get _isConference => _state.isConference;
+
+  /// A second top-level call exists (held, or ringing as call waiting). Keyed
+  /// on its phase rather than its number, so a hidden-number caller or a held
+  /// conference (neither has a number) still shows.
+  bool get _hasSecondCall => _state.heldPhase != CallPhase.none;
+
   String get _title {
+    if (_isConference) return AppLocalizations.of(context).labelConferenceCall;
     if (_resolvedName != null) return _resolvedName!;
     final n = _state.number;
-    return (n == null || n.isEmpty) ? 'Unknown' : n;
+    return (n == null || n.isEmpty)
+        ? AppLocalizations.of(context).labelUnknownCaller
+        : n;
   }
 
   String get _statusLabel {
+    final l10n = AppLocalizations.of(context);
     switch (_state.phase) {
       case CallPhase.ringing:
-        return 'Incoming call';
+        return l10n.labelIncomingCall;
       case CallPhase.dialing:
       case CallPhase.connecting:
-        return 'Calling…';
+        return l10n.labelCalling;
       case CallPhase.holding:
-        return 'On hold';
+        return l10n.labelOnHold;
       case CallPhase.disconnecting:
       case CallPhase.disconnected:
-        return 'Call ended';
+        return l10n.labelCallEnded;
       case CallPhase.active:
         return _durationLabel();
       default:
@@ -393,7 +518,9 @@ class _InCallScreenState extends State<InCallScreen>
   }
 
   String _durationLabel() {
-    if (_state.connectTimeMillis <= 0) return 'Connected';
+    if (_state.connectTimeMillis <= 0) {
+      return AppLocalizations.of(context).labelConnected;
+    }
     final secs =
         ((DateTime.now().millisecondsSinceEpoch - _state.connectTimeMillis) ~/
                 1000)
@@ -410,12 +537,14 @@ class _InCallScreenState extends State<InCallScreen>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.extension<AppColors>()!;
-    final imagePath = _resolvedImagePath;
-    final hasImage = imagePath != null;
+    // A conference is nobody's call in particular: no one person's photo or
+    // relationship mood, just the brand gradient.
+    final backdropImage = _isConference ? null : _backdropImage;
+    final hasImage = backdropImage != null;
     // No photo: a relationship-keyed gradient if we resolved one, else the brand
     // gradient. Built here (not when resolved) so it follows the theme and the
     // time of day.
-    final mood = _resolvedMood;
+    final mood = _isConference ? null : _resolvedMood;
     final gradient =
         (mood == null
             ? null
@@ -436,7 +565,14 @@ class _InCallScreenState extends State<InCallScreen>
             // Backdrop: full-bleed caller image (calling card or profile photo)
             // with a scrim for legibility, else the relationship/brand gradient.
             if (hasImage) ...[
-              Image.file(File(imagePath), fit: BoxFit.cover),
+              Image(
+                image: backdropImage,
+                fit: BoxFit.cover,
+                // Safety net: should the cached photo fail to repaint, show the
+                // gradient rather than bare black under the scrim.
+                errorBuilder: (_, _, _) =>
+                    DecoratedBox(decoration: BoxDecoration(gradient: gradient)),
+              ),
               DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
@@ -463,7 +599,7 @@ class _InCallScreenState extends State<InCallScreen>
                   children: [
                     const Spacer(flex: 2),
                     _identity(fg, showAvatar: !hasImage),
-                    if (_state.heldNumber != null) ...[
+                    if (_hasSecondCall) ...[
                       const SizedBox(height: 16),
                       // A second call that is *ringing* (call waiting) gets a card
                       // with Answer/Decline; a genuinely held call gets the banner.
@@ -498,7 +634,9 @@ class _InCallScreenState extends State<InCallScreen>
     final held = _state.heldNumber ?? '';
     final title = (_resolvedHeldName != null && _resolvedHeldName!.isNotEmpty)
         ? _resolvedHeldName!
-        : (held.isEmpty ? 'Unknown' : held);
+        : (held.isEmpty
+              ? AppLocalizations.of(context).labelUnknownCaller
+              : held);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -527,7 +665,7 @@ class _InCallScreenState extends State<InCallScreen>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Incoming call',
+                  AppLocalizations.of(context).labelIncomingCall,
                   style: TextStyle(
                     color: fg.withValues(alpha: 0.8),
                     fontSize: 12.5,
@@ -579,12 +717,17 @@ class _InCallScreenState extends State<InCallScreen>
   Widget _heldBanner(Color fg) {
     final held = _state.heldNumber ?? '';
     final name = _resolvedHeldName;
-    final label = (name != null && name.isNotEmpty)
+    final l10n = AppLocalizations.of(context);
+    final label = _state.heldIsConference
+        ? l10n.labelConferenceCall
+        : (name != null && name.isNotEmpty)
         ? name
-        : (held.isEmpty ? 'Second call' : held);
+        : (held.isEmpty ? l10n.labelSecondCall : held);
     final canSwap = _state.canSwap;
     return Tooltip(
-      message: canSwap ? 'Tap to switch call' : '',
+      message: canSwap
+          ? AppLocalizations.of(context).tooltipTapToSwitchCall
+          : '',
       child: Material(
         color: Colors.transparent,
         child: InkWell(
@@ -609,7 +752,7 @@ class _InCallScreenState extends State<InCallScreen>
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '$label — on hold',
+                  AppLocalizations.of(context).labelNameOnHold(label),
                   style: TextStyle(
                     color: fg,
                     fontSize: 13.5,
@@ -634,14 +777,16 @@ class _InCallScreenState extends State<InCallScreen>
           CircleAvatar(
             radius: 52,
             backgroundColor: fg.withValues(alpha: 0.18),
-            child: AvatarInitial(
-              initial,
-              style: TextStyle(
-                fontSize: 44,
-                fontWeight: FontWeight.w800,
-                color: fg,
-              ),
-            ),
+            child: _isConference
+                ? Icon(Icons.groups, size: 52, color: fg)
+                : AvatarInitial(
+                    initial,
+                    style: TextStyle(
+                      fontSize: 44,
+                      fontWeight: FontWeight.w800,
+                      color: fg,
+                    ),
+                  ),
           ),
           const SizedBox(height: 20),
         ],
@@ -660,7 +805,20 @@ class _InCallScreenState extends State<InCallScreen>
           _statusLabel,
           style: TextStyle(fontSize: 15, color: fg.withValues(alpha: 0.85)),
         ),
-        if (_callerId != null) ...[
+        if (_isConference && _state.participants.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            AppLocalizations.of(
+              context,
+            ).labelConferencePeople(_state.participants.length),
+            style: TextStyle(fontSize: 13.5, color: fg.withValues(alpha: 0.75)),
+          ),
+        ],
+        // The caller-ID, verification and "why calling" hints describe one
+        // person, so they don't apply to a conference.
+        if (_isConference)
+          const SizedBox.shrink()
+        else if (_callerId != null) ...[
           const SizedBox(height: 12),
           _callerIdChip(_callerId!),
         ] else if (_state.verificationStatus == 'failed') ...[
@@ -672,7 +830,9 @@ class _InCallScreenState extends State<InCallScreen>
           const SizedBox(height: 12),
           _simChip(_resolvedSimLabel!),
         ],
-        if (_callerContext != null && _callerContext!.hasContext) ...[
+        if (!_isConference &&
+            _callerContext != null &&
+            _callerContext!.hasContext) ...[
           const SizedBox(height: 12),
           _callerContextCard(fg, _callerContext!),
         ],
@@ -686,8 +846,8 @@ class _InCallScreenState extends State<InCallScreen>
   Widget _callerContextCard(Color fg, CallerContext ctx) {
     final headline = ctx.buildSmartHeadline();
     final headerText = _state.direction == CallDirection.outgoing
-        ? 'ABOUT THIS CONTACT'
-        : 'WHY THEY ARE CALLING';
+        ? AppLocalizations.of(context).labelAboutThisContact
+        : AppLocalizations.of(context).labelWhyCalling;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -851,14 +1011,14 @@ class _InCallScreenState extends State<InCallScreen>
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: amber.withValues(alpha: 0.55)),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.gpp_maybe_outlined, size: 16, color: amber),
-          SizedBox(width: 6),
+          const Icon(Icons.gpp_maybe_outlined, size: 16, color: amber),
+          const SizedBox(width: 6),
           Text(
-            'Caller ID not verified',
-            style: TextStyle(
+            AppLocalizations.of(context).labelCallerIdNotVerified,
+            style: const TextStyle(
               color: amber,
               fontSize: 13.5,
               fontWeight: FontWeight.w700,
@@ -918,7 +1078,7 @@ class _InCallScreenState extends State<InCallScreen>
           if (_hasNumber)
             _toggle(
               icon: Icons.sms_outlined,
-              label: 'Reply',
+              label: AppLocalizations.of(context).labelReply,
               active: false,
               fg: fg,
               onTap: _showReplySheet,
@@ -936,30 +1096,37 @@ class _InCallScreenState extends State<InCallScreen>
       children: [
         _toggle(
           icon: _state.muted ? Icons.mic_off : Icons.mic,
-          label: 'Mute',
+          label: AppLocalizations.of(context).labelMute,
           active: _state.muted,
           fg: fg,
           onTap: () => _telecom.setMuted(!_state.muted),
         ),
         _speakerToggle(fg),
-        _toggle(
-          icon: Icons.pause,
-          label: 'Hold',
-          active: _state.phase == CallPhase.holding,
-          fg: fg,
-          onTap: !_state.canHold
-              ? null
-              : () => _state.phase == CallPhase.holding
-                    ? _telecom.unhold()
-                    : _telecom.hold(),
-        ),
+        // With another call already on hold, holding this one too would leave
+        // both parked; Swap (second row) is the control for that case.
+        if (!_otherCallHeld)
+          _toggle(
+            icon: Icons.pause,
+            label: AppLocalizations.of(context).labelHold,
+            active: _state.phase == CallPhase.holding,
+            fg: fg,
+            onTap: !_state.canHold
+                ? null
+                : () => _state.phase == CallPhase.holding
+                      ? _telecom.unhold()
+                      : _telecom.hold(),
+          ),
       ],
     );
   }
 
+  /// This call is up and a second call is parked on hold behind it.
+  bool get _otherCallHeld =>
+      _state.phase == CallPhase.active && _state.heldPhase == CallPhase.holding;
+
   Widget _speakerToggle(Color fg) => _toggle(
     icon: _state.speaker ? Icons.volume_up : Icons.volume_down,
-    label: 'Speaker',
+    label: AppLocalizations.of(context).labelSpeaker,
     active: _state.speaker,
     fg: fg,
     onTap: () => _telecom.setSpeaker(!_state.speaker),
@@ -975,7 +1142,7 @@ class _InCallScreenState extends State<InCallScreen>
     final items = <Widget>[
       _toggle(
         icon: Icons.dialpad,
-        label: 'Keypad',
+        label: AppLocalizations.of(context).labelKeypad,
         active: _showKeypad,
         fg: fg,
         // DTMF only reaches the far end on a connected (not held) call.
@@ -994,7 +1161,7 @@ class _InCallScreenState extends State<InCallScreen>
       items.add(
         _toggle(
           icon: Icons.add_call,
-          label: 'Add call',
+          label: AppLocalizations.of(context).titleAddCall,
           active: false,
           fg: fg,
           onTap: _openAddCall,
@@ -1005,7 +1172,7 @@ class _InCallScreenState extends State<InCallScreen>
       items.add(
         _toggle(
           icon: Icons.merge_type,
-          label: 'Merge',
+          label: AppLocalizations.of(context).labelMerge,
           active: false,
           fg: fg,
           onTap: _telecom.mergeCalls,
@@ -1016,14 +1183,26 @@ class _InCallScreenState extends State<InCallScreen>
       items.add(
         _toggle(
           icon: Icons.swap_calls,
-          label: 'Swap',
+          label: AppLocalizations.of(context).labelSwap,
           active: false,
           fg: fg,
           onTap: _telecom.swapCalls,
         ),
       );
     }
-    if (_hasNumber) items.add(_blockToggle(fg));
+    if (_isConference && _state.participants.isNotEmpty) {
+      items.add(
+        _toggle(
+          icon: Icons.groups_outlined,
+          label: AppLocalizations.of(context).labelManage,
+          active: false,
+          fg: fg,
+          onTap: _showConferenceSheet,
+        ),
+      );
+    }
+    // Block targets one caller's number, which a conference doesn't have.
+    if (_hasNumber && !_isConference) items.add(_blockToggle(fg));
     return Row(mainAxisAlignment: MainAxisAlignment.center, children: items);
   }
 
@@ -1032,7 +1211,9 @@ class _InCallScreenState extends State<InCallScreen>
   /// unblock dialog.
   Widget _blockToggle(Color fg) => _toggle(
     icon: Icons.block,
-    label: _isBlocked ? 'Blocked' : 'Block',
+    label: _isBlocked
+        ? AppLocalizations.of(context).labelBlocked
+        : AppLocalizations.of(context).labelBlock,
     active: _isBlocked,
     fg: fg,
     onTap: _confirmBlock,
@@ -1047,26 +1228,27 @@ class _InCallScreenState extends State<InCallScreen>
     if (number == null || number.isEmpty) return;
     final unblocking = _isBlocked;
     final hasRunningCall = _state.hasCall;
+    final l10n = AppLocalizations.of(context);
+    final body = unblocking
+        ? l10n.descUnblockNumber(number)
+        : '${l10n.descBlockNumberFuture(number)}'
+              '${hasRunningCall ? ' ${l10n.descCallWillDisconnect}' : ''}\n\n'
+              '${l10n.descManageBlockedNumbers}';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(unblocking ? 'Unblock this number?' : 'Block this number?'),
-        content: Text(
-          unblocking
-              ? 'Calls from $number will ring normally again.'
-              : 'Future calls from $number will be rejected before your phone '
-                    'rings.${hasRunningCall ? ' This call will be disconnected immediately.' : ''}\n\n'
-                    'You can manage blocked numbers in Settings → Contacts → '
-                    'Blocked numbers.',
+        title: Text(
+          unblocking ? l10n.titleUnblockThisNumber : l10n.titleBlockThisNumber,
         ),
+        content: Text(body),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(unblocking ? 'Unblock' : 'Block'),
+            child: Text(unblocking ? l10n.actionUnblock : l10n.actionBlock),
           ),
         ],
       ),
@@ -1106,13 +1288,16 @@ class _InCallScreenState extends State<InCallScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Reply with a message',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                Text(
+                  AppLocalizations.of(context).titleReplyWithMessage,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Declines the call and texts the caller',
+                  AppLocalizations.of(context).descDeclinesAndTexts,
                   style: TextStyle(color: colors.mutedText, fontSize: 13),
                 ),
                 const SizedBox(height: 8),
@@ -1130,7 +1315,9 @@ class _InCallScreenState extends State<InCallScreen>
                       ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: const Icon(Icons.edit_outlined),
-                        title: const Text('Write your own…'),
+                        title: Text(
+                          AppLocalizations.of(context).actionWriteYourOwn,
+                        ),
                         onTap: () async {
                           final custom = await _promptCustomReply(sheetContext);
                           if (custom != null &&
@@ -1159,29 +1346,30 @@ class _InCallScreenState extends State<InCallScreen>
   /// the typed message, or null when cancelled.
   Future<String?> _promptCustomReply(BuildContext hostContext) {
     final controller = TextEditingController();
+    final l10n = AppLocalizations.of(hostContext);
     return showDialog<String>(
       context: hostContext,
       builder: (ctx) => AlertDialog(
-        title: const Text('Reply with…'),
+        title: Text(l10n.titleReplyWith),
         content: TextField(
           controller: controller,
           autofocus: true,
           maxLength: 160,
           textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(
-            labelText: 'Message',
-            hintText: 'Type a message to send',
+          decoration: InputDecoration(
+            labelText: l10n.labelMessage,
+            hintText: l10n.hintTypeMessageToSend,
           ),
           onSubmitted: (v) => Navigator.of(ctx).pop(v),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(l10n.actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(controller.text),
-            child: const Text('Send'),
+            child: Text(l10n.actionSend),
           ),
         ],
       ),
@@ -1192,8 +1380,24 @@ class _InCallScreenState extends State<InCallScreen>
   /// Once a call is placed, it pops back to reveal this screen with the new held/active legs.
   Future<void> _openAddCall() async {
     await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const HomeShell(addCallMode: true),
+      MaterialPageRoute(builder: (_) => const HomeShell(addCallMode: true)),
+    );
+  }
+
+  /// Bottom sheet listing the people in the conference, each with Private
+  /// (split off for a one-to-one talk) and Drop (remove from the call) when
+  /// the network allows it. Follows the live call and closes by itself once
+  /// the call is no longer a conference.
+  Future<void> _showConferenceSheet() async {
+    if (!_isConference || _state.participants.isEmpty) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (_) => _ConferenceSheet(
+        initialState: _state,
+        telecom: _telecom,
+        contacts: _contacts,
       ),
     );
   }
@@ -1239,7 +1443,8 @@ class _InCallScreenState extends State<InCallScreen>
                       child: _dtmfEntry.isEmpty
                           ? null
                           : GestureDetector(
-                              onLongPress: () => setState(() => _dtmfEntry = ''),
+                              onLongPress: () =>
+                                  setState(() => _dtmfEntry = ''),
                               child: IconButton(
                                 icon: const Icon(
                                   Icons.backspace_outlined,
@@ -1255,7 +1460,9 @@ class _InCallScreenState extends State<InCallScreen>
                                     });
                                   }
                                 },
-                                tooltip: 'Delete',
+                                tooltip: AppLocalizations.of(
+                                  context,
+                                ).actionDelete,
                               ),
                             ),
                     ),
@@ -1271,9 +1478,9 @@ class _InCallScreenState extends State<InCallScreen>
               const SizedBox(height: 24),
               TextButton(
                 onPressed: () => setState(() => _showKeypad = false),
-                child: const Text(
-                  'Hide',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+                child: Text(
+                  AppLocalizations.of(context).actionHide,
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
                 ),
               ),
               const SizedBox(height: 24),
@@ -1406,6 +1613,165 @@ class _InCallScreenState extends State<InCallScreen>
         child: InkWell(
           onTap: onTap,
           child: Icon(icon, color: Colors.white, size: 32),
+        ),
+      ),
+    );
+  }
+}
+
+/// The "People on this call" sheet for a merged conference (see
+/// [_InCallScreenState._showConferenceSheet]). Keeps its own subscription to
+/// the call stream so the list updates as people join, leave or are split off,
+/// and pops itself when the conference is gone.
+class _ConferenceSheet extends StatefulWidget {
+  final CallState initialState;
+  final TelecomService telecom;
+  final ContactRepository contacts;
+
+  const _ConferenceSheet({
+    required this.initialState,
+    required this.telecom,
+    required this.contacts,
+  });
+
+  @override
+  State<_ConferenceSheet> createState() => _ConferenceSheetState();
+}
+
+class _ConferenceSheetState extends State<_ConferenceSheet> {
+  late List<ConferenceParticipant> _participants;
+  StreamSubscription<CallState>? _sub;
+
+  /// Contact names by number; a number maps to null once looked up and found
+  /// not to be a saved contact, so it isn't queried again.
+  final Map<String, String?> _names = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _participants = widget.initialState.participants;
+    _resolveNames();
+    _sub = widget.telecom.callEvents.listen((s) {
+      if (!mounted) return;
+      if (!s.isConference || s.participants.isEmpty) {
+        Navigator.of(context).maybePop();
+        return;
+      }
+      setState(() => _participants = s.participants);
+      _resolveNames();
+    });
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _resolveNames() async {
+    final pending = _participants
+        .map((p) => p.number)
+        .whereType<String>()
+        .where((n) => n.isNotEmpty && !_names.containsKey(n))
+        .toList();
+    if (pending.isEmpty) return;
+    for (final n in pending) {
+      _names[n] = null; // claimed, so a parallel event doesn't re-query it
+    }
+    try {
+      final iso = await AppSettings.readDefaultCountryIso();
+      for (final n in pending) {
+        final matches = await widget.contacts.findByFullNumber(
+          n,
+          defaultIso: iso,
+        );
+        if (!mounted) return;
+        final name = matches.isNotEmpty ? matches.first.contactName : '';
+        if (name.isNotEmpty) setState(() => _names[n] = name);
+      }
+    } catch (_) {
+      // Best-effort; rows fall back to the number.
+    }
+  }
+
+  String _label(ConferenceParticipant p, AppLocalizations l10n) {
+    final n = p.number;
+    if (n == null || n.isEmpty) return l10n.labelUnknownCaller;
+    return _names[n] ?? n;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = Theme.of(context).extension<AppColors>()!;
+    final danger = Theme.of(context).colorScheme.error;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.titlePeopleOnCall,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              l10n.labelConferencePeople(_participants.length),
+              style: TextStyle(color: colors.mutedText, fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final p in _participants)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.person_outline),
+                      title: Text(
+                        _label(p, l10n),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: p.phase == CallPhase.holding
+                          ? Text(l10n.labelOnHold)
+                          : null,
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (p.canSeparate)
+                            Tooltip(
+                              message: l10n.tooltipPrivateTalk,
+                              child: TextButton(
+                                onPressed: () {
+                                  widget.telecom.separateParticipant(p.callId);
+                                  Navigator.of(context).maybePop();
+                                },
+                                child: Text(l10n.actionPrivate),
+                              ),
+                            ),
+                          if (p.canDisconnect)
+                            Tooltip(
+                              message: l10n.tooltipDropFromCall,
+                              child: TextButton.icon(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: danger,
+                                ),
+                                onPressed: () => widget.telecom
+                                    .disconnectParticipant(p.callId),
+                                icon: const Icon(Icons.call_end, size: 18),
+                                label: Text(l10n.actionDrop),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

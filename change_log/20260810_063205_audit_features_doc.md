@@ -6,7 +6,7 @@
 - Updated `docs/features.md` to explicitly specify the Android `applicationId` (`in.sreerajp.contact_sphere`) alongside the Dart package name (`smart_contacts_dialer`).
 
 ## Reference Plan
-- Implements plan: [plans/20260810_062747_audit_features_doc.md](file:///l:/Android/SreerajPContactSphere/plans/20260810_062747_audit_features_doc.md)
+- Implements plan: [plans/20260810_062747_audit_features_doc.md](../plans/20260810_062747_audit_features_doc.md)
 
 ## Files Changed
 - `docs/features.md`

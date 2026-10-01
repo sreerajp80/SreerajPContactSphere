@@ -1,6 +1,7 @@
 // lib/screens/settings/online_sync_settings_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/online_sync_account.dart';
 import 'package:smart_contacts_dialer/services/online_sync_service.dart';
 
@@ -8,7 +9,8 @@ class OnlineSyncSettingsScreen extends StatefulWidget {
   const OnlineSyncSettingsScreen({super.key});
 
   @override
-  State<OnlineSyncSettingsScreen> createState() => _OnlineSyncSettingsScreenState();
+  State<OnlineSyncSettingsScreen> createState() =>
+      _OnlineSyncSettingsScreenState();
 }
 
 class _OnlineSyncSettingsScreenState extends State<OnlineSyncSettingsScreen> {
@@ -43,8 +45,10 @@ class _OnlineSyncSettingsScreenState extends State<OnlineSyncSettingsScreen> {
         SnackBar(
           content: Text(
             success
-                ? 'Synced successfully with ${account.accountEmailOrName}'
-                : 'Sync completed',
+                ? AppLocalizations.of(
+                    context,
+                  ).msgSyncedWith(account.accountEmailOrName)
+                : AppLocalizations.of(context).msgSyncCompleted,
           ),
         ),
       );
@@ -61,14 +65,16 @@ class _OnlineSyncSettingsScreenState extends State<OnlineSyncSettingsScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('Add Online Account'),
+          title: Text(AppLocalizations.of(context).titleAddOnlineAccount),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 DropdownButtonFormField<OnlineProviderType>(
                   initialValue: selectedProvider,
-                  decoration: const InputDecoration(labelText: 'Provider'),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context).labelProvider,
+                  ),
                   items: const [
                     DropdownMenuItem(
                       value: OnlineProviderType.google,
@@ -84,21 +90,31 @@ class _OnlineSyncSettingsScreenState extends State<OnlineSyncSettingsScreen> {
                     ),
                   ],
                   onChanged: (val) {
-                    if (val != null) setDialogState(() => selectedProvider = val);
+                    if (val != null) {
+                      setDialogState(() => selectedProvider = val);
+                    }
                   },
                 ),
                 TextField(
                   controller: emailController,
-                  decoration: const InputDecoration(labelText: 'Account Email / Name'),
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(
+                      context,
+                    ).labelAccountEmailName,
+                  ),
                 ),
                 if (selectedProvider == OnlineProviderType.carddav) ...[
                   TextField(
                     controller: serverController,
-                    decoration: const InputDecoration(labelText: 'Server URL'),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context).labelServerUrl,
+                    ),
                   ),
                   TextField(
                     controller: usernameController,
-                    decoration: const InputDecoration(labelText: 'Username'),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context).labelUsername,
+                    ),
                   ),
                 ],
               ],
@@ -107,7 +123,7 @@ class _OnlineSyncSettingsScreenState extends State<OnlineSyncSettingsScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel'),
+              child: Text(AppLocalizations.of(context).actionCancel),
             ),
             ElevatedButton(
               onPressed: () async {
@@ -115,7 +131,7 @@ class _OnlineSyncSettingsScreenState extends State<OnlineSyncSettingsScreen> {
                   id: 'account_${DateTime.now().millisecondsSinceEpoch}',
                   providerType: selectedProvider,
                   accountEmailOrName: emailController.text.trim().isEmpty
-                      ? 'Account'
+                      ? AppLocalizations.of(context).labelAccount
                       : emailController.text.trim(),
                   isContactSyncEnabled: true,
                   serverUrl: serverController.text.trim(),
@@ -125,7 +141,7 @@ class _OnlineSyncSettingsScreenState extends State<OnlineSyncSettingsScreen> {
                 if (ctx.mounted) Navigator.pop(ctx);
                 _loadAccounts();
               },
-              child: const Text('Add'),
+              child: Text(AppLocalizations.of(context).actionAdd),
             ),
           ],
         ),
@@ -137,7 +153,7 @@ class _OnlineSyncSettingsScreenState extends State<OnlineSyncSettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Online Provider Sync'),
+        title: Text(AppLocalizations.of(context).titleOnlineProviderSync),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -153,7 +169,7 @@ class _OnlineSyncSettingsScreenState extends State<OnlineSyncSettingsScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'Opt-in 2-way contact sync with Google, Microsoft & CardDAV. Zero telemetry, direct API requests only.',
+                            AppLocalizations.of(context).descOnlineSyncIntro,
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ),
@@ -166,67 +182,88 @@ class _OnlineSyncSettingsScreenState extends State<OnlineSyncSettingsScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Configured Providers',
+                      AppLocalizations.of(context).labelConfiguredProviders,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     ElevatedButton.icon(
                       onPressed: _showAddAccountDialog,
                       icon: const Icon(Icons.add),
-                      label: const Text('Add Account'),
+                      label: Text(
+                        AppLocalizations.of(context).actionAddAccount,
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
                 if (_accounts.isEmpty)
-                  const Center(
+                  Center(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 32.0),
-                      child: Text('No cloud sync accounts configured.'),
+                      padding: const EdgeInsets.symmetric(vertical: 32.0),
+                      child: Text(
+                        AppLocalizations.of(context).emptyNoCloudAccounts,
+                      ),
                     ),
                   )
                 else
-                  ..._accounts.map((acc) => Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: ListTile(
-                          leading: Icon(
-                            acc.providerType == OnlineProviderType.google
-                                ? Icons.g_mobiledata
-                                : acc.providerType == OnlineProviderType.microsoft
-                                    ? Icons.window
-                                    : Icons.cloud,
-                            size: 32,
-                          ),
-                          title: Text(acc.accountEmailOrName),
-                          subtitle: Text(
-                            'Provider: ${acc.providerType.name.toUpperCase()}\n'
-                            'Last Synced: ${acc.lastSyncedAt ?? "Never"}',
-                          ),
-                          isThreeLine: true,
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: _isSyncing
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      )
-                                    : const Icon(Icons.sync),
-                                onPressed: _isSyncing ? null : () => _triggerManualSync(acc),
-                                tooltip: 'Sync Now',
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                onPressed: () async {
-                                  await _syncService.removeAccount(acc.id);
-                                  _loadAccounts();
-                                },
-                              ),
-                            ],
+                  ..._accounts.map(
+                    (acc) => Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      child: ListTile(
+                        leading: Icon(
+                          acc.providerType == OnlineProviderType.google
+                              ? Icons.g_mobiledata
+                              : acc.providerType == OnlineProviderType.microsoft
+                              ? Icons.window
+                              : Icons.cloud,
+                          size: 32,
+                        ),
+                        title: Text(acc.accountEmailOrName),
+                        subtitle: Text(
+                          AppLocalizations.of(context).descProviderLastSynced(
+                            acc.providerType.name.toUpperCase(),
+                            acc.lastSyncedAt ??
+                                AppLocalizations.of(context).labelNever,
                           ),
                         ),
-                      )),
+                        isThreeLine: true,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: _isSyncing
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(Icons.sync),
+                              onPressed: _isSyncing
+                                  ? null
+                                  : () => _triggerManualSync(acc),
+                              tooltip: AppLocalizations.of(
+                                context,
+                              ).tooltipSyncNow,
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.delete_outline,
+                                color: Colors.red,
+                              ),
+                              tooltip: AppLocalizations.of(
+                                context,
+                              ).tooltipRemoveAccount,
+                              onPressed: () async {
+                                await _syncService.removeAccount(acc.id);
+                                _loadAccounts();
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
     );

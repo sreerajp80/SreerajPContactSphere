@@ -7,7 +7,7 @@ The user confirmed concluding this feature with the in-app-only approach.
 ## Proposed Changes
 
 ### Documentation
-#### [MODIFY] [docs/feature_analysis_and_roadmap.md](file:///l:/Android/SreerajPContactSphere/docs/feature_analysis_and_roadmap.md)
+#### [MODIFY] [docs/feature_analysis_and_roadmap.md](../docs/feature_analysis_and_roadmap.md)
 - Update Section 6 row for **Pre-call overlay HUD**:
   - **Current state**: Mark as `✅ **Shipped (In-app only).** pre_call_summary_service.dart builds summaries shown inside the app.`
   - **Recommended change**: Update to `Concluded: retained as an **in-app-only** summary UI. Floating system overlay over native incoming-call screen rejected to preserve user trust and avoid requesting SYSTEM_ALERT_WINDOW. No further work planned.`

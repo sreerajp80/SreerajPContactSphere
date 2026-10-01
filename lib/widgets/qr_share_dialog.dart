@@ -9,6 +9,7 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/contact.dart';
 import 'package:smart_contacts_dialer/services/qr_share_service.dart';
 import 'package:smart_contacts_dialer/services/vcard_service.dart';
@@ -41,9 +42,13 @@ class _QrShareDialogState extends State<QrShareDialog> {
       await QrShareService().shareQr(widget.contact);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Could not share QR: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).errorCouldNotShareQr('$e'),
+            ),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _sharing = false);
@@ -53,6 +58,7 @@ class _QrShareDialogState extends State<QrShareDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final payload = VCardService().qrPayload(widget.contact);
 
     return AlertDialog(
@@ -61,7 +67,7 @@ class _QrShareDialogState extends State<QrShareDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'Scan with any phone camera to add this contact.',
+            l10n.descScanToAddContact,
             style: theme.textTheme.bodySmall,
             textAlign: TextAlign.center,
           ),
@@ -84,9 +90,9 @@ class _QrShareDialogState extends State<QrShareDialog> {
                 data: payload,
                 size: 240,
                 backgroundColor: Colors.white,
-                errorStateBuilder: (_, _) => const Center(
+                errorStateBuilder: (_, _) => Center(
                   child: Text(
-                    'This contact has too much detail to fit in a QR code.',
+                    l10n.errorContactTooBigForQr,
                     textAlign: TextAlign.center,
                   ),
                 ),
@@ -97,7 +103,7 @@ class _QrShareDialogState extends State<QrShareDialog> {
       ),
       actions: [
         IconButton(
-          tooltip: 'Air-Gap Stream (Full Contact)',
+          tooltip: l10n.tooltipAirGapStream,
           icon: const Icon(Icons.sensors, color: Colors.blue),
           onPressed: () {
             Navigator.of(context).pop();
@@ -106,12 +112,12 @@ class _QrShareDialogState extends State<QrShareDialog> {
         ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close'),
+          child: Text(l10n.actionClose),
         ),
         FilledButton.icon(
           onPressed: _sharing ? null : _share,
           icon: const Icon(Icons.share, size: 18),
-          label: const Text('Share'),
+          label: Text(l10n.actionShare),
         ),
       ],
     );

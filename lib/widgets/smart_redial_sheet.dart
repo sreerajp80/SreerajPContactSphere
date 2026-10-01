@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/sim_account.dart';
 import 'package:smart_contacts_dialer/screens/sim_settings_screen.dart';
 import 'package:smart_contacts_dialer/services/sim_service.dart';
@@ -136,7 +137,11 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
       // scheduling failure.
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not schedule auto-retry')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).errorCouldNotScheduleRetry,
+          ),
+        ),
       );
       return;
     }
@@ -144,6 +149,10 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
     if (!mounted) return;
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = AppLocalizations.of(context);
+    final fireTime = MaterialLocalizations.of(
+      context,
+    ).formatTimeOfDay(TimeOfDay.fromDateTime(task.fireAt));
     navigator.pop();
 
     messenger.showSnackBar(
@@ -153,11 +162,9 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
         // animation finishes, and that stalls while the app is off-screen —
         // e.g. a call arriving right after scheduling), and "in 5 min" would
         // then be quietly wrong.
-        content: Text(
-          'Auto-retry at ${_clockTime(task.fireAt)} for ${widget.displayName}',
-        ),
+        content: Text(l10n.msgAutoRetryAt(fireTime, widget.displayName)),
         action: SnackBarAction(
-          label: 'View',
+          label: l10n.actionView,
           // Opens SIM & calling settings, which lists the pending redials with
           // a cancel action.
           onPressed: () => navigator.push(
@@ -168,36 +175,25 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
     );
   }
 
-  /// A wall-clock time like "7:23 PM" — what the user will actually see on the
-  /// phone when the retry runs.
-  String _clockTime(DateTime when) {
-    final hour = when.hour % 12 == 0 ? 12 : when.hour % 12;
-    final minute = when.minute.toString().padLeft(2, '0');
-    return '$hour:$minute ${when.hour < 12 ? 'AM' : 'PM'}';
-  }
-
   /// Explains why auto-retry needs the "Alarms & reminders" permission and
   /// offers to open the system settings screen to grant it (there's no
   /// runtime request dialog for this one). Returns true if the user chose to
   /// open settings.
   Future<bool?> _showExactAlarmPermissionDialog() {
+    final l10n = AppLocalizations.of(context);
     return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Allow "Alarms & reminders"'),
-        content: const Text(
-          'Auto-Retry needs the "Alarms & reminders" permission so it can '
-          'call back on schedule even if this app is closed. Enable it for '
-          'SreerajP Contacts Sphere in the settings screen that opens next.',
-        ),
+        title: Text(l10n.titleAllowAlarmsReminders),
+        content: Text(l10n.descAlarmsPermission),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Open settings'),
+            child: Text(l10n.actionOpenSettings),
           ),
         ],
       ),
@@ -215,7 +211,11 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
 
     if (!sent) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not launch messaging app')),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).errorCouldNotLaunchMessaging,
+          ),
+        ),
       );
     }
   }
@@ -226,6 +226,7 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
     final colors = theme.extension<AppColors>()!;
     final accent = theme.colorScheme.primary;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final l10n = AppLocalizations.of(context);
 
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
@@ -275,9 +276,9 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Call Unanswered',
-                            style: TextStyle(
+                          Text(
+                            l10n.titleCallUnanswered,
+                            style: const TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.w800,
                               letterSpacing: -0.3,
@@ -303,7 +304,7 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
 
                 // Option 1: Auto-Retry
                 _sectionHeader(
-                  title: 'OPTION 1: ONE-TAP AUTO-RETRY',
+                  title: l10n.labelOptionAutoRetry,
                   colors: colors,
                 ),
                 const SizedBox(height: 10),
@@ -334,7 +335,7 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
                     ),
                     icon: const Icon(Icons.timer, size: 18),
                     label: Text(
-                      'Auto-Retry in $_selectedDelayMinutes min',
+                      l10n.actionAutoRetryIn(_selectedDelayMinutes),
                       style: const TextStyle(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w700,
@@ -352,7 +353,7 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _sectionHeader(
-                      title: 'OPTION 2: REACH ME MESSAGE',
+                      title: l10n.labelOptionReachMe,
                       colors: colors,
                     ),
                     IconButton(
@@ -361,7 +362,9 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
                         size: 20,
                         color: accent,
                       ),
-                      tooltip: _isEditingMessage ? 'Done' : 'Edit message',
+                      tooltip: _isEditingMessage
+                          ? l10n.actionDone
+                          : l10n.tooltipEditMessage,
                       onPressed: () {
                         setState(() {
                           _isEditingMessage = !_isEditingMessage;
@@ -377,7 +380,7 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
                     minLines: 2,
                     maxLines: 4,
                     decoration: InputDecoration(
-                      hintText: 'Type your reach me message...',
+                      hintText: l10n.hintReachMeMessage,
                       filled: true,
                       fillColor: colors.searchFill,
                       border: OutlineInputBorder(
@@ -415,9 +418,9 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
                       side: BorderSide(color: accent),
                     ),
                     icon: const Icon(Icons.send_rounded, size: 18),
-                    label: const Text(
-                      'Send "Trying to Reach You" SMS',
-                      style: TextStyle(
+                    label: Text(
+                      l10n.actionSendReachMeSms,
+                      style: const TextStyle(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w700,
                       ),
@@ -430,7 +433,7 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
                   child: TextButton(
                     onPressed: () => Navigator.of(context).pop(),
                     child: Text(
-                      'Dismiss',
+                      l10n.actionDismiss,
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -467,7 +470,7 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
   }) {
     return FilterChip(
       selected: selected,
-      label: Text('$minutes min'),
+      label: Text(AppLocalizations.of(context).labelMinutesShort(minutes)),
       selectedColor: accent,
       checkmarkColor: AppTheme.contrastOn(accent),
       labelStyle: TextStyle(
@@ -488,7 +491,8 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
       return const SizedBox.shrink();
     }
 
-    final simLabel = _selectedSim?.displayLabel ?? 'Default SIM';
+    final l10n = AppLocalizations.of(context);
+    final simLabel = _selectedSim?.displayLabel ?? l10n.labelDefaultSim;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -503,7 +507,7 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
           Icon(Icons.sim_card_outlined, size: 18, color: accent),
           const SizedBox(width: 8),
           Text(
-            'SIM to dial:',
+            l10n.labelSimToDial,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -529,7 +533,7 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: Text(
-                  'Change',
+                  l10n.actionChange,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -551,11 +555,14 @@ class _SmartRedialSheetState extends State<_SmartRedialSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: Text(
-                'Select SIM for Auto-Retry',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                AppLocalizations.of(context).titleSelectSimForRetry,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
             for (final sim in _availableSims)

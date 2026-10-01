@@ -1,8 +1,8 @@
 // lib/screens/blocked_numbers_screen.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/repositories/flagged_number_repository.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
@@ -10,7 +10,7 @@ import 'package:smart_contacts_dialer/theme/app_theme.dart';
 /// Blocked-numbers management, reached from Settings → Contacts. Numbers here
 /// are rejected by the native call-screening service before the phone rings
 /// (exact match after normalizing to E.164 under the Default country). Also
-/// hosts the "Block unknown callers" toggle for calls with no / hidden number.
+/// hosts the "Block unknown" toggle for calls with no / hidden number.
 class BlockedNumbersScreen extends StatefulWidget {
   const BlockedNumbersScreen({super.key});
 
@@ -50,29 +50,30 @@ class _BlockedNumbersScreenState extends State<BlockedNumbersScreen> {
   }
 
   Future<void> _addNumber() async {
+    final l10n = AppLocalizations.of(context);
     final controller = TextEditingController();
     final number = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Block a number'),
+        title: Text(l10n.titleBlockNumber),
         content: TextField(
           controller: controller,
           autofocus: true,
           keyboardType: TextInputType.phone,
-          decoration: const InputDecoration(
-            labelText: 'Phone number',
-            hintText: 'e.g. +91 98765 43210',
+          decoration: InputDecoration(
+            labelText: l10n.labelPhoneNumber,
+            hintText: l10n.hintPhoneNumberExample,
           ),
           onSubmitted: (v) => Navigator.of(ctx).pop(v),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(l10n.actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(controller.text),
-            child: const Text('Block'),
+            child: Text(l10n.actionBlock),
           ),
         ],
       ),
@@ -84,9 +85,9 @@ class _BlockedNumbersScreenState extends State<BlockedNumbersScreen> {
     );
     if (!mounted) return;
     if (!added) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('That doesn’t look like a number')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(l10n.errorNotAPhoneNumber)));
       return;
     }
     await _load();
@@ -96,38 +97,43 @@ class _BlockedNumbersScreenState extends State<BlockedNumbersScreen> {
     await _repo.remove(entry.id);
     await _load();
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('${entry.number} unblocked')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          AppLocalizations.of(context).msgNumberUnblocked(entry.number),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Blocked numbers')),
+      appBar: AppBar(title: Text(l10n.titleBlockedNumbers)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               children: [
-                _blockUnknownCard(colors),
+                _blockUnknownCard(colors, l10n),
                 const SizedBox(height: 12),
-                _explainerNote(colors),
+                _explainerNote(colors, l10n),
                 const SizedBox(height: 12),
-                _addNumberCard(colors),
+                _addNumberCard(colors, l10n),
                 const SizedBox(height: 12),
                 if (_numbers.isEmpty)
-                  _emptyNote(colors)
+                  _emptyNote(colors, l10n)
                 else
-                  _numbersCard(colors),
+                  _numbersCard(colors, l10n),
               ],
             ),
     );
   }
 
   /// Reject calls that carry no / a hidden number.
-  Widget _blockUnknownCard(AppColors colors) {
+  Widget _blockUnknownCard(AppColors colors, AppLocalizations l10n) {
     final accent = Theme.of(context).colorScheme.primary;
     final enabled = context.watch<AppSettings>().blockUnknownCallers;
 
@@ -138,20 +144,19 @@ class _BlockedNumbersScreenState extends State<BlockedNumbersScreen> {
         value: enabled,
         activeThumbColor: accent,
         onChanged: (v) => context.read<AppSettings>().setBlockUnknownCallers(v),
-        title: const Text(
-          'Block unknown callers',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        title: Text(
+          l10n.labelBlockUnknownCallers,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
         subtitle: Text(
-          'Reject calls that don’t show a number (hidden or private '
-          'callers)',
+          l10n.descBlockUnknownCallers,
           style: TextStyle(color: colors.mutedText, fontSize: 13),
         ),
       ),
     );
   }
 
-  Widget _explainerNote(AppColors colors) {
+  Widget _explainerNote(AppColors colors, AppLocalizations l10n) {
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
@@ -162,9 +167,7 @@ class _BlockedNumbersScreenState extends State<BlockedNumbersScreen> {
             const SizedBox(width: 14),
             Expanded(
               child: Text(
-                'Blocked numbers never ring. Blocking works while '
-                'SreerajP Contacts Sphere is your default phone app and matches the '
-                'exact number.',
+                l10n.descBlockedNumbersInfo,
                 style: TextStyle(color: colors.mutedText, fontSize: 13.5),
               ),
             ),
@@ -174,7 +177,7 @@ class _BlockedNumbersScreenState extends State<BlockedNumbersScreen> {
     );
   }
 
-  Widget _addNumberCard(AppColors colors) {
+  Widget _addNumberCard(AppColors colors, AppLocalizations l10n) {
     final accent = Theme.of(context).colorScheme.primary;
     return Card(
       margin: EdgeInsets.zero,
@@ -199,16 +202,16 @@ class _BlockedNumbersScreenState extends State<BlockedNumbersScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Add a number',
-                      style: TextStyle(
+                    Text(
+                      l10n.actionAddNumber,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Calls from it will be rejected before ringing',
+                      l10n.descAddNumber,
                       style: TextStyle(color: colors.mutedText, fontSize: 13),
                     ),
                   ],
@@ -222,18 +225,18 @@ class _BlockedNumbersScreenState extends State<BlockedNumbersScreen> {
     );
   }
 
-  Widget _emptyNote(AppColors colors) {
+  Widget _emptyNote(AppColors colors, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Text(
-        'No blocked numbers yet.',
+        l10n.emptyBlockedNumbers,
         textAlign: TextAlign.center,
         style: TextStyle(color: colors.mutedText, fontSize: 13.5),
       ),
     );
   }
 
-  Widget _numbersCard(AppColors colors) {
+  Widget _numbersCard(AppColors colors, AppLocalizations l10n) {
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
@@ -244,21 +247,25 @@ class _BlockedNumbersScreenState extends State<BlockedNumbersScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
               child: Text(
-                'Blocked (${_numbers.length})',
+                l10n.labelBlockedCount(_numbers.length),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                 ),
               ),
             ),
-            for (final entry in _numbers) _numberTile(colors, entry),
+            for (final entry in _numbers) _numberTile(colors, l10n, entry),
           ],
         ),
       ),
     );
   }
 
-  Widget _numberTile(AppColors colors, FlaggedNumber entry) {
+  Widget _numberTile(
+    AppColors colors,
+    AppLocalizations l10n,
+    FlaggedNumber entry,
+  ) {
     const red = Color(0xFFEF4444);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -279,7 +286,16 @@ class _BlockedNumbersScreenState extends State<BlockedNumbersScreen> {
                 ),
                 const SizedBox(height: 1),
                 Text(
-                  'Blocked ${DateFormat('MMM d, yyyy').format(entry.createdAt)}',
+                  // The date is formatted by MaterialLocalizations, not by an
+                  // ARB DateTime placeholder: intl ships no CLDR date data for
+                  // Sanskrit, so DateFormat.yMMMd('sa') throws. Material's
+                  // formatter falls back cleanly on any locale it does not
+                  // localize.
+                  l10n.labelBlockedOn(
+                    MaterialLocalizations.of(
+                      context,
+                    ).formatShortDate(entry.createdAt),
+                  ),
                   style: TextStyle(color: colors.mutedText, fontSize: 12.5),
                 ),
               ],
@@ -287,7 +303,7 @@ class _BlockedNumbersScreenState extends State<BlockedNumbersScreen> {
           ),
           IconButton(
             icon: Icon(Icons.close, color: colors.mutedText, size: 20),
-            tooltip: 'Unblock',
+            tooltip: l10n.tooltipUnblock,
             onPressed: () => _remove(entry),
           ),
         ],

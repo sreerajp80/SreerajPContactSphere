@@ -14,9 +14,9 @@ void main() {
     test('isT9Match identifies word prefix matches', () {
       // "John Doe" -> "5646 363"
       expect(T9Utils.isT9Match('John Doe', '5646'), isTrue); // "John"
-      expect(T9Utils.isT9Match('John Doe', '564'), isTrue);  // prefix of "John"
-      expect(T9Utils.isT9Match('John Doe', '363'), isTrue);  // "Doe"
-      expect(T9Utils.isT9Match('John Doe', '36'), isTrue);   // prefix of "Doe"
+      expect(T9Utils.isT9Match('John Doe', '564'), isTrue); // prefix of "John"
+      expect(T9Utils.isT9Match('John Doe', '363'), isTrue); // "Doe"
+      expect(T9Utils.isT9Match('John Doe', '36'), isTrue); // prefix of "Doe"
       expect(T9Utils.isT9Match('John Doe', '999'), isFalse);
     });
 
@@ -27,9 +27,21 @@ void main() {
     });
 
     test('scoreMatch ranks name prefix higher than phone number prefix', () {
-      final namePrefixScore = T9Utils.scoreMatch('John Doe', '9847012345', '5646'); // "John"
-      final phonePrefixScore = T9Utils.scoreMatch('Alice', '5646123456', '5646');  // phone start
-      final phoneSubstrScore = T9Utils.scoreMatch('Bob', '9956460000', '5646');    // phone mid
+      final namePrefixScore = T9Utils.scoreMatch(
+        'John Doe',
+        '9847012345',
+        '5646',
+      ); // "John"
+      final phonePrefixScore = T9Utils.scoreMatch(
+        'Alice',
+        '5646123456',
+        '5646',
+      ); // phone start
+      final phoneSubstrScore = T9Utils.scoreMatch(
+        'Bob',
+        '9956460000',
+        '5646',
+      ); // phone mid
 
       expect(namePrefixScore, equals(100));
       expect(phonePrefixScore, equals(85));
@@ -37,6 +49,25 @@ void main() {
 
       expect(namePrefixScore, greaterThan(phonePrefixScore));
       expect(phonePrefixScore, greaterThan(phoneSubstrScore));
+    });
+
+    test('name matches never span a word break', () {
+      // "Chunga[m Ma]nager" and "Somashekhar[an Na]ir" only spell 2662
+      // when two words are joined, so they must not match.
+      expect(T9Utils.isT9Match('SBI Chungam Manager', '2662'), isFalse);
+      expect(T9Utils.isT9Match('Somashekharan Nair', '2662'), isFalse);
+      expect(
+        T9Utils.scoreMatch('SBI Chungam Manager', '918078350854', '2662'),
+        0,
+      );
+      expect(T9Utils.scoreMatch('Somashekharan Nair', '9495786208', '2662'), 0);
+    });
+
+    test('mid-word name matches still work inside one word', () {
+      // "k[anna]n" holds 2662 inside a single word.
+      expect(T9Utils.isT9Match('Kannan', '2662'), isTrue);
+      expect(T9Utils.scoreMatch('Kannan', '9895367822', '2662'), 65);
+      expect(T9Utils.isT9Match('Kannan N Babu', '2662'), isTrue);
     });
 
     test('textToMalayalamT9 maps Malayalam script characters to digits 2-9', () {
@@ -67,10 +98,13 @@ void main() {
       expect(T9Utils.isT9Match('സുരേഷ്', '222'), isFalse);
     });
 
-    test('scoreMatch ranks direct Malayalam keypad matches with high score', () {
-      final score = T9Utils.scoreMatch('സുരേഷ്', '9847000000', '878');
-      expect(score, equals(100));
-    });
+    test(
+      'scoreMatch ranks direct Malayalam keypad matches with high score',
+      () {
+        final score = T9Utils.scoreMatch('സുരേഷ്', '9847000000', '878');
+        expect(score, equals(100));
+      },
+    );
 
     test('getScriptKeyLegends resolves legends for all supported scripts', () {
       final mlLegends = T9Utils.getScriptKeyLegends(DialpadScript.malayalam);
@@ -92,27 +126,30 @@ void main() {
       expect(noneLegends, isEmpty);
     });
 
-    test('charToT9Digit supports global scripts (Devanagari, Cyrillic, Arabic, Greek, Diacritics)', () {
-      // Devanagari
-      expect(T9Utils.charToT9Digit('क'), '2');
-      expect(T9Utils.charToT9Digit('म'), '6');
+    test(
+      'charToT9Digit supports global scripts (Devanagari, Cyrillic, Arabic, Greek, Diacritics)',
+      () {
+        // Devanagari
+        expect(T9Utils.charToT9Digit('क'), '2');
+        expect(T9Utils.charToT9Digit('म'), '6');
 
-      // Cyrillic
-      expect(T9Utils.charToT9Digit('а'), '2');
-      expect(T9Utils.charToT9Digit('я'), '9');
+        // Cyrillic
+        expect(T9Utils.charToT9Digit('а'), '2');
+        expect(T9Utils.charToT9Digit('я'), '9');
 
-      // Arabic
-      expect(T9Utils.charToT9Digit('ا'), '2');
-      expect(T9Utils.charToT9Digit('م'), '8');
+        // Arabic
+        expect(T9Utils.charToT9Digit('ا'), '2');
+        expect(T9Utils.charToT9Digit('م'), '8');
 
-      // Greek
-      expect(T9Utils.charToT9Digit('α'), '2');
-      expect(T9Utils.charToT9Digit('ω'), '9');
+        // Greek
+        expect(T9Utils.charToT9Digit('α'), '2');
+        expect(T9Utils.charToT9Digit('ω'), '9');
 
-      // Latin Diacritics
-      expect(T9Utils.charToT9Digit('é'), '3');
-      expect(T9Utils.charToT9Digit('ñ'), '6');
-      expect(T9Utils.charToT9Digit('ç'), '2');
-    });
+        // Latin Diacritics
+        expect(T9Utils.charToT9Digit('é'), '3');
+        expect(T9Utils.charToT9Digit('ñ'), '6');
+        expect(T9Utils.charToT9Digit('ç'), '2');
+      },
+    );
   });
 }

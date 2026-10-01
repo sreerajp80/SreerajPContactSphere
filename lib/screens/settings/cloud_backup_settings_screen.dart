@@ -1,6 +1,7 @@
 // lib/screens/settings/cloud_backup_settings_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/cloud_backup_entry.dart';
 import 'package:smart_contacts_dialer/models/online_sync_account.dart';
 import 'package:smart_contacts_dialer/services/cloud_backup_service.dart';
@@ -10,7 +11,8 @@ class CloudBackupSettingsScreen extends StatefulWidget {
   const CloudBackupSettingsScreen({super.key});
 
   @override
-  State<CloudBackupSettingsScreen> createState() => _CloudBackupSettingsScreenState();
+  State<CloudBackupSettingsScreen> createState() =>
+      _CloudBackupSettingsScreenState();
 }
 
 class _CloudBackupSettingsScreenState extends State<CloudBackupSettingsScreen> {
@@ -48,7 +50,9 @@ class _CloudBackupSettingsScreenState extends State<CloudBackupSettingsScreen> {
 
   Future<void> _fetchRemoteBackups() async {
     if (_selectedAccount == null) return;
-    final backups = await _cloudBackupService.fetchCloudBackups(_selectedAccount!);
+    final backups = await _cloudBackupService.fetchCloudBackups(
+      _selectedAccount!,
+    );
     setState(() {
       _remoteBackups = backups;
     });
@@ -59,7 +63,9 @@ class _CloudBackupSettingsScreenState extends State<CloudBackupSettingsScreen> {
     final passphrase = _passphraseController.text;
     if (passphrase.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a backup passphrase')),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).errorEnterPassphrase),
+        ),
       );
       return;
     }
@@ -76,8 +82,10 @@ class _CloudBackupSettingsScreenState extends State<CloudBackupSettingsScreen> {
           SnackBar(
             content: Text(
               entry != null
-                  ? 'Encrypted backup uploaded successfully: ${entry.fileName}'
-                  : 'Backup uploaded',
+                  ? AppLocalizations.of(
+                      context,
+                    ).msgBackupUploadedFile(entry.fileName)
+                  : AppLocalizations.of(context).msgBackupUploaded,
             ),
           ),
         );
@@ -85,7 +93,9 @@ class _CloudBackupSettingsScreenState extends State<CloudBackupSettingsScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Upload failed: $e')),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).errorUploadFailed('$e')),
+          ),
         );
       }
     } finally {
@@ -97,7 +107,7 @@ class _CloudBackupSettingsScreenState extends State<CloudBackupSettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Encrypted Cloud Backup'),
+        title: Text(AppLocalizations.of(context).titleEncryptedCloudBackup),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -113,7 +123,7 @@ class _CloudBackupSettingsScreenState extends State<CloudBackupSettingsScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            'Backs up the full app payload (.csbak) encrypted end-to-end with your passphrase via PBKDF2 (300k iters) + AES-GCM-256 to your cloud storage.',
+                            AppLocalizations.of(context).descCloudBackupIntro,
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ),
@@ -128,11 +138,17 @@ class _CloudBackupSettingsScreenState extends State<CloudBackupSettingsScreen> {
                       padding: const EdgeInsets.all(16.0),
                       child: Column(
                         children: [
-                          const Text('No cloud storage accounts configured.'),
+                          Text(
+                            AppLocalizations.of(context).emptyNoCloudStorage,
+                          ),
                           const SizedBox(height: 8),
                           ElevatedButton(
                             onPressed: () => Navigator.pop(context),
-                            child: const Text('Add Account in Provider Sync'),
+                            child: Text(
+                              AppLocalizations.of(
+                                context,
+                              ).actionAddAccountInProviderSync,
+                            ),
                           ),
                         ],
                       ),
@@ -141,12 +157,20 @@ class _CloudBackupSettingsScreenState extends State<CloudBackupSettingsScreen> {
                 else ...[
                   DropdownButtonFormField<OnlineSyncAccount>(
                     initialValue: _selectedAccount,
-                    decoration: const InputDecoration(labelText: 'Target Cloud Account'),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(
+                        context,
+                      ).labelTargetCloudAccount,
+                    ),
                     items: _accounts
-                        .map((acc) => DropdownMenuItem(
-                              value: acc,
-                              child: Text('${acc.accountEmailOrName} (${acc.providerType.name.toUpperCase()})'),
-                            ))
+                        .map(
+                          (acc) => DropdownMenuItem(
+                            value: acc,
+                            child: Text(
+                              '${acc.accountEmailOrName} (${acc.providerType.name.toUpperCase()})',
+                            ),
+                          ),
+                        )
                         .toList(),
                     onChanged: (acc) {
                       setState(() => _selectedAccount = acc);
@@ -157,15 +181,19 @@ class _CloudBackupSettingsScreenState extends State<CloudBackupSettingsScreen> {
                   TextField(
                     controller: _passphraseController,
                     obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Encryption Passphrase',
-                      hintText: 'Enter passphrase for .csbak encryption',
-                      prefixIcon: Icon(Icons.key),
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(
+                        context,
+                      ).labelEncryptionPassphrase,
+                      hintText: AppLocalizations.of(context).hintPassphrase,
+                      prefixIcon: const Icon(Icons.key),
                     ),
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
-                    onPressed: _isActionInProgress ? null : _triggerUploadBackup,
+                    onPressed: _isActionInProgress
+                        ? null
+                        : _triggerUploadBackup,
                     icon: _isActionInProgress
                         ? const SizedBox(
                             width: 18,
@@ -173,33 +201,45 @@ class _CloudBackupSettingsScreenState extends State<CloudBackupSettingsScreen> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.cloud_upload),
-                    label: const Text('Upload Encrypted Backup Now'),
+                    label: Text(
+                      AppLocalizations.of(context).actionUploadBackupNow,
+                    ),
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'Remote Cloud Backups',
+                    AppLocalizations.of(context).labelRemoteCloudBackups,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
                   if (_remoteBackups.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16.0),
-                      child: Text('No cloud backups found for this account.'),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0),
+                      child: Text(
+                        AppLocalizations.of(context).emptyNoCloudBackups,
+                      ),
                     )
                   else
-                    ..._remoteBackups.map((entry) => Card(
-                          child: ListTile(
-                            leading: const Icon(Icons.insert_drive_file),
-                            title: Text(entry.fileName),
-                            subtitle: Text('Size: ${entry.sizeBytes} bytes | Date: ${entry.modifiedAt}'),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.cloud_download),
-                              onPressed: () {
-                                // Trigger restore
-                              },
+                    ..._remoteBackups.map(
+                      (entry) => Card(
+                        child: ListTile(
+                          leading: const Icon(Icons.insert_drive_file),
+                          title: Text(entry.fileName),
+                          subtitle: Text(
+                            AppLocalizations.of(context).descBackupSizeDate(
+                              entry.sizeBytes,
+                              entry.modifiedAt,
                             ),
                           ),
-                        )),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.cloud_download),
+                            tooltip: AppLocalizations.of(context).actionRestore,
+                            onPressed: () {
+                              // Trigger restore
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ],
             ),

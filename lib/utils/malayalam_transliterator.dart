@@ -29,7 +29,7 @@ const Map<String, String> _vowelSigns = {
   'ീ': 'ee', // ീ
   'ു': 'u', // ു
   'ൂ': 'oo', // ൂ
-  'ൃ': 'ru', // ൃ
+  'ൃ': 'ri', // ൃ  (typed "ri": Krishnan, not Krushnan)
   'െ': 'e', // െ
   'േ': 'e', // േ
   'ൈ': 'ai', // ൈ
@@ -62,6 +62,25 @@ const Map<String, String> _standalone = {
 
 const String _virama = '്'; // ്  (kills the inherent vowel)
 
+/// Consonant clusters that are written one way and said (and typed) another,
+/// keyed by their letters with the virama between them.
+const Map<String, String> _conjuncts = {
+  'ന്റ': 'nt', // ആന്റണി → Antony
+  'ൻറ': 'nt', // older encoding of the same cluster
+  'റ്റ': 'tt', // മറ്റം → Mattam
+  'ങ്ങ': 'ng', // ങ്ങ → ng, not ngng
+};
+
+/// The [_conjuncts] entry starting at [i], as (latin, letters used), or null.
+(String, int)? _conjunctAt(List<String> chars, int i) {
+  for (final len in const [3, 2]) {
+    if (i + len > chars.length) continue;
+    final latin = _conjuncts[chars.sublist(i, i + len).join()];
+    if (latin != null) return (latin, len);
+  }
+  return null;
+}
+
 /// Transliterates any Malayalam script in [input] to Latin, passing other
 /// characters through unchanged. Handles conjuncts via the virama (ക്ക → kk)
 /// and both modern atomic chillus and the legacy consonant+virama+ZWJ form.
@@ -76,11 +95,22 @@ String transliterateMalayalam(String input) {
     }
   }
 
-  for (final rune in input.runes) {
-    final ch = String.fromCharCode(rune);
+  final chars = input.runes.map(String.fromCharCode).toList();
+  for (var i = 0; i < chars.length; i++) {
+    final ch = chars[i];
     // Joiners only disambiguate rendering (legacy chillu encoding); the
     // preceding virama already handled the sound.
     if (ch == '‌' || ch == '‍') continue;
+    // Conjuncts whose sound differs from their letters (ന്റ is said and typed
+    // `nt`, not `nr`). The cluster keeps its inherent `a` like a consonant.
+    final conjunct = _conjunctAt(chars, i);
+    if (conjunct != null) {
+      flush();
+      buf.write(conjunct.$1);
+      pendingA = true;
+      i += conjunct.$2 - 1;
+      continue;
+    }
     final cons = _consonants[ch];
     if (cons != null) {
       flush();
@@ -123,6 +153,8 @@ final RegExp _spaces = RegExp(r'\s+');
 String searchKey(String input) {
   var s = transliterateMalayalam(input).toLowerCase();
   s = s.replaceAll('x', 'ks');
+  // `f` and `ph` are one sound (ഫ): Fathima / Phathima / ഫാത്തിമ.
+  s = s.replaceAll('f', 'p');
   // Aspirated digraphs → base letter (kh→k, th→t, sh→s …; zh is untouched —
   // it's a distinct sound, not an aspirate). Loop so chh → ch → c.
   String prev;
@@ -198,13 +230,142 @@ String phoneticCode(String input) {
 /// code into a wildcard. Returns false for codes under [phoneticCodeMinLen].
 bool phoneticMatches(String queryCode, String storedCode) {
   if (queryCode.length < phoneticCodeMinLen || storedCode.isEmpty) return false;
-  return storedCode.startsWith(queryCode) ||
-      storedCode.contains(' $queryCode');
+  return storedCode.startsWith(queryCode) || storedCode.contains(' $queryCode');
+}
+
+/// Shortest typed key (spaces removed) used for [compactKeyMatches].
+const int compactMatchMinLen = 3;
+
+/// [searchKey] with the spaces removed, so `sree raj`, `sreeraj` and
+/// `Sreeraj P` can be compared regardless of where words split.
+String compactKey(String key) => key.replaceAll(' ', '');
+
+/// Whether typed [queryKey] matches stored [nameKey] (both [searchKey]s) when
+/// spaces are ignored, starting at the beginning of some word of the name:
+/// `sree raj` → `sriraj`, `sreerajp` → `sriraj p`. Still word-anchored on
+/// purpose — matching mid-word made `Ale` find `City Time Gallery`.
+bool compactKeyMatches(String queryKey, String nameKey) {
+  final q = compactKey(queryKey);
+  if (q.length < compactMatchMinLen) return false;
+  for (var i = 0; i < nameKey.length; i++) {
+    if (i > 0 && nameKey[i - 1] != ' ') continue;
+    if (nameKey[i] == ' ') continue;
+    if (compactKey(nameKey.substring(i)).startsWith(q)) return true;
+  }
+  return false;
+}
+
+/// How many typing mistakes a typed word of [length] letters may contain and
+/// still count as "similar": none for short words (Binu/Vinu/Minu would all
+/// collide), one for normal words, two for long ones.
+int similarMistakeBudget(int length) {
+  if (length <= 4) return 0;
+  if (length <= 7) return 1;
+  return 2;
+}
+
+/// Edit distance between [a] and [b]: the fewest single-letter inserts,
+/// deletes, changes, or swaps of two neighbouring letters that turn one into
+/// the other (`suresh` → `sureesh` is 1). Stops early and returns
+/// `limit + 1` once the distance is sure to exceed [limit].
+int editDistance(String a, String b, {int limit = 1 << 20}) {
+  if ((a.length - b.length).abs() > limit) return limit + 1;
+  if (a.isEmpty || b.isEmpty) return a.length + b.length;
+  final n = b.length;
+  var prev2 = List<int>.filled(n + 1, 0);
+  var prev = List<int>.generate(n + 1, (j) => j);
+  var cur = List<int>.filled(n + 1, 0);
+  var prevRowMin = 0;
+  for (var i = 1; i <= a.length; i++) {
+    cur[0] = i;
+    var rowMin = cur[0];
+    for (var j = 1; j <= n; j++) {
+      final cost = a.codeUnitAt(i - 1) == b.codeUnitAt(j - 1) ? 0 : 1;
+      var d = prev[j] + 1;
+      if (cur[j - 1] + 1 < d) d = cur[j - 1] + 1;
+      if (prev[j - 1] + cost < d) d = prev[j - 1] + cost;
+      if (i > 1 &&
+          j > 1 &&
+          a.codeUnitAt(i - 1) == b.codeUnitAt(j - 2) &&
+          a.codeUnitAt(i - 2) == b.codeUnitAt(j - 1) &&
+          prev2[j - 2] + 1 < d) {
+        d = prev2[j - 2] + 1;
+      }
+      cur[j] = d;
+      if (d < rowMin) rowMin = d;
+    }
+    // A swap reaches back two rows, so stop only once two rows in a row are
+    // over the limit — nothing later can come back under it.
+    if (rowMin > limit && prevRowMin > limit) return limit + 1;
+    prevRowMin = rowMin;
+    final t = prev2;
+    prev2 = prev;
+    prev = cur;
+    cur = t;
+  }
+  final result = prev[n];
+  return result > limit ? limit + 1 : result;
+}
+
+/// Fewest mistakes between typed word [word] and the start of [target], or
+/// null when that is over the word's [similarMistakeBudget]. Comparing against
+/// the start of [target] lets a half-typed name (`sures` → `suresh kumar`)
+/// still match. The first letter must agree — people rarely get it wrong, and
+/// it keeps `Vinu` and `Binu` apart.
+int? _wordDistance(String word, String target) {
+  final budget = similarMistakeBudget(word.length);
+  if (budget == 0) return target.startsWith(word) ? 0 : null;
+  if (target.isEmpty || target[0] != word[0]) return null;
+  int? best;
+  final lo = word.length - budget;
+  final hi = word.length + budget;
+  for (var len = lo; len <= hi; len++) {
+    if (len < 1 || len > target.length) continue;
+    final d = editDistance(word, target.substring(0, len), limit: budget);
+    if (d <= budget && (best == null || d < best)) best = d;
+  }
+  return best;
+}
+
+/// How similar typed [queryKey] is to a stored name key [nameKey] (both
+/// [searchKey]s), as the total number of typing mistakes — or null when they
+/// are not similar. Every typed word must be close to the start of some word
+/// in the name; failing that, the whole query (spaces removed) must be close
+/// to the start of the whole name (spaces removed), so `sree raj` still finds
+/// `sriraj`. Lower is closer; 0 is an exact prefix hit.
+int? similarNameDistance(String queryKey, String nameKey) {
+  final queryWords = queryKey.split(' ').where((w) => w.isNotEmpty).toList();
+  final nameWords = nameKey.split(' ').where((w) => w.isNotEmpty).toList();
+  if (queryWords.isEmpty || nameWords.isEmpty) return null;
+
+  var total = 0;
+  var allWordsMatched = true;
+  for (final qw in queryWords) {
+    int? best;
+    for (final nw in nameWords) {
+      final d = _wordDistance(qw, nw);
+      if (d != null && (best == null || d < best)) best = d;
+      if (best == 0) break;
+    }
+    if (best == null) {
+      allWordsMatched = false;
+      break;
+    }
+    total += best;
+  }
+  final byWords = allWordsMatched ? total : null;
+
+  final whole = _wordDistance(compactKey(queryKey), compactKey(nameKey));
+  if (byWords == null) return whole;
+  if (whole == null) return byWords;
+  return whole < byWords ? whole : byWords;
 }
 
 /// The single "does this name match what was typed" test, shared by the
-/// in-memory searches so they agree with the SQL-backed ones: plain text substring,
-/// word-anchored [searchKey] prefix hit, or word-anchored [phoneticCode] hit.
+/// in-memory searches so they agree with the SQL-backed ones: plain text
+/// substring, word-anchored [searchKey] prefix hit (also with spaces ignored,
+/// see [compactKeyMatches]), word-anchored [phoneticCode] hit, or a similar name (see
+/// [similarNameDistance]).
 bool nameMatches(String query, String name) {
   final q = query.trim();
   if (q.isEmpty) return false;
@@ -219,6 +380,9 @@ bool nameMatches(String query, String name) {
     for (final word in nameKey.split(' ')) {
       if (word.startsWith(key)) return true;
     }
+    if (compactKeyMatches(key, nameKey)) return true;
+    if (phoneticMatches(phoneticCode(q), phoneticCode(name))) return true;
+    return similarNameDistance(key, nameKey) != null;
   }
   return phoneticMatches(phoneticCode(q), phoneticCode(name));
 }

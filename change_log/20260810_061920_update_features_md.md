@@ -1,11 +1,11 @@
 # Change Log: Update `docs/features.md` to document missing app features
 
 **Date:** 2026-08-10
-**Plan Implemented:** [plans/20260810_061803_update_features_md.md](file:///l:/Android/SreerajPContactSphere/plans/20260810_061803_update_features_md.md)
+**Plan Implemented:** [plans/20260810_061803_update_features_md.md](../plans/20260810_061803_update_features_md.md)
 
 ## Summary of Changes
 
-Updated [docs/features.md](file:///l:/Android/SreerajPContactSphere/docs/features.md) to comprehensively document all existing features present in the codebase that were previously missing or listed as unintegrated:
+Updated [docs/features.md](../docs/features.md) to comprehensively document all existing features present in the codebase that were previously missing or listed as unintegrated:
 
 1. **Section 1 (Contacts management)**: Added Relationship-Tier Quiet Hours exception settings (silencing night calls except for allowed emergency/ICE contacts, starred contacts, specified relationship types, allowed tags, or specific contacts).
 2. **Section 2 (Dialer / calling)**: Added Spoken Caller Announcements (caller name announced over ringtone in English/Malayalam with quiet-hours exception range and test preview).

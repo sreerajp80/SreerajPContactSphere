@@ -1,6 +1,7 @@
 // lib/screens/contacts_settings_screen.dart
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/contact.dart';
 import 'package:smart_contacts_dialer/services/contact_sync_service.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
@@ -34,56 +35,56 @@ class ContactsSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Contacts')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).navContacts)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           _SettingsSectionCard(
             icon: Icons.groups_outlined,
-            title: 'Contact counts & search index',
-            subtitle: 'View device/app contact counts and search index status',
+            title: AppLocalizations.of(context).labelContactCountsIndex,
+            subtitle: AppLocalizations.of(context).descContactCountsIndex,
             onTap: () => _push(context, const ContactIndexHealthScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsSectionCard(
             icon: Icons.person_add_alt_outlined,
-            title: 'My Profile ("Add Me")',
-            subtitle: 'Create or edit your own Self contact card',
+            title: AppLocalizations.of(context).labelMyProfileAddMe,
+            subtitle: AppLocalizations.of(context).descMyProfileAddMe,
             onTap: () => _addMe(context),
           ),
           const SizedBox(height: 12),
           _SettingsSectionCard(
             icon: Icons.sort_by_alpha,
-            title: 'Display & formatting',
-            subtitle: 'Sort order, name format, and display filters',
+            title: AppLocalizations.of(context).labelDisplayFormatting,
+            subtitle: AppLocalizations.of(context).descDisplayFormatting,
             onTap: () => _push(context, const ContactDisplaySettingsScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsSectionCard(
             icon: Icons.sync,
-            title: 'Device & cloud sync',
-            subtitle: 'Configure device mirroring and cloud accounts',
+            title: AppLocalizations.of(context).labelDeviceCloudSync,
+            subtitle: AppLocalizations.of(context).descDeviceCloudSync,
             onTap: () => _push(context, const ContactSyncSettingsScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsSectionCard(
             icon: Icons.label_outlined,
-            title: 'Custom relationship labels',
-            subtitle: 'Manage custom relationship labels for contacts',
+            title: AppLocalizations.of(context).labelCustomRelationshipLabels,
+            subtitle: AppLocalizations.of(context).descCustomRelationshipLabels,
             onTap: () => _push(context, const RelationshipNamesScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsSectionCard(
             icon: Icons.block_outlined,
-            title: 'Blocked numbers',
-            subtitle: 'View and manage numbers blocked from ringing',
+            title: AppLocalizations.of(context).titleBlockedNumbers,
+            subtitle: AppLocalizations.of(context).descBlockedNumbersCard,
             onTap: () => _push(context, const BlockedNumbersScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsSectionCard(
             icon: Icons.lock_outline,
-            title: 'Secret contacts & export',
-            subtitle: 'Export options and secret contact export controls',
+            title: AppLocalizations.of(context).labelSecretContactsExport,
+            subtitle: AppLocalizations.of(context).descSecretContactsExport,
             onTap: () => _push(context, const SecretContactsExportScreen()),
           ),
         ],

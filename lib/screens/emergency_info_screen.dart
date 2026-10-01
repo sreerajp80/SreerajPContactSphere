@@ -10,6 +10,7 @@
 // user turns it on.
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/core/constants/blood_groups.dart';
 import 'package:smart_contacts_dialer/models/emergency_info.dart';
 import 'package:smart_contacts_dialer/models/phone_number.dart';
@@ -158,17 +159,21 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
         SnackBar(
           content: Text(
             !_info.enabled
-                ? 'Saved. The lock screen card is off.'
+                ? AppLocalizations.of(context).msgSavedCardOff
                 : _info.hasNothingToShow
-                ? 'Saved. Nothing is switched on to show yet.'
-                : 'Saved. The card is on your lock screen.',
+                ? AppLocalizations.of(context).msgSavedNothingOn
+                : AppLocalizations.of(context).msgSavedCardOn,
           ),
         ),
       );
     } catch (e) {
       if (!mounted) return;
       setState(() => _saving = false);
-      messenger.showSnackBar(SnackBar(content: Text('Could not save: $e')));
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).errorCouldNotSave('$e')),
+        ),
+      );
     }
   }
 
@@ -177,16 +182,16 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
     final leave = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Leave without saving?'),
-        content: const Text('Your changes to the emergency card are not saved.'),
+        title: Text(AppLocalizations.of(context).titleLeaveWithoutSaving),
+        content: Text(AppLocalizations.of(context).descUnsavedEmergency),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Keep editing'),
+            child: Text(AppLocalizations.of(context).actionKeepEditing),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Discard'),
+            child: Text(AppLocalizations.of(context).actionDiscard),
           ),
         ],
       ),
@@ -218,7 +223,9 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
 
     if (currentInfo.hasNothingToShow) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nothing on the card is switched on to share.')),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).errorNothingToShare),
+        ),
       );
       return;
     }
@@ -231,8 +238,8 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
           children: [
             ListTile(
               leading: const Icon(Icons.text_snippet),
-              title: const Text('Share as Text'),
-              subtitle: const Text('Send formatted details via messaging or email'),
+              title: Text(AppLocalizations.of(context).actionShareAsText),
+              subtitle: Text(AppLocalizations.of(context).descShareFormatted),
               onTap: () {
                 Navigator.of(ctx).pop();
                 EmergencyShareService().shareAsText(currentInfo);
@@ -240,8 +247,8 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
             ),
             ListTile(
               leading: const Icon(Icons.image),
-              title: const Text('Share as Card Image'),
-              subtitle: const Text('Send visual ICE card image (PNG)'),
+              title: Text(AppLocalizations.of(context).actionShareAsCardImage),
+              subtitle: Text(AppLocalizations.of(context).descShareCardImage),
               onTap: () {
                 Navigator.of(ctx).pop();
                 EmergencyShareService().shareAsImage(currentInfo);
@@ -267,16 +274,16 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Emergency info'),
+          title: Text(AppLocalizations.of(context).titleEmergencyInfo),
           actions: [
             IconButton(
               icon: const Icon(Icons.share),
-              tooltip: 'Share ICE Card',
+              tooltip: AppLocalizations.of(context).tooltipShareIceCard,
               onPressed: _loading || _saving ? null : _showShareOptions,
             ),
             TextButton(
               onPressed: _loading || _saving ? null : _save,
-              child: const Text('Save'),
+              child: Text(AppLocalizations.of(context).actionSave),
             ),
           ],
         ),
@@ -315,12 +322,10 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
         children: [
           Icon(Icons.lock_open_outlined, color: theme.colorScheme.error),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Anything you switch on here can be read by anyone holding your '
-              'phone, without your PIN. That is the point of an emergency card — '
-              'so switch on only what a stranger should see.',
-              style: TextStyle(fontSize: 13, height: 1.35),
+              AppLocalizations.of(context).descEmergencyWarning,
+              style: const TextStyle(fontSize: 13, height: 1.35),
             ),
           ),
         ],
@@ -336,28 +341,25 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           value: _info.enabled,
-          title: const Text(
-            'Show on lock screen',
-            style: TextStyle(fontWeight: FontWeight.w700),
+          title: Text(
+            AppLocalizations.of(context).labelShowOnLockScreen,
+            style: const TextStyle(fontWeight: FontWeight.w700),
           ),
-          subtitle: const Text(
-            'Adds a persistent notification with 1-tap emergency call action. '
-            'Opens the card over the lock screen with a high-contrast emergency QR code.',
-          ),
+          subtitle: Text(AppLocalizations.of(context).descShowOnLockScreen),
           onChanged: (v) => _touch(() => _info.enabled = v),
         ),
         if (_info.enabled) ..._lockScreenHelp(),
         const Divider(height: 20),
         TextField(
           controller: _ownerCtrl,
-          decoration: const InputDecoration(
-            labelText: 'Name shown on the card',
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).labelNameOnCard,
+            border: const OutlineInputBorder(),
           ),
           onChanged: (_) => _dirty = true,
         ),
         _showRow(
-          'Show the name',
+          AppLocalizations.of(context).labelShowTheName,
           _info.showOwnerName,
           (v) => _touch(() => _info.showOwnerName = v),
         ),
@@ -405,10 +407,8 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
                   Expanded(
                     child: Text(
                       blocked
-                          ? 'Notifications for this app are switched off, so the '
-                                'card cannot show anywhere.'
-                          : 'This notification is set to silent. The lock screen '
-                                'hides silent notifications on many phones.',
+                          ? AppLocalizations.of(context).descNotificationsOff
+                          : AppLocalizations.of(context).descNotificationSilent,
                       style: const TextStyle(fontSize: 13, height: 1.35),
                     ),
                   ),
@@ -418,7 +418,9 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
                 alignment: Alignment.centerLeft,
                 child: TextButton(
                   onPressed: _cardService.openChannelSettings,
-                  child: const Text('Open notification settings'),
+                  child: Text(
+                    AppLocalizations.of(context).actionOpenNotificationSettings,
+                  ),
                 ),
               ),
             ],
@@ -429,7 +431,7 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
         child: TextButton.icon(
           onPressed: _showLockScreenTips,
           icon: const Icon(Icons.help_outline, size: 18),
-          label: const Text('Not seeing it on the lock screen?'),
+          label: Text(AppLocalizations.of(context).titleNotSeeingOnLock),
         ),
       ),
     ];
@@ -439,23 +441,16 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
     final open = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Not seeing it on the lock screen?'),
-        content: const Text(
-          'The phone decides which notifications the lock screen shows. Check '
-          'this system setting:\n\n'
-          'Settings → Notifications → Notifications on lock screen\n\n'
-          'Pick "Show conversations, default and silent". If it is set to '
-          '"Hide silent notifications" or "Don\'t show any notifications", the '
-          'emergency card cannot appear there — no app can override that.',
-        ),
+        title: Text(AppLocalizations.of(context).titleNotSeeingOnLock),
+        content: Text(AppLocalizations.of(context).descLockScreenTips),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Close'),
+            child: Text(AppLocalizations.of(context).actionClose),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Open settings'),
+            child: Text(AppLocalizations.of(context).actionOpenSettings),
           ),
         ],
       ),
@@ -468,45 +463,45 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle('Medical details', colors),
+        _sectionTitle(AppLocalizations.of(context).labelMedicalDetails, colors),
         const SizedBox(height: 4),
         _bloodGroupField(),
         _field(
           _allergiesCtrl,
-          EmergencyInfo.labelAllergies,
-          'e.g. Penicillin, peanuts',
+          AppLocalizations.of(context).labelAllergies,
+          AppLocalizations.of(context).hintAllergies,
           _info.showAllergies,
           (v) => _touch(() => _info.showAllergies = v),
           lines: 2,
         ),
         _field(
           _medsCtrl,
-          EmergencyInfo.labelMedications,
-          'Medicines you take regularly',
+          AppLocalizations.of(context).labelMedicines,
+          AppLocalizations.of(context).hintMedicines,
           _info.showMedications,
           (v) => _touch(() => _info.showMedications = v),
           lines: 2,
         ),
         _field(
           _conditionsCtrl,
-          EmergencyInfo.labelConditions,
-          'e.g. Diabetes, epilepsy',
+          AppLocalizations.of(context).labelConditions,
+          AppLocalizations.of(context).hintConditions,
           _info.showConditions,
           (v) => _touch(() => _info.showConditions = v),
           lines: 2,
         ),
         _field(
           _addressCtrl,
-          EmergencyInfo.labelAddress,
-          'Home address',
+          AppLocalizations.of(context).labelAddressField,
+          AppLocalizations.of(context).hintHomeAddress,
           _info.showAddress,
           (v) => _touch(() => _info.showAddress = v),
           lines: 2,
         ),
         _field(
           _notesCtrl,
-          EmergencyInfo.labelNotes,
-          'Anything else a helper should know',
+          AppLocalizations.of(context).labelNotes,
+          AppLocalizations.of(context).hintEmergencyNotes,
           _info.showNotes,
           (v) => _touch(() => _info.showNotes = v),
           lines: 3,
@@ -514,12 +509,12 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           value: _info.organDonor,
-          title: const Text('Organ donor'),
+          title: Text(AppLocalizations.of(context).labelOrganDonor),
           onChanged: (v) => _touch(() => _info.organDonor = v),
         ),
         if (_info.organDonor)
           _showRow(
-            'Show "Organ donor"',
+            AppLocalizations.of(context).labelShowOrganDonor,
             _info.showOrganDonor,
             (v) => _touch(() => _info.showOrganDonor = v),
           ),
@@ -532,10 +527,9 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle('People to call', colors),
+        _sectionTitle(AppLocalizations.of(context).labelPeopleToCall, colors),
         Text(
-          'Each one gets a Call button on the card. The call is placed straight '
-          'from the lock screen.',
+          AppLocalizations.of(context).descPeopleToCall,
           style: TextStyle(color: colors.mutedText, fontSize: 13),
         ),
         const SizedBox(height: 8),
@@ -543,7 +537,7 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
-              'No one added yet.',
+              AppLocalizations.of(context).emptyNoOneAdded,
               style: TextStyle(color: colors.mutedText),
             ),
           ),
@@ -556,12 +550,12 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
             OutlinedButton.icon(
               onPressed: _addFromContacts,
               icon: const Icon(Icons.person_add_alt),
-              label: const Text('From contacts'),
+              label: Text(AppLocalizations.of(context).actionFromContacts),
             ),
             OutlinedButton.icon(
               onPressed: () => _editByHand(null),
               icon: const Icon(Icons.dialpad),
-              label: const Text('Type a number'),
+              label: Text(AppLocalizations.of(context).actionTypeANumber),
             ),
           ],
         ),
@@ -593,19 +587,21 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
             ),
           ),
           IconButton(
-            tooltip: entry.showOnLock ? 'Shown on the card' : 'Hidden',
+            tooltip: entry.showOnLock
+                ? AppLocalizations.of(context).tooltipShownOnCard
+                : AppLocalizations.of(context).tooltipHidden,
             icon: Icon(
               entry.showOnLock ? Icons.visibility : Icons.visibility_off,
             ),
             onPressed: () => _touch(() => entry.showOnLock = !entry.showOnLock),
           ),
           IconButton(
-            tooltip: 'Edit',
+            tooltip: AppLocalizations.of(context).actionEdit,
             icon: const Icon(Icons.edit_outlined),
             onPressed: () => _editByHand(index),
           ),
           IconButton(
-            tooltip: 'Remove',
+            tooltip: AppLocalizations.of(context).actionRemove,
             icon: const Icon(Icons.close),
             onPressed: () => _touch(() => _info.contacts.removeAt(index)),
           ),
@@ -645,16 +641,19 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _sectionTitle('What a stranger will see', colors),
+          _sectionTitle(
+            AppLocalizations.of(context).labelWhatStrangerSees,
+            colors,
+          ),
           const SizedBox(height: 6),
           if (!_info.enabled)
             Text(
-              'Nothing — the card is switched off.',
+              AppLocalizations.of(context).descCardSwitchedOff,
               style: TextStyle(color: colors.mutedText),
             )
           else if (rows.isEmpty && people.isEmpty)
             Text(
-              'Nothing yet. Fill in a field and switch it on.',
+              AppLocalizations.of(context).descNothingYetFill,
               style: TextStyle(color: colors.mutedText),
             )
           else ...[
@@ -671,7 +670,7 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
           ],
           const SizedBox(height: 6),
           Text(
-            'Tap Save to apply changes to the lock screen.',
+            AppLocalizations.of(context).descTapSaveToApply,
             style: TextStyle(color: colors.mutedText, fontSize: 12),
           ),
         ],
@@ -685,7 +684,7 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
   Future<void> _addFromContacts() async {
     final picked = await showContactSearchPickerSheet(
       context,
-      title: 'Choose a person to call',
+      title: AppLocalizations.of(context).titleChoosePersonToCall,
       requirePhone: true,
     );
     if (picked == null || !mounted) return;
@@ -738,25 +737,33 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
     final saved = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(index == null ? 'Add a person' : 'Edit person'),
+        title: Text(
+          index == null
+              ? AppLocalizations.of(context).titleAddPerson
+              : AppLocalizations.of(context).titleEditPerson,
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: nameCtrl,
-              decoration: const InputDecoration(labelText: 'Name'),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).labelFieldName,
+              ),
               textCapitalization: TextCapitalization.words,
             ),
             TextField(
               controller: numberCtrl,
-              decoration: const InputDecoration(labelText: 'Number'),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).labelNumber,
+              ),
               keyboardType: TextInputType.phone,
             ),
             TextField(
               controller: relationCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Relation (optional)',
-                hintText: 'e.g. Wife, Doctor',
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).labelRelationOptional,
+                hintText: AppLocalizations.of(context).hintRelationExample,
               ),
             ),
           ],
@@ -764,11 +771,11 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Done'),
+            child: Text(AppLocalizations.of(context).actionDone),
           ),
         ],
       ),
@@ -782,7 +789,9 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
     if (saved != true || !mounted) return;
     if (name.isEmpty || number.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('A name and a number are both needed.')),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).errorNameAndNumberNeeded),
+        ),
       );
       return;
     }
@@ -835,12 +844,14 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
       children: [
         DropdownButtonFormField<String?>(
           initialValue: _blood,
-          decoration: const InputDecoration(
-            labelText: EmergencyInfo.labelBloodGroup,
-            border: OutlineInputBorder(),
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).labelBloodGroup,
+            border: const OutlineInputBorder(),
           ),
           items: [
-            const DropdownMenuItem<String?>(child: Text('Not set')),
+            DropdownMenuItem<String?>(
+              child: Text(AppLocalizations.of(context).labelNotSet),
+            ),
             for (final g in [...kBloodGroups, ?_bloodLegacy])
               DropdownMenuItem<String?>(value: g, child: Text(g)),
           ],
@@ -850,7 +861,7 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
           }),
         ),
         _showRow(
-          'Show on lock screen',
+          AppLocalizations.of(context).labelShowOnLockScreen,
           _info.showBloodGroup,
           (v) => _touch(() => _info.showBloodGroup = v),
         ),
@@ -881,31 +892,36 @@ class _EmergencyInfoScreenState extends State<EmergencyInfoScreen>
           ),
           onChanged: (_) => setState(() => _dirty = true),
         ),
-        _showRow('Show on lock screen', show, onShowChanged),
+        _showRow(
+          AppLocalizations.of(context).labelShowOnLockScreen,
+          show,
+          onShowChanged,
+        ),
       ],
     ),
   );
 
   /// The per-field "show on lock screen" toggle, kept compact so it reads as a
   /// property of the field above it rather than a separate setting.
-  Widget _showRow(String label, bool value, ValueChanged<bool> onChanged) => Row(
-    children: [
-      Icon(
-        value ? Icons.visibility : Icons.visibility_off,
-        size: 18,
-        color: Theme.of(context).extension<AppColors>()!.mutedText,
-      ),
-      const SizedBox(width: 8),
-      Expanded(
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 13,
+  Widget _showRow(String label, bool value, ValueChanged<bool> onChanged) =>
+      Row(
+        children: [
+          Icon(
+            value ? Icons.visibility : Icons.visibility_off,
+            size: 18,
             color: Theme.of(context).extension<AppColors>()!.mutedText,
           ),
-        ),
-      ),
-      Switch(value: value, onChanged: onChanged),
-    ],
-  );
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                color: Theme.of(context).extension<AppColors>()!.mutedText,
+              ),
+            ),
+          ),
+          Switch(value: value, onChanged: onChanged),
+        ],
+      );
 }

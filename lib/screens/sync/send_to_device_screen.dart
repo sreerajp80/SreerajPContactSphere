@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/services/p2p_sync_service.dart';
 import 'package:smart_contacts_dialer/services/sync_bundle_service.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
@@ -34,7 +35,9 @@ class _SendToDeviceScreenState extends State<SendToDeviceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Send to Another Device')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).titleSendToDevice),
+      ),
       body: ListenableBuilder(
         listenable: _service,
         builder: (context, _) {
@@ -59,17 +62,17 @@ class _SendToDeviceScreenState extends State<SendToDeviceScreen> {
       final s = state.summary;
       return SyncResultView(
         success: true,
-        title: 'Sent',
-        message:
-            'Sent ${s.contactsAdded} contacts, ${s.groups} groups and '
-            '${s.callLogs} call-log entries to the other phone.',
+        title: AppLocalizations.of(context).titleSent,
+        message: AppLocalizations.of(
+          context,
+        ).descSentSummary(s.contactsAdded, s.groups, s.callLogs),
         onDone: () => _service.cancel(),
       );
     }
     if (state is SyncError) {
       return SyncResultView(
         success: false,
-        title: 'Could not send',
+        title: AppLocalizations.of(context).titleCouldNotSend,
         message: state.message,
         onDone: () => _service.cancel(),
       );
@@ -89,22 +92,19 @@ class _StartView extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SyncInfoCard(
+        SyncInfoCard(
           icon: Icons.info_outline,
-          text:
-              'Share this phone\'s SreerajP Contacts Sphere data with another phone on '
-              'the same Wi-Fi. Start below, then scan the QR (or type the code) '
-              'on the other phone. After it connects, pick what to send.',
+          text: AppLocalizations.of(context).descSendIntro,
         ),
         const SizedBox(height: 16),
         FilledButton.icon(
           onPressed: onStart,
           icon: const Icon(Icons.wifi_tethering),
-          label: const Text('Start'),
+          label: Text(AppLocalizations.of(context).actionStart),
         ),
         const SizedBox(height: 8),
         Text(
-          'Both phones must be on the same Wi-Fi network.',
+          AppLocalizations.of(context).descSameWifi,
           style: TextStyle(color: colors.mutedText, fontSize: 12.5),
           textAlign: TextAlign.center,
         ),
@@ -134,7 +134,7 @@ class _HostingView extends StatelessWidget {
           Center(
             child: OutlinedButton(
               onPressed: () => service.cancel(),
-              child: const Text('Cancel'),
+              child: Text(AppLocalizations.of(context).actionCancel),
             ),
           ),
       ],
@@ -165,7 +165,7 @@ class _ConnectionCard extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              'On the other phone, choose Receive, then scan this code:',
+              AppLocalizations.of(context).descScanThisCode,
               style: TextStyle(color: colors.mutedText, fontSize: 13),
               textAlign: TextAlign.center,
             ),
@@ -185,20 +185,23 @@ class _ConnectionCard extends StatelessWidget {
             ),
             const Divider(height: 32),
             Text(
-              '…or enter these by hand:',
+              AppLocalizations.of(context).descEnterTheseByHand,
               style: TextStyle(color: colors.mutedText, fontSize: 13),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             SyncLabeledValue(
-              label: 'This phone\'s address',
+              label: AppLocalizations.of(context).labelThisPhoneAddress,
               value: '${state.ipAddress}:${state.port}',
-              onCopy: () =>
-                  _copy(context, '${state.ipAddress}:${state.port}', 'Address'),
+              onCopy: () => _copy(
+                context,
+                '${state.ipAddress}:${state.port}',
+                AppLocalizations.of(context).msgAddressCopied,
+              ),
             ),
             const SizedBox(height: 12),
             Text(
-              'Pairing code',
+              AppLocalizations.of(context).labelPairingCode,
               style: TextStyle(color: colors.mutedText, fontSize: 13),
             ),
             const SizedBox(height: 8),
@@ -215,9 +218,13 @@ class _ConnectionCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             TextButton.icon(
-              onPressed: () => _copy(context, state.code, 'Code'),
+              onPressed: () => _copy(
+                context,
+                state.code,
+                AppLocalizations.of(context).msgCodeCopied,
+              ),
               icon: const Icon(Icons.copy, size: 18),
-              label: const Text('Copy code'),
+              label: Text(AppLocalizations.of(context).actionCopyCode),
             ),
           ],
         ),
@@ -225,11 +232,11 @@ class _ConnectionCard extends StatelessWidget {
     );
   }
 
-  void _copy(BuildContext context, String value, String what) {
+  void _copy(BuildContext context, String value, String copiedMessage) {
     Clipboard.setData(ClipboardData(text: value));
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$what copied'),
+        content: Text(copiedMessage),
         duration: const Duration(seconds: 1),
       ),
     );
@@ -254,21 +261,21 @@ class _StatusChip extends StatelessWidget {
           ),
           const SizedBox(width: 12),
           Text(
-            'Waiting for the other phone…',
+            AppLocalizations.of(context).msgWaitingForOtherPhone,
             style: TextStyle(color: colors.mutedText),
           ),
         ],
       );
     }
     const green = Color(0xFF10B981);
-    return const Row(
+    return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.check_circle, color: green, size: 20),
-        SizedBox(width: 8),
+        const Icon(Icons.check_circle, color: green, size: 20),
+        const SizedBox(width: 8),
         Text(
-          'Other phone connected',
-          style: TextStyle(color: green, fontWeight: FontWeight.w600),
+          AppLocalizations.of(context).labelOtherPhoneConnected,
+          style: const TextStyle(color: green, fontWeight: FontWeight.w600),
         ),
       ],
     );
@@ -296,13 +303,13 @@ class _ChooseWhatToShareState extends State<_ChooseWhatToShare> {
     SyncCategory.settings,
   };
 
-  static const _labels = <SyncCategory, String>{
-    SyncCategory.callHistory: 'Call history',
-    SyncCategory.groups: 'Groups',
-    SyncCategory.relationships: 'Relationships',
-    SyncCategory.blockedNumbers: 'Blocked & spam numbers',
-    SyncCategory.emergencyCard: 'Emergency info card',
-    SyncCategory.settings: 'App settings',
+  static Map<SyncCategory, String> _labelsFor(AppLocalizations l) => {
+    SyncCategory.callHistory: l.labelCallHistory,
+    SyncCategory.groups: l.tooltipGroups,
+    SyncCategory.relationships: l.labelRelationships,
+    SyncCategory.blockedNumbers: l.labelBlockedSpamNumbers,
+    SyncCategory.emergencyCard: l.labelEmergencyInfoCard,
+    SyncCategory.settings: l.labelAppSettings,
   };
 
   @override
@@ -312,36 +319,34 @@ class _ChooseWhatToShareState extends State<_ChooseWhatToShare> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          'Choose what to share',
+          AppLocalizations.of(context).titleChooseWhatToShare,
           style: Theme.of(context).textTheme.titleMedium,
         ),
         const SizedBox(height: 8),
-        const SyncInfoCard(
+        SyncInfoCard(
           icon: Icons.shield_outlined,
-          text:
-              'This never overrides anything already on the other phone. On '
-              'a conflict, the other phone keeps its own data.',
+          text: AppLocalizations.of(context).descNeverOverrides,
         ),
         const SizedBox(height: 16),
         FilledButton.icon(
           onPressed: () => _confirmFullSync(context),
           icon: const Icon(Icons.copy_all),
-          label: const Text('Full Sync (for a brand-new phone)'),
+          label: Text(AppLocalizations.of(context).actionFullSyncNewPhone),
         ),
         const SizedBox(height: 20),
         Text(
-          'Or send only:',
+          AppLocalizations.of(context).labelOrSendOnly,
           style: TextStyle(color: colors.mutedText, fontSize: 13),
         ),
-        const ListTile(
+        ListTile(
           contentPadding: EdgeInsets.zero,
           dense: true,
-          leading: Icon(Icons.person),
-          title: Text('Contacts'),
-          subtitle: Text('Always included'),
-          trailing: Icon(Icons.lock_outline, size: 18),
+          leading: const Icon(Icons.person),
+          title: Text(AppLocalizations.of(context).navContacts),
+          subtitle: Text(AppLocalizations.of(context).labelAlwaysIncluded),
+          trailing: const Icon(Icons.lock_outline, size: 18),
         ),
-        for (final entry in _labels.entries)
+        for (final entry in _labelsFor(AppLocalizations.of(context)).entries)
           CheckboxListTile(
             contentPadding: EdgeInsets.zero,
             dense: true,
@@ -359,13 +364,13 @@ class _ChooseWhatToShareState extends State<_ChooseWhatToShare> {
         FilledButton.tonalIcon(
           onPressed: () => widget.service.sendSelectiveSync(_selected),
           icon: const Icon(Icons.send),
-          label: const Text('Send selected'),
+          label: Text(AppLocalizations.of(context).actionSendSelected),
         ),
         const SizedBox(height: 8),
         Center(
           child: OutlinedButton(
             onPressed: () => widget.service.cancel(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
         ),
       ],
@@ -376,20 +381,16 @@ class _ChooseWhatToShareState extends State<_ChooseWhatToShare> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Full Sync?'),
-        content: const Text(
-          'Send everything (contacts, groups, call history, relationships, '
-          'blocked numbers and settings). Best for a brand-new phone. The other '
-          'phone still keeps any data it already has.',
-        ),
+        title: Text(AppLocalizations.of(context).titleFullSync),
+        content: Text(AppLocalizations.of(context).descFullSync),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Send everything'),
+            child: Text(AppLocalizations.of(context).actionSendEverything),
           ),
         ],
       ),

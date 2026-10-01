@@ -1,6 +1,7 @@
 // lib/widgets/sim_picker_sheet.dart
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/sim_account.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
@@ -56,13 +57,13 @@ class _SimPickerSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Call with',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+            Text(
+              AppLocalizations.of(context).titleCallWith,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 2),
             Text(
-              'Choose the SIM for this call',
+              AppLocalizations.of(context).descChooseSimForCall,
               style: TextStyle(color: colors.mutedText, fontSize: 13),
             ),
             const SizedBox(height: 12),
@@ -97,7 +98,10 @@ class _SimPickerSheet extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: preselected
-            ? Color.alphaBlend(accent.withValues(alpha: 0.10), colors.cardSurface)
+            ? Color.alphaBlend(
+                accent.withValues(alpha: 0.10),
+                colors.cardSurface,
+              )
             : colors.cardSurface,
         borderRadius: BorderRadius.circular(16),
         border: preselected

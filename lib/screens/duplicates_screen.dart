@@ -4,7 +4,7 @@
 // a summary banner, one card per duplicate set (reason header + count badge,
 // contact rows with a KEEP badge and an include/exclude checkbox, a per-set
 // footer with a "Keeping 1 · merging N" note and a Merge button) and a sticky
-// "Merge all sets" bottom bar. The kept contact is fixed to the best candidate;
+// AppLocalizations.of(context).actionMergeAllSets bottom bar. The kept contact is fixed to the best candidate;
 // tapping a non-kept row toggles whether it is merged. Styled with the same
 // token system as the Add-contact screen (AppColors + ColorScheme) so it renders
 // on-brand in Calm (light) and Midnight (dark) — no hardcoded palette.
@@ -13,6 +13,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/contact.dart';
 import 'package:smart_contacts_dialer/repositories/contact_repository.dart';
 import 'package:smart_contacts_dialer/services/contact_sync_service.dart';
@@ -142,9 +143,10 @@ class _DupSet {
   }
 
   /// The subtitle line for a member contact, precomputed by the repository.
-  String detailFor(Contact c) {
+  /// [noPhone] is the translated text shown when there is no number.
+  String detailFor(Contact c, String noPhone) {
     final id = c.id;
-    return id == null ? 'No phone' : (details[id] ?? 'No phone');
+    return id == null ? noPhone : (details[id] ?? noPhone);
   }
 
   /// Ids folded into [keptId] on merge: every non-kept, non-excluded member.
@@ -194,7 +196,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      _showMessage('Failed to find duplicates: $e');
+      _say((l) => l.errorFailedFindDuplicates('$e'));
     }
   }
 
@@ -205,24 +207,31 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
       ..showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  /// Shows a translated snackbar. The message is built only after the
+  /// `mounted` check, so this is safe to call after an `await`.
+  void _say(String Function(AppLocalizations l) message) {
+    if (!mounted) return;
+    _showMessage(message(AppLocalizations.of(context)));
+  }
+
   int get _totalMerging =>
       _sets.fold(0, (sum, set) => sum + set.mergeIds.length);
 
   Future<void> _mergeSet(_DupSet set) async {
     final ids = set.mergeIds;
     if (ids.isEmpty) return;
+    final l10n = AppLocalizations.of(context);
     final ok = await _confirm(
-      'Merge this set?',
-      'Keep the selected contact and merge ${ids.length} other'
-          '${ids.length == 1 ? '' : 's'} into it. This cannot be undone.',
+      l10n.titleMergeThisSet,
+      l10n.descMergeThisSet(ids.length),
     );
     if (ok != true) return;
     try {
       await _syncService.mergeContacts(set.keptId, ids);
-      _showMessage('Merged ${ids.length} contact${ids.length == 1 ? '' : 's'}');
+      _say((l) => l.msgMergedCount(ids.length));
       await _load();
     } catch (e) {
-      _showMessage('Merge failed: $e');
+      _say((l) => l.errorMergeFailed('$e'));
     }
   }
 
@@ -233,24 +242,23 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
     ];
     final total = _totalMerging;
     if (pending.isEmpty) {
-      _showMessage('Nothing selected to merge');
+      _say((l) => l.errorNothingSelectedToMerge);
       return;
     }
+    final l10n = AppLocalizations.of(context);
     final ok = await _confirm(
-      'Merge all sets?',
-      'Resolve ${pending.length} set${pending.length == 1 ? '' : 's'}, merging '
-          '$total contact${total == 1 ? '' : 's'} into their kept ones. '
-          'This cannot be undone.',
+      l10n.titleMergeAllSets,
+      l10n.descMergeAllSets(pending.length, total),
     );
     if (ok != true) return;
     try {
       for (final set in pending) {
         await _syncService.mergeContacts(set.keptId, set.mergeIds);
       }
-      _showMessage('Merged $total contact${total == 1 ? '' : 's'}');
+      _say((l) => l.msgMergedCount(total));
       await _load();
     } catch (e) {
-      _showMessage('Merge failed: $e');
+      _say((l) => l.errorMergeFailed('$e'));
     }
   }
 
@@ -263,11 +271,11 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Merge'),
+            child: Text(AppLocalizations.of(context).actionMerge),
           ),
         ],
       ),
@@ -342,7 +350,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
             onTap: () => Navigator.of(context).maybePop(),
           ),
           Text(
-            'Find duplicates',
+            AppLocalizations.of(context).actionFindDuplicates,
             style: TextStyle(
               color: _t.text,
               fontSize: 18,
@@ -375,10 +383,10 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
   Widget _summary() {
     final n = _sets.length;
     final headline = _loading
-        ? 'Scanning…'
+        ? AppLocalizations.of(context).labelScanning
         : n > 0
-        ? '$n duplicate ${n == 1 ? 'set' : 'sets'} found'
-        : 'No duplicates';
+        ? AppLocalizations.of(context).labelDuplicateSetsFound(n)
+        : AppLocalizations.of(context).labelNoDuplicates;
     return Padding(
       padding: const EdgeInsets.fromLTRB(18, 2, 18, 14),
       child: Container(
@@ -415,7 +423,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
                   ),
                   const SizedBox(height: 1),
                   Text(
-                    'Tap a contact to choose which to keep; untick the rest.',
+                    AppLocalizations.of(context).descTapToKeep,
                     style: TextStyle(
                       color: _t.caption,
                       fontSize: 12.5,
@@ -447,7 +455,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
           ),
           const SizedBox(height: 12),
           Text(
-            'All cleaned up',
+            AppLocalizations.of(context).labelAllCleanedUp,
             style: TextStyle(
               color: _t.text,
               fontSize: 16,
@@ -456,7 +464,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            'No more duplicate contacts. Your address book is tidy.',
+            AppLocalizations.of(context).descNoMoreDuplicates,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: _t.caption,
@@ -530,7 +538,9 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              '${set.contacts.length} contacts',
+              AppLocalizations.of(
+                context,
+              ).labelContactCount(set.contacts.length),
               style: TextStyle(
                 color: _t.accentText,
                 fontSize: 11,
@@ -572,7 +582,9 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
                     children: [
                       Flexible(
                         child: Text(
-                          c.fullName.isEmpty ? 'Unnamed' : c.fullName,
+                          c.fullName.isEmpty
+                              ? AppLocalizations.of(context).labelUnnamed
+                              : c.fullName,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(
@@ -587,7 +599,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    set.detailFor(c),
+                    set.detailFor(c, AppLocalizations.of(context).labelNoPhone),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -630,7 +642,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
           Icon(Icons.star, size: 10, color: _t.accent),
           const SizedBox(width: 3),
           Text(
-            'KEEP',
+            AppLocalizations.of(context).labelKeep,
             style: TextStyle(
               color: _t.accent,
               fontSize: 9.5,
@@ -675,7 +687,9 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
         children: [
           Expanded(
             child: Text(
-              enabled ? 'Keeping 1 · merging $n' : 'Nothing selected',
+              enabled
+                  ? AppLocalizations.of(context).labelKeepingMerging(n)
+                  : AppLocalizations.of(context).labelNothingSelected,
               style: TextStyle(
                 color: _t.caption,
                 fontSize: 12,
@@ -706,7 +720,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Merge',
+                      AppLocalizations.of(context).actionMerge,
                       style: TextStyle(
                         color: enabled ? _t.onAccent : _t.caption,
                         fontSize: 12.5,
@@ -756,7 +770,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
                 ),
               ),
               Text(
-                'to merge',
+                AppLocalizations.of(context).labelToMerge,
                 style: TextStyle(
                   color: _t.caption,
                   fontSize: 11,
@@ -784,7 +798,7 @@ class _DuplicatesScreenState extends State<DuplicatesScreen> {
                       Icon(Icons.merge, size: 18, color: _t.onAccent),
                       const SizedBox(width: 8),
                       Text(
-                        'Merge all sets',
+                        AppLocalizations.of(context).actionMergeAllSets,
                         style: TextStyle(
                           color: _t.onAccent,
                           fontSize: 14.5,

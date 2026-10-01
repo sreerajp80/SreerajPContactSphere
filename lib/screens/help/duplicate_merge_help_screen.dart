@@ -1,6 +1,7 @@
 // lib/screens/help/duplicate_merge_help_screen.dart
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
 class DuplicateMergeHelpScreen extends StatelessWidget {
@@ -9,74 +10,49 @@ class DuplicateMergeHelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Duplicate Contacts & Merge')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).helpDuplicateMergeText),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-        children: const [
-          _Intro(
-            'Keep your address book clean and clutter-free with ContactSphere\'s '
-            'intelligent duplicate detection and safe one-tap merging system.',
-          ),
-          SizedBox(height: 24),
+        children: [
+          _Intro(AppLocalizations.of(context).helpDuplicateMergeIntro),
+          const SizedBox(height: 24),
 
           _Section(
             icon: Icons.search_outlined,
-            title: 'How Duplicates are Detected',
+            title: AppLocalizations.of(context).helpDuplicateMergeTitle1,
             children: [
-              _Bullet(
-                'Same phone number: two contacts share the same digits, or the same number once it is put into full international form.',
-              ),
-              _Bullet(
-                'Same name: two contacts have the same full name, or the same name once it is transliterated — so "Anil" and "അനിൽ" are seen as one person.',
-              ),
-              _Bullet(
-                'Matching spreads across a set: if A matches B and B matches C, all three are shown together as one set.',
-              ),
-              _Bullet(
-                'Email addresses are deliberately not used, and neither are sound-alike name codes. Both produced wrong merges between unrelated people.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpDuplicateMergeBullet1),
+              _Bullet(AppLocalizations.of(context).helpDuplicateMergeBullet2),
+              _Bullet(AppLocalizations.of(context).helpDuplicateMergeBullet3),
+              _Bullet(AppLocalizations.of(context).helpDuplicateMergeBullet4),
             ],
           ),
 
           _Section(
             icon: Icons.merge_type_outlined,
-            title: 'Smart Merging Process',
+            title: AppLocalizations.of(context).helpDuplicateMergeTitle2,
             children: [
-              _Bullet(
-                'Open the Contacts tab, tap the three-dot menu, and choose "Find Duplicates".',
-              ),
-              _Bullet(
-                'Each set is shown as one card. The contact that will be kept is at the top; the others are ticked to be merged into it.',
-              ),
-              _Bullet(
-                'Untick anyone who does not belong in the set, or tap a different row to keep that one instead.',
-              ),
-              _Bullet(
-                'All the different phone numbers, emails, addresses, birthdays and notes from the set are carried over into the contact you keep. Nothing is thrown away.',
-              ),
-              _Bullet(
-                'Merge one set with its own Merge button, or use "Merge all sets" at the bottom to do the whole list at once.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpDuplicateMergeBullet5),
+              _Bullet(AppLocalizations.of(context).helpDuplicateMergeBullet6),
+              _Bullet(AppLocalizations.of(context).helpDuplicateMergeBullet7),
+              _Bullet(AppLocalizations.of(context).helpDuplicateMergeBullet8),
+              _Bullet(AppLocalizations.of(context).helpDuplicateMergeBullet9),
             ],
           ),
 
           _Section(
             icon: Icons.undo_outlined,
-            title: 'Safety & Reversibility',
+            title: AppLocalizations.of(context).helpDuplicateMergeTitle3,
             children: [
-              _Bullet(
-                'Before merging everything at once, make a backup under Settings → Backup & Restore. A merge cannot be undone from the duplicates screen.',
-              ),
-              _Bullet(
-                'If a merge was wrong, open the kept contact and edit it — the extra numbers and details are all still there, so you can move them back out into a new contact.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpDuplicateMergeBullet10),
+              _Bullet(AppLocalizations.of(context).helpDuplicateMergeBullet11),
             ],
           ),
 
-          SizedBox(height: 8),
-          _Footer(
-            'Tip: run "Find Duplicates" after a phonebook sync or a file import — that is when duplicates usually appear.',
-          ),
+          const SizedBox(height: 8),
+          _Footer(AppLocalizations.of(context).helpDuplicateMergeFooter),
         ],
       ),
     );

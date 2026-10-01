@@ -1,6 +1,7 @@
 // lib/screens/contact_index_health_screen.dart
 import 'dart:async';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 
 import 'package:smart_contacts_dialer/database/database_helper.dart';
@@ -15,7 +16,9 @@ class ContactIndexHealthScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Contact Counts & Search Index')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).featureC7F4Title),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
@@ -113,9 +116,9 @@ class _ContactCountsCardState extends State<_ContactCountsCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Contact counts',
-                      style: TextStyle(
+                    Text(
+                      AppLocalizations.of(context).labelContactCounts,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
@@ -123,13 +126,15 @@ class _ContactCountsCardState extends State<_ContactCountsCard> {
                     const SizedBox(height: 2),
                     if (needsPermission)
                       Text(
-                        'Grant contacts permission to count device contacts',
+                        AppLocalizations.of(context).descGrantContactsToCount,
                         style: TextStyle(color: colors.mutedText, fontSize: 13),
                       )
                     else
                       Text(
-                        'Device: ${_countText(_deviceCount)}  ·  '
-                        'App: ${_countText(_appCount)}',
+                        AppLocalizations.of(context).descDeviceAppCounts(
+                          _countText(_deviceCount),
+                          _countText(_appCount),
+                        ),
                         style: TextStyle(color: colors.mutedText, fontSize: 13),
                       ),
                   ],
@@ -240,24 +245,27 @@ class _SearchIndexCardState extends State<_SearchIndexCard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Search index',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  Text(
+                    AppLocalizations.of(context).labelSearchIndex,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   if (_checking)
                     Text(
-                      'Checking search index...',
+                      AppLocalizations.of(context).msgCheckingSearchIndex,
                       style: TextStyle(color: colors.mutedText, fontSize: 13),
                     )
                   else if (_stale == 0)
                     Text(
-                      'Index healthy — all contacts are findable',
+                      AppLocalizations.of(context).descIndexHealthy,
                       style: TextStyle(color: colors.mutedText, fontSize: 13),
                     )
                   else
                     Text(
-                      '$_stale contact(s) have stale search keys',
+                      AppLocalizations.of(context).descIndexStale(_stale ?? 0),
                       style: const TextStyle(
                         color: Colors.amber,
                         fontSize: 13,
@@ -277,10 +285,14 @@ class _SearchIndexCardState extends State<_SearchIndexCard> {
                 ),
               )
             else if (_stale != null && _stale! > 0)
-              TextButton(onPressed: _rebuild, child: const Text('Rebuild'))
+              TextButton(
+                onPressed: _rebuild,
+                child: Text(AppLocalizations.of(context).actionRebuild),
+              )
             else
               IconButton(
                 icon: Icon(Icons.refresh, color: colors.mutedText),
+                tooltip: AppLocalizations.of(context).tooltipCheckAgain,
                 onPressed: _check,
               ),
           ],

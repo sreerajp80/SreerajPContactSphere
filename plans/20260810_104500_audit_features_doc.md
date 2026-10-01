@@ -13,7 +13,7 @@ Ensure `docs/features.md` is complete, up to date, and accurately reflects all i
 
 ## Proposed Changes
 
-### [docs/features.md](file:///l:/Android/SreerajPContactSphere/docs/features.md)
+### [docs/features.md](../docs/features.md)
 - Update timestamp and verify complete accuracy of all sections to ensure the documentation is 100% comprehensive and aligns with the codebase.
 
 ## STOP AND APPROVE

@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/contact.dart';
 import 'package:smart_contacts_dialer/utils/malayalam_transliterator.dart';
 import 'package:smart_contacts_dialer/models/relationship.dart';
@@ -195,6 +196,7 @@ class _RelationshipScreenState extends State<RelationshipScreen> {
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.close),
+                    tooltip: AppLocalizations.of(context).actionClose,
                     onPressed: () => Navigator.pop(ctx),
                   ),
                 ],
@@ -230,14 +232,19 @@ class _RelationshipScreenState extends State<RelationshipScreen> {
                       ),
                       subtitle: Text(
                         r.relationshipType,
-                        style: TextStyle(color: colors.mutedText, fontSize: 12.5),
+                        style: TextStyle(
+                          color: colors.mutedText,
+                          fontSize: 12.5,
+                        ),
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
                             icon: const Icon(Icons.hub_outlined, size: 20),
-                            tooltip: 'Centre sphere here',
+                            tooltip: AppLocalizations.of(
+                              context,
+                            ).tooltipCentreSphere,
                             onPressed: () {
                               Navigator.pop(ctx);
                               _recenterOn(r.contactId);
@@ -245,7 +252,9 @@ class _RelationshipScreenState extends State<RelationshipScreen> {
                           ),
                           IconButton(
                             icon: const Icon(Icons.person_outline, size: 20),
-                            tooltip: 'Open profile',
+                            tooltip: AppLocalizations.of(
+                              context,
+                            ).tooltipOpenProfile,
                             onPressed: () {
                               Navigator.pop(ctx);
                               _openProfile(r.contactId);
@@ -253,7 +262,7 @@ class _RelationshipScreenState extends State<RelationshipScreen> {
                           ),
                           IconButton(
                             icon: const Icon(Icons.more_vert, size: 20),
-                            tooltip: 'Options',
+                            tooltip: AppLocalizations.of(context).tooltipMore,
                             onPressed: () {
                               Navigator.pop(ctx);
                               _nodeMenu(r);
@@ -340,7 +349,9 @@ class _RelationshipScreenState extends State<RelationshipScreen> {
           if (_relations.isNotEmpty)
             IconButton(
               icon: Icon(
-                _groupedView ? Icons.view_comfy_alt_outlined : Icons.workspaces_outlined,
+                _groupedView
+                    ? Icons.view_comfy_alt_outlined
+                    : Icons.workspaces_outlined,
               ),
               tooltip: _groupedView
                   ? 'View individual contacts'
@@ -787,10 +798,7 @@ class _GroupNodeAvatar extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: accent.withValues(alpha: 0.16),
-        border: Border.all(
-          color: accent.withValues(alpha: 0.7),
-          width: 2.5,
-        ),
+        border: Border.all(color: accent.withValues(alpha: 0.7), width: 2.5),
         boxShadow: [
           BoxShadow(
             color: accent.withValues(alpha: 0.25),

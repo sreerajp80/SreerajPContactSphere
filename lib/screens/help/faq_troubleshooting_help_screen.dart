@@ -1,6 +1,7 @@
 // lib/screens/help/faq_troubleshooting_help_screen.dart
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
 class FaqTroubleshootingHelpScreen extends StatelessWidget {
@@ -9,141 +10,130 @@ class FaqTroubleshootingHelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('FAQs & Troubleshooting')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).helpFaqTroubleshootingText),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-        children: const [
-          _Intro(
-            'Find quick answers to common questions about permissions, default dialer setup, '
-            'privacy, sync options, and troubleshooting steps in ContactSphere.',
-          ),
-          SizedBox(height: 24),
+        children: [
+          _Intro(AppLocalizations.of(context).helpFaqTroubleshootingIntro),
+          const SizedBox(height: 24),
 
           _Section(
             icon: Icons.help_outline,
-            title: 'General & Permissions',
+            title: AppLocalizations.of(context).helpFaqTroubleshootingTitle1,
             children: [
               _FaqItem(
-                question:
-                    'Why does ContactSphere need Default Phone App permission?',
-                answer:
-                    'Android requires an app to be set as the Default Phone App to show incoming call alerts, enable conference merging/call swap, and automatically screen and block spam calls.',
+                question: AppLocalizations.of(context).helpFaqTroubleshootingQ1,
+                answer: AppLocalizations.of(context).helpFaqTroubleshootingA1,
               ),
               _FaqItem(
-                question: 'Are my contacts uploaded to external servers?',
-                answer:
-                    'No. ContactSphere is built with an offline-first architecture. All contacts, call logs, notes, and photos reside in your encrypted local SQLite database. No data is sent to external servers unless you explicitly configure your personal Google Drive / WebDAV cloud backup.',
+                question: AppLocalizations.of(context).helpFaqTroubleshootingQ2,
+                answer: AppLocalizations.of(context).helpFaqTroubleshootingA2,
               ),
               _FaqItem(
-                question: 'Why are some permissions optional?',
-                answer:
-                    'Permissions such as Bluetooth (for nearby sharing), Camera (for QR and business-card scanning), and Microphone (for dictating call notes) are asked for only when you first use that feature. Refusing one disables just that feature. See the "Permissions explained" guide for the full list.',
+                question: AppLocalizations.of(context).helpFaqTroubleshootingQ3,
+                answer: AppLocalizations.of(context).helpFaqTroubleshootingA3,
               ),
             ],
           ),
 
           _Section(
             icon: Icons.dialpad,
-            title: 'Dialer & Calling',
+            title: AppLocalizations.of(context).helpFaqTroubleshootingTitle2,
             children: [
               _FaqItem(
-                question:
-                    'How do I search Malayalam or Devanagari names on T9?',
-                answer:
-                    'Press the keys for the consonant group, or type the name as it sounds in English (typing 2-6-4-5 matches both "Anil" and "അനിൽ"). To change which script the keypad shows, use the "Dialpad script" card on the main Settings page.',
+                question: AppLocalizations.of(context).helpFaqTroubleshootingQ4,
+                answer: AppLocalizations.of(context).helpFaqTroubleshootingA4,
               ),
               _FaqItem(
-                question: 'How do I choose which SIM to call from?',
-                answer:
-                    'On dual-SIM phones the dialer gives you separate SIM 1 and SIM 2 call buttons. To stop choosing every time, set a default SIM under Settings → SIM & calling → SIM Cards & Accounts, or switch on "Ask before each call" there.',
+                question: AppLocalizations.of(context).helpFaqTroubleshootingQ5,
+                answer: AppLocalizations.of(context).helpFaqTroubleshootingA5,
               ),
               _FaqItem(
-                question: 'Why didn\'t a call ring during quiet hours?',
-                answer:
-                    'Quiet hours silence everything except the people you allow. Open Settings → SIM & calling → Relationship-tier quiet hours and add whoever should still get through — starred contacts, whole relationship categories, a tag, or named individuals. Anyone not on that list is silenced until the quiet hours end.',
+                question: AppLocalizations.of(context).helpFaqTroubleshootingQ6,
+                answer: AppLocalizations.of(context).helpFaqTroubleshootingA6,
               ),
             ],
           ),
 
           _Section(
             icon: Icons.sync,
-            title: 'Sync, Cloud & Backups',
+            title: AppLocalizations.of(context).helpFaqTroubleshootingTitle3,
             children: [
               _FaqItem(
-                question:
-                    'What is the difference between Local Wi-Fi Sync and Cloud Sync?',
-                answer:
-                    'Local Wi-Fi sync copies data straight from one phone to another on the same network, with no internet and no account. Online sync and cloud backup use accounts you add yourself — Google, Microsoft, or a CardDAV/WebDAV server — and are off until you set one up.',
+                question: AppLocalizations.of(context).helpFaqTroubleshootingQ7,
+                answer: AppLocalizations.of(context).helpFaqTroubleshootingA7,
               ),
               _FaqItem(
-                question: 'What happens if I forget my Backup password?',
-                answer:
-                    'A backup file is encrypted with the password you chose, and the app never stores it. There is no server to ask, so a lost password means the file cannot be opened. Write it down somewhere safe before you need it.',
+                question: AppLocalizations.of(context).helpFaqTroubleshootingQ8,
+                answer: AppLocalizations.of(context).helpFaqTroubleshootingA8,
               ),
               _FaqItem(
-                question:
-                    'Will syncing with my phone contacts delete anything?',
-                answer:
-                    'Standard sync merges new and updated contacts safely. Destructive / Mirror sync will warn you explicitly before replacing or removing any contacts.',
+                question: AppLocalizations.of(context).helpFaqTroubleshootingQ9,
+                answer: AppLocalizations.of(context).helpFaqTroubleshootingA9,
               ),
             ],
           ),
 
           _Section(
             icon: Icons.lock_outline,
-            title: 'Privacy & Secret Contacts',
+            title: AppLocalizations.of(context).helpFaqTroubleshootingTitle4,
             children: [
               _FaqItem(
-                question: 'How do I restore access if biometric unlock fails?',
-                answer:
-                    'The phone\'s own unlock prompt falls back to your screen-lock PIN, pattern, or password. If you use an App PIN instead and have forgotten it, tap "Forgot PIN?" on the lock screen and enter the recovery code you were given when you set it up.',
+                question: AppLocalizations.of(
+                  context,
+                ).helpFaqTroubleshootingQ10,
+                answer: AppLocalizations.of(context).helpFaqTroubleshootingA10,
               ),
               _FaqItem(
-                question: 'Why does the screen go black when switching apps?',
-                answer:
-                    'Screenshot Guard protects sensitive views from being captured in Android\'s recent apps preview or by background recording tools.',
+                question: AppLocalizations.of(
+                  context,
+                ).helpFaqTroubleshootingQ11,
+                answer: AppLocalizations.of(context).helpFaqTroubleshootingA11,
               ),
             ],
           ),
 
           _Section(
             icon: Icons.build_outlined,
-            title: 'Troubleshooting & Maintenance',
+            title: AppLocalizations.of(context).helpFaqTroubleshootingTitle5,
             children: [
               _FaqItem(
-                question:
-                    'Search is slow or not finding new contacts. How to fix?',
-                answer:
-                    'Open Settings → Contacts → Contact counts & search index. If any contacts have stale search keys, a Rebuild button appears — tap it and the keys are rebuilt in a few seconds.',
+                question: AppLocalizations.of(
+                  context,
+                ).helpFaqTroubleshootingQ12,
+                answer: AppLocalizations.of(context).helpFaqTroubleshootingA12,
               ),
               _FaqItem(
-                question:
-                    'A blocked number still shows in Recents. Is it ringing?',
-                answer:
-                    'No. A blocked call is rejected before your phone rings, but it is still written into Recents with a "Blocked" mark so you can see that someone tried. If you would rather see the call and just not be disturbed, use "Filter suspected spam" instead of blocking.',
+                question: AppLocalizations.of(
+                  context,
+                ).helpFaqTroubleshootingQ13,
+                answer: AppLocalizations.of(context).helpFaqTroubleshootingA13,
               ),
               _FaqItem(
-                question: 'A contact vanished on its own. Why?',
-                answer:
-                    'It was probably saved as an ephemeral (temporary) contact, which deletes itself after 2 hours, 24 hours, 7 days, or one call. Opening such a contact shows a countdown banner with a "Keep Permanently" button.',
+                question: AppLocalizations.of(
+                  context,
+                ).helpFaqTroubleshootingQ14,
+                answer: AppLocalizations.of(context).helpFaqTroubleshootingA14,
               ),
               _FaqItem(
-                question: 'Where are groups and tags?',
-                answer:
-                    'Groups are behind the group icon in the top bar of the Contacts tab. Tags have their own tab at the bottom of the app, drawn as a cloud where a tag used by more people appears larger.',
+                question: AppLocalizations.of(
+                  context,
+                ).helpFaqTroubleshootingQ15,
+                answer: AppLocalizations.of(context).helpFaqTroubleshootingA15,
               ),
               _FaqItem(
-                question: 'How do I clean up duplicate contacts?',
-                answer:
-                    'Open the Contacts tab, tap the three-dot menu, and choose "Find Duplicates". Matching is by phone number and by name (including transliterated names). Review each set, then merge it, or use "Merge all sets".',
+                question: AppLocalizations.of(
+                  context,
+                ).helpFaqTroubleshootingQ16,
+                answer: AppLocalizations.of(context).helpFaqTroubleshootingA16,
               ),
             ],
           ),
 
-          SizedBox(height: 8),
-          _Footer(
-            'Still stuck? Open the matching guide in Help, or check Settings → Permissions to see whether the feature is simply missing a permission.',
-          ),
+          const SizedBox(height: 8),
+          _Footer(AppLocalizations.of(context).helpFaqTroubleshootingFooter),
         ],
       ),
     );

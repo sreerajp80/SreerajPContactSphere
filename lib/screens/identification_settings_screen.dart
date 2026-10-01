@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
@@ -22,7 +23,9 @@ class IdentificationSettingsScreen extends StatelessWidget {
     final settings = context.watch<AppSettings>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Identification')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).labelIdentification),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
@@ -37,13 +40,15 @@ class IdentificationSettingsScreen extends StatelessWidget {
               activeThumbColor: accent,
               onChanged: (v) =>
                   context.read<AppSettings>().setCallerIdEnabled(v),
-              title: const Text(
-                'Caller identification',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              title: Text(
+                AppLocalizations.of(context).labelCallerIdentification,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               subtitle: Text(
-                'Label callers who aren’t in your contacts — telemarketing '
-                'and service numbers, numbers you marked as spam',
+                AppLocalizations.of(context).descCallerIdentification,
                 style: TextStyle(color: colors.mutedText, fontSize: 13),
               ),
             ),
@@ -60,26 +65,28 @@ class IdentificationSettingsScreen extends StatelessWidget {
               activeThumbColor: accent,
               onChanged: (v) =>
                   context.read<AppSettings>().setSpamFilterEnabled(v),
-              title: const Text(
-                'Filter suspected spam',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              title: Text(
+                AppLocalizations.of(context).labelFilterSuspectedSpam,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               subtitle: Text(
-                'Suspected spam calls ring silently. They still appear in '
-                'Recents and can be answered',
+                AppLocalizations.of(context).descFilterSpam,
                 style: TextStyle(color: colors.mutedText, fontSize: 13),
               ),
             ),
           ),
           const SizedBox(height: 12),
-          _howItWorksCard(colors),
+          _howItWorksCard(context, colors),
         ],
       ),
     );
   }
 
   /// Honest explanation of where identification comes from (and doesn't).
-  Widget _howItWorksCard(AppColors colors) {
+  Widget _howItWorksCard(BuildContext context, AppColors colors) {
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
@@ -91,23 +98,18 @@ class IdentificationSettingsScreen extends StatelessWidget {
               children: [
                 Icon(Icons.info_outline, color: colors.mutedText, size: 20),
                 const SizedBox(width: 10),
-                const Text(
-                  'How identification works',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                Text(
+                  AppLocalizations.of(context).labelHowIdentificationWorks,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 10),
             Text(
-              'Identification happens on your phone — nothing is sent '
-              'anywhere. SreerajP Contacts Sphere recognises registered telemarketing '
-              '(140…) and service (160…) number series, numbers you have '
-              'marked as spam from Recents, and shows a warning when your '
-              'network reports that a caller’s number could not be verified.\n\n'
-              'Mobile networks only deliver the caller’s number, not a name, '
-              'so callers outside your contacts can’t be identified by name. '
-              'Spam filtering needs SreerajP Contacts Sphere to be your default phone '
-              'app.',
+              AppLocalizations.of(context).descHowIdentificationWorks,
               style: TextStyle(
                 color: colors.mutedText,
                 fontSize: 13.5,

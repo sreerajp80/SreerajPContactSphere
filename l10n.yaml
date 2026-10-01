@@ -1,0 +1,16 @@
+# l10n.yaml — Flutter localization generator config (engineering standard 8.1).
+#
+# `flutter gen-l10n` reads this to find the ARB files in lib/l10n/ and write the
+# typed AppLocalizations accessors. Run it after editing any .arb file; the
+# generated files are committed (generated-file policy Option A, standard 12.2),
+# so a fresh clone builds and tests without a codegen step.
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+nullable-getter: false
+
+# `synthetic-package` is intentionally absent: from Flutter 3.32 the option has
+# no effect and the generator always writes into lib/l10n/ (standard 8.1 asks
+# for the choice to be documented — this is it). Leaving the key in makes every
+# pub/gen/build command print a deprecation warning.

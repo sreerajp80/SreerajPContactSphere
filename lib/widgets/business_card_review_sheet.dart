@@ -8,6 +8,7 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/address.dart';
 import 'package:smart_contacts_dialer/models/contact.dart';
 import 'package:smart_contacts_dialer/models/email.dart';
@@ -36,7 +37,8 @@ Future<Contact?> showBusinessCardReviewSheet(
 
 /// One reviewable field: what it is, what was read, and whether to keep it.
 class _Row {
-  final String label;
+  /// Field name, looked up when the row is drawn so it follows the language.
+  final String Function(AppLocalizations) label;
   final String value;
   final IconData icon;
 
@@ -81,7 +83,7 @@ class _BusinessCardReviewSheetState extends State<BusinessCardReviewSheet> {
     if (nameParts.trim().isNotEmpty) {
       rows.add(
         _Row(
-          label: 'Name',
+          label: (l) => l.labelFieldName,
           value: nameParts,
           icon: Icons.person_outline,
           apply: (out) {
@@ -97,7 +99,7 @@ class _BusinessCardReviewSheetState extends State<BusinessCardReviewSheet> {
     for (final phone in c.phoneNumbers) {
       rows.add(
         _Row(
-          label: 'Phone',
+          label: (l) => l.labelFieldPhone,
           value: phone.number,
           icon: Icons.call_outlined,
           apply: (out) => out.phoneNumbers = [
@@ -116,7 +118,7 @@ class _BusinessCardReviewSheetState extends State<BusinessCardReviewSheet> {
     for (final email in c.emails) {
       rows.add(
         _Row(
-          label: 'Email',
+          label: (l) => l.labelFieldEmail,
           value: email.email,
           icon: Icons.mail_outline,
           apply: (out) => out.emails = [
@@ -136,7 +138,7 @@ class _BusinessCardReviewSheetState extends State<BusinessCardReviewSheet> {
     if (designation != null && designation.trim().isNotEmpty) {
       rows.add(
         _Row(
-          label: 'Designation',
+          label: (l) => l.labelFieldDesignation,
           value: designation,
           icon: Icons.badge_outlined,
           apply: (out) => out.officialDetails = OfficialDetails(
@@ -158,7 +160,11 @@ class _BusinessCardReviewSheetState extends State<BusinessCardReviewSheet> {
         return out.addresses.first;
       }
 
-      void addPiece(String label, String? value, void Function(Address) set) {
+      void addPiece(
+        String Function(AppLocalizations) label,
+        String? value,
+        void Function(Address) set,
+      ) {
         if (value == null || value.trim().isEmpty) return;
         rows.add(
           _Row(
@@ -170,18 +176,42 @@ class _BusinessCardReviewSheetState extends State<BusinessCardReviewSheet> {
         );
       }
 
-      addPiece('Company', address.companyName, (a) => a.companyName = address.companyName);
-      addPiece('Street', address.street, (a) => a.street = address.street);
-      addPiece('City', address.cityTown, (a) => a.cityTown = address.cityTown);
-      addPiece('State', address.state, (a) => a.state = address.state);
-      addPiece('Postal code', address.postalCode, (a) => a.postalCode = address.postalCode);
-      addPiece('Country', address.country, (a) => a.country = address.country);
+      addPiece(
+        (l) => l.labelFieldCompany,
+        address.companyName,
+        (a) => a.companyName = address.companyName,
+      );
+      addPiece(
+        (l) => l.labelFieldStreet,
+        address.street,
+        (a) => a.street = address.street,
+      );
+      addPiece(
+        (l) => l.labelFieldCity,
+        address.cityTown,
+        (a) => a.cityTown = address.cityTown,
+      );
+      addPiece(
+        (l) => l.labelFieldState,
+        address.state,
+        (a) => a.state = address.state,
+      );
+      addPiece(
+        (l) => l.labelFieldPostalCode,
+        address.postalCode,
+        (a) => a.postalCode = address.postalCode,
+      );
+      addPiece(
+        (l) => l.labelFieldCountry,
+        address.country,
+        (a) => a.country = address.country,
+      );
     }
 
     for (final link in c.socialLinks) {
       rows.add(
         _Row(
-          label: link.label ?? 'Link',
+          label: (l) => link.label ?? l.labelFieldLink,
           value: link.value,
           icon: Icons.link_outlined,
           apply: (out) => out.socialLinks = [
@@ -213,6 +243,7 @@ class _BusinessCardReviewSheetState extends State<BusinessCardReviewSheet> {
     final theme = Theme.of(context);
     final colors = theme.extension<AppColors>()!;
     final muted = colors.mutedText;
+    final l10n = AppLocalizations.of(context);
     final anyKept = _rows.any((r) => r.keep);
 
     return SafeArea(
@@ -224,11 +255,14 @@ class _BusinessCardReviewSheetState extends State<BusinessCardReviewSheet> {
           children: [
             Row(
               children: [
-                Icon(Icons.description_outlined, color: theme.colorScheme.primary),
+                Icon(
+                  Icons.description_outlined,
+                  color: theme.colorScheme.primary,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Read from the card',
+                    l10n.titleReadFromCard,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -238,8 +272,7 @@ class _BusinessCardReviewSheetState extends State<BusinessCardReviewSheet> {
             ),
             const SizedBox(height: 4),
             Text(
-              'Untick anything that came out wrong. You can still edit '
-              'everything on the next screen.',
+              l10n.descUntickWrongFields,
               style: theme.textTheme.bodySmall?.copyWith(color: muted),
             ),
             const SizedBox(height: 12),
@@ -260,7 +293,7 @@ class _BusinessCardReviewSheetState extends State<BusinessCardReviewSheet> {
                           style: theme.textTheme.bodyMedium,
                         ),
                         subtitle: Text(
-                          row.label,
+                          row.label(l10n),
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: muted,
                           ),
@@ -271,7 +304,7 @@ class _BusinessCardReviewSheetState extends State<BusinessCardReviewSheet> {
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         child: Text(
-                          'No fields could be read from this card.',
+                          l10n.emptyNoFieldsRead,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: muted,
                           ),
@@ -280,9 +313,12 @@ class _BusinessCardReviewSheetState extends State<BusinessCardReviewSheet> {
                     if (widget.draft.unmatchedLines.isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Text(
-                        'Not placed in a field: '
-                        '${widget.draft.unmatchedLines.join(' · ')}',
-                        style: theme.textTheme.bodySmall?.copyWith(color: muted),
+                        l10n.descNotPlacedInField(
+                          widget.draft.unmatchedLines.join(' · '),
+                        ),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: muted,
+                        ),
                       ),
                     ],
                     const SizedBox(height: 4),
@@ -294,7 +330,9 @@ class _BusinessCardReviewSheetState extends State<BusinessCardReviewSheet> {
                         size: 20,
                       ),
                       label: Text(
-                        _showRawText ? 'Hide all scanned text' : 'Show all scanned text',
+                        _showRawText
+                            ? l10n.actionHideScannedText
+                            : l10n.actionShowScannedText,
                       ),
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
@@ -312,7 +350,7 @@ class _BusinessCardReviewSheetState extends State<BusinessCardReviewSheet> {
                         ),
                         child: SelectableText(
                           widget.draft.rawText.isEmpty
-                              ? 'Nothing was recognized.'
+                              ? l10n.emptyNothingRecognized
                               : widget.draft.rawText,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: muted,
@@ -329,7 +367,7 @@ class _BusinessCardReviewSheetState extends State<BusinessCardReviewSheet> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Retake'),
+                    child: Text(l10n.actionRetake),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -338,7 +376,7 @@ class _BusinessCardReviewSheetState extends State<BusinessCardReviewSheet> {
                     onPressed: anyKept
                         ? () => Navigator.of(context).pop(_accepted())
                         : null,
-                    child: const Text('Continue'),
+                    child: Text(l10n.actionContinue),
                   ),
                 ),
               ],

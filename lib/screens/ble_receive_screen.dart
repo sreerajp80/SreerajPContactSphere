@@ -1,6 +1,6 @@
 // lib/screens/ble_receive_screen.dart
 //
-// "Receive via Bluetooth": scans for a nearby phone that is sharing a contact
+// "Get via Bluetooth": scans for a nearby phone that is sharing a contact
 // (ContactSphere's "Share via Bluetooth" dialog), downloads the vCard over
 // GATT (services/ble_receive_service.dart), and routes it through the same
 // review/import flow as the QR scanner and the .vcf-intent path: a single
@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/contact.dart';
 import 'package:smart_contacts_dialer/services/ble_receive_service.dart';
 import 'package:smart_contacts_dialer/services/ble_share_service.dart';
@@ -256,12 +257,12 @@ class _BleReceiveScreenState extends State<BleReceiveScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Receive via Bluetooth'),
+        title: const Text('Get via Bluetooth'),
         actions: [
           if (_phase == _Phase.scanning && !_scanning)
             IconButton(
               icon: const Icon(Icons.refresh),
-              tooltip: 'Scan again',
+              tooltip: AppLocalizations.of(context).tooltipScanAgain,
               onPressed: _startScan,
             ),
         ],
@@ -282,9 +283,7 @@ class _BleReceiveScreenState extends State<BleReceiveScreen> {
           actionLabel: 'Turn on Bluetooth',
           onAction: _turnOnAndScan,
         ),
-        _Phase.authenticating => const _CenteredProgress(
-          label: 'Verifying…',
-        ),
+        _Phase.authenticating => const _CenteredProgress(label: 'Verifying…'),
         _Phase.fetching => _CenteredProgress(
           label: _fetchProgress == null
               ? 'Receiving…'

@@ -57,7 +57,7 @@ working per-SIM feature.
 
 - `flutter analyze` on the three changed Dart files: **no issues**.
 - Kotlin reviewed for correctness. A full `flutter build apk` / on-device run could **not** be
-  performed in this environment: the only installed JDK is **JDK 24** (`E:\jdk-24`), which the
+  performed in this environment: the only installed JDK is **JDK 24** (a local JDK 24 install), which the
   project's Gradle 8.12 / AGP can't configure — the build fails at configuration time in the
   `:audioplayers_android` test task (`Type T not present`), before any app code compiles. This is
   a pre-existing environmental limitation (see [docs/known-gaps.md](../docs/known-gaps.md), which

@@ -12,6 +12,8 @@
 
 import 'package:call_log/call_log.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
+
 /// The stored `call_type` values Recents knows how to render
 /// (see `CallHistoryScreenState._typeIcon`).
 class AppCallType {
@@ -109,20 +111,29 @@ String? normalizeCallOutcome(String? outcome) =>
 /// each side: a call that rang out unanswered is "No answer" when we placed it,
 /// but "Missed" when it came in — the stored outcome is the same fact either
 /// way. Omit it and the outgoing wording is used, as it always was.
-String? callOutcomeLabel(String? outcome, [String? callType]) {
+///
+/// Pass [l10n] to get the label in the app's language; without it the English
+/// label is returned (what the unit tests and non-UI callers expect).
+String? callOutcomeLabel(
+  String? outcome, [
+  String? callType,
+  AppLocalizations? l10n,
+]) {
   final inbound =
       callType == AppCallType.incoming || callType == AppCallType.missed;
   switch (outcome) {
     case AppCallOutcome.noAnswer:
-      return inbound ? 'Missed' : 'No answer';
+      return inbound
+          ? (l10n?.labelOutcomeMissed ?? 'Missed')
+          : (l10n?.labelOutcomeNoAnswer ?? 'No answer');
     case AppCallOutcome.busy:
-      return 'Busy';
+      return l10n?.labelOutcomeBusy ?? 'Busy';
     case AppCallOutcome.declined:
-      return 'Declined';
+      return l10n?.labelOutcomeDeclined ?? 'Declined';
     case AppCallOutcome.cancelled:
-      return 'Cancelled';
+      return l10n?.labelOutcomeCancelled ?? 'Cancelled';
     case AppCallOutcome.failed:
-      return 'Failed';
+      return l10n?.labelOutcomeFailed ?? 'Failed';
     default:
       return null;
   }

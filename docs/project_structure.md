@@ -72,7 +72,8 @@ lib/
 |   |-- about_screen.dart             # About screen driven by assets/config/app_config.json
 |   |-- add_edit_contact_screen.dart  # Contact create and edit form
 |   |-- call_history_screen.dart      # Recents / call log view
-|   |-- contact_detail_screen.dart    # Contact profile, pre-call summary, quick actions
+|   |-- number_detail_screen.dart     # Unsaved number: History | Add contact tabs
+|   |-- contact_detail_screen.dart    # Contact profile (Details | History tabs), pre-call summary
 |   |-- contact_list_screen.dart      # Main contacts list, search, filters
 |   |-- dialer_screen.dart            # T9 dialpad with multi-script search
 |   |-- home_shell.dart               # Bottom navigation hub (Contacts, Dialer, Recents)

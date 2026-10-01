@@ -16,6 +16,7 @@
 // null on cancel.
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/contact.dart';
 import 'package:smart_contacts_dialer/services/contact_sync_service.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
@@ -24,7 +25,7 @@ import 'package:smart_contacts_dialer/widgets/voice_input_button.dart';
 /// Opens the picker as a modal sheet. Returns the picked contact, or null.
 Future<Contact?> showContactSearchPickerSheet(
   BuildContext context, {
-  String title = 'Choose a contact',
+  String? title,
   bool requirePhone = false,
 }) {
   return showModalBottomSheet<Contact>(
@@ -38,7 +39,8 @@ Future<Contact?> showContactSearchPickerSheet(
 
 class ContactSearchPickerSheet extends StatefulWidget {
   /// Sheet heading, e.g. `Choose a person to call`.
-  final String title;
+  /// Sheet heading; null shows the default "Choose a contact".
+  final String? title;
 
   /// Show only contacts that have at least one phone number. For callers whose
   /// whole purpose is a number (the emergency card, a dial shortcut) a contact
@@ -47,7 +49,7 @@ class ContactSearchPickerSheet extends StatefulWidget {
 
   const ContactSearchPickerSheet({
     super.key,
-    this.title = 'Choose a contact',
+    this.title,
     this.requirePhone = false,
   });
 
@@ -110,7 +112,7 @@ class _ContactSearchPickerSheetState extends State<ContactSearchPickerSheet> {
       setState(() {
         _shown = const [];
         _loading = false;
-        _error = 'Could not load contacts: $e';
+        _error = AppLocalizations.of(context).errorCouldNotLoadContacts('$e');
       });
       return;
     }
@@ -130,6 +132,7 @@ class _ContactSearchPickerSheetState extends State<ContactSearchPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
+    final l10n = AppLocalizations.of(context);
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(
@@ -144,7 +147,7 @@ class _ContactSearchPickerSheetState extends State<ContactSearchPickerSheet> {
                 child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    widget.title,
+                    widget.title ?? l10n.titleChooseContact,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -181,7 +184,7 @@ class _ContactSearchPickerSheetState extends State<ContactSearchPickerSheet> {
           autofocus: true,
           onChanged: _onQueryChanged,
           decoration: InputDecoration(
-            hintText: 'Search contacts',
+            hintText: AppLocalizations.of(context).hintSearchContacts,
             prefixIcon: Icon(Icons.search, color: accent),
             suffixIcon: _query.isEmpty
                 // Voice search: partial words land in the field live, each
@@ -197,7 +200,7 @@ class _ContactSearchPickerSheetState extends State<ContactSearchPickerSheet> {
                   )
                 : IconButton(
                     icon: Icon(Icons.close, color: colors.mutedText),
-                    tooltip: 'Clear search',
+                    tooltip: AppLocalizations.of(context).tooltipClearSearch,
                     onPressed: () {
                       _searchCtrl.clear();
                       _onQueryChanged('');
@@ -234,9 +237,9 @@ class _ContactSearchPickerSheetState extends State<ContactSearchPickerSheet> {
           child: Text(
             q.isEmpty
                 ? (widget.requirePhone
-                      ? 'No contacts with a number yet.'
-                      : 'No contacts yet.')
-                : 'No contacts match "$q".',
+                      ? AppLocalizations.of(context).emptyNoContactsWithNumber
+                      : AppLocalizations.of(context).emptyNoContactsYet)
+                : AppLocalizations.of(context).emptyNoContactsMatch(q),
             textAlign: TextAlign.center,
             style: TextStyle(color: colors.mutedText),
           ),
@@ -247,9 +250,15 @@ class _ContactSearchPickerSheetState extends State<ContactSearchPickerSheet> {
       itemCount: _shown.length,
       itemBuilder: (ctx, i) {
         final c = _shown[i];
-        final number = c.phoneNumbers.isEmpty ? null : c.phoneNumbers.first.number;
+        final number = c.phoneNumbers.isEmpty
+            ? null
+            : c.phoneNumbers.first.number;
         return ListTile(
-          title: Text(c.fullName.isEmpty ? '(No name)' : c.fullName),
+          title: Text(
+            c.fullName.isEmpty
+                ? AppLocalizations.of(context).labelNoName
+                : c.fullName,
+          ),
           subtitle: number == null ? null : Text(number),
           onTap: () => Navigator.of(ctx).pop(c),
         );

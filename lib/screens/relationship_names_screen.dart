@@ -1,4 +1,6 @@
 // lib/screens/relationship_names_screen.dart
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
+import 'package:smart_contacts_dialer/l10n/relationship_labels.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -11,7 +13,7 @@ import 'package:smart_contacts_dialer/theme/app_theme.dart';
 /// "Friend"). Each name is filed under one of the seven relationship categories
 /// by its wording, and shows up as a chip once that category is chosen — a name
 /// the app does not recognise appears under Social. The list is fully editable
-/// and seeded from the built-in defaults; "Reset to defaults" restores them.
+/// and seeded from the built-in defaults; AppLocalizations.of(context).tooltipResetToDefaults restores them.
 class RelationshipNamesScreen extends StatefulWidget {
   const RelationshipNamesScreen({super.key});
 
@@ -33,26 +35,30 @@ class _RelationshipNamesScreenState extends State<RelationshipNamesScreen> {
     final text = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(index == null ? 'New relationship' : 'Edit relationship'),
+        title: Text(
+          index == null
+              ? AppLocalizations.of(context).titleNewRelationship
+              : AppLocalizations.of(context).titleEditRelationship,
+        ),
         content: TextField(
           controller: controller,
           autofocus: true,
           maxLength: 40,
           textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(
-            labelText: 'Relationship name',
-            hintText: 'e.g. Mentor',
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).labelRelationshipName,
+            hintText: AppLocalizations.of(context).hintRelationshipNameExample,
           ),
           onSubmitted: (v) => Navigator.of(ctx).pop(v),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(controller.text),
-            child: const Text('Save'),
+            child: Text(AppLocalizations.of(context).actionSave),
           ),
         ],
       ),
@@ -62,13 +68,13 @@ class _RelationshipNamesScreenState extends State<RelationshipNamesScreen> {
 
     // Reject a duplicate (any other row with the same name, case-insensitive).
     final clash = names.asMap().entries.any(
-      (e) =>
-          e.key != index &&
-          e.value.toLowerCase() == trimmed.toLowerCase(),
+      (e) => e.key != index && e.value.toLowerCase() == trimmed.toLowerCase(),
     );
     if (clash) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('That relationship already exists')),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).errorRelationshipExists),
+        ),
       );
       return;
     }
@@ -92,19 +98,16 @@ class _RelationshipNamesScreenState extends State<RelationshipNamesScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Reset relationship names?'),
-        content: const Text(
-          'Your custom list will be replaced by the built-in relationship '
-          'names.',
-        ),
+        title: Text(AppLocalizations.of(context).titleResetRelationshipNames),
+        content: Text(AppLocalizations.of(context).descResetRelationshipNames),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Reset'),
+            child: Text(AppLocalizations.of(context).actionReset),
           ),
         ],
       ),
@@ -119,11 +122,11 @@ class _RelationshipNamesScreenState extends State<RelationshipNamesScreen> {
     final names = context.watch<AppSettings>().relationshipNames;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Relationship names'),
+        title: Text(AppLocalizations.of(context).titleRelationshipNames),
         actions: [
           IconButton(
             icon: const Icon(Icons.restart_alt),
-            tooltip: 'Reset to defaults',
+            tooltip: AppLocalizations.of(context).tooltipResetToDefaults,
             onPressed: _resetToDefaults,
           ),
         ],
@@ -135,10 +138,7 @@ class _RelationshipNamesScreenState extends State<RelationshipNamesScreen> {
           const SizedBox(height: 12),
           _addNameCard(colors),
           const SizedBox(height: 12),
-          if (names.isEmpty)
-            _emptyNote(colors)
-          else
-            _namesCard(colors, names),
+          if (names.isEmpty) _emptyNote(colors) else _namesCard(colors, names),
         ],
       ),
     );
@@ -155,10 +155,7 @@ class _RelationshipNamesScreenState extends State<RelationshipNamesScreen> {
             const SizedBox(width: 14),
             Expanded(
               child: Text(
-                'These labels appear as chips when you link two contacts, under '
-                'whichever of the seven categories they belong to. You can '
-                'still type any label you like. Editing them here does not '
-                'change relationships you have already saved.',
+                AppLocalizations.of(context).descRelationshipNamesInfo,
                 style: TextStyle(color: colors.mutedText, fontSize: 13.5),
               ),
             ),
@@ -193,16 +190,16 @@ class _RelationshipNamesScreenState extends State<RelationshipNamesScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Add a relationship',
-                      style: TextStyle(
+                    Text(
+                      AppLocalizations.of(context).actionAddRelationshipName,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Add a name to offer when linking contacts',
+                      AppLocalizations.of(context).descAddRelationshipName,
                       style: TextStyle(color: colors.mutedText, fontSize: 13),
                     ),
                   ],
@@ -220,8 +217,7 @@ class _RelationshipNamesScreenState extends State<RelationshipNamesScreen> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Text(
-        'No relationship names yet. Add one, or reset to the defaults from the '
-        'top-right.',
+        AppLocalizations.of(context).emptyNoRelationshipNames,
         textAlign: TextAlign.center,
         style: TextStyle(color: colors.mutedText, fontSize: 13.5),
       ),
@@ -239,7 +235,9 @@ class _RelationshipNamesScreenState extends State<RelationshipNamesScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
               child: Text(
-                'Relationships (${names.length})',
+                AppLocalizations.of(
+                  context,
+                ).labelRelationshipsCount(names.length),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -278,7 +276,7 @@ class _RelationshipNamesScreenState extends State<RelationshipNamesScreen> {
                     ),
                   ),
                   Text(
-                    '${category.emoji} ${category.displayName}',
+                    '${category.emoji} ${relationshipCategoryLabel(AppLocalizations.of(context), category)}',
                     style: TextStyle(color: colors.mutedText, fontSize: 12),
                   ),
                 ],
@@ -286,7 +284,7 @@ class _RelationshipNamesScreenState extends State<RelationshipNamesScreen> {
             ),
             IconButton(
               icon: Icon(Icons.close, color: colors.mutedText, size: 20),
-              tooltip: 'Delete',
+              tooltip: AppLocalizations.of(context).actionDelete,
               onPressed: () => _removeName(index),
             ),
           ],

@@ -1,6 +1,7 @@
 // lib/screens/help/contact_sharing_help_screen.dart
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
 class ContactSharingHelpScreen extends StatelessWidget {
@@ -9,74 +10,49 @@ class ContactSharingHelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sharing & Card Scanning')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).helpContactSharingText),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-        children: const [
-          _Intro(
-            'Quickly exchange contact information using modern digital QR codes, '
-            'on-device business card OCR camera scanning, and offline Bluetooth LE.',
-          ),
-          SizedBox(height: 24),
+        children: [
+          _Intro(AppLocalizations.of(context).helpContactSharingIntro),
+          const SizedBox(height: 24),
 
           _Section(
             icon: Icons.qr_code_2_outlined,
-            title: 'QR Code Sharing & Scanner',
+            title: AppLocalizations.of(context).helpContactSharingTitle1,
             children: [
-              _Bullet(
-                'Show a QR code: open a contact, tap Share, and choose "Share as QR code". A standard vCard QR appears on screen for someone else to scan.',
-              ),
-              _Bullet(
-                'Scan a QR code: open the Contacts tab, tap the three-dot menu, and choose "Scan QR code" to open the camera.',
-              ),
-              _Bullet(
-                'What was scanned is shown to you first. You save it as a new contact only after looking at it.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpContactSharingBullet1),
+              _Bullet(AppLocalizations.of(context).helpContactSharingBullet2),
+              _Bullet(AppLocalizations.of(context).helpContactSharingBullet3),
             ],
           ),
 
           _Section(
             icon: Icons.document_scanner_outlined,
-            title: 'Business Card Scanner (On-Device AI)',
+            title: AppLocalizations.of(context).helpContactSharingTitle2,
             children: [
-              _Bullet(
-                'Photograph any paper business card with your phone\'s camera.',
-              ),
-              _Bullet(
-                'ContactSphere\'s optical character recognition (OCR) scans the image in seconds to extract names, phone numbers, emails, addresses, and company titles.',
-              ),
-              _Bullet(
-                'You can review, edit, or untick any field before saving to your address book.',
-              ),
-              _Bullet(
-                '100% On-Device Privacy: The card photo is processed locally on your phone and is never uploaded to any cloud server.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpContactSharingBullet4),
+              _Bullet(AppLocalizations.of(context).helpContactSharingBullet5),
+              _Bullet(AppLocalizations.of(context).helpContactSharingBullet6),
+              _Bullet(AppLocalizations.of(context).helpContactSharingBullet7),
             ],
           ),
 
           _Section(
             icon: Icons.bluetooth_outlined,
-            title: 'Offline Bluetooth LE Share',
+            title: AppLocalizations.of(context).helpContactSharingTitle3,
             children: [
-              _Bullet(
-                'Share contacts directly with nearby Android devices running ContactSphere without internet or pairing codes.',
-              ),
-              _Bullet(
-                'The sender opens a contact, taps Share, and chooses "Share via Bluetooth". The receiver opens the Contacts tab, taps the three-dot menu, and chooses "Bluetooth transfer".',
-              ),
-              _Bullet(
-                'The receiving phone shows a challenge you must confirm, so a contact cannot be pushed onto your phone without you agreeing.',
-              ),
-              _Bullet(
-                'Devices automatically discover each other and transfer the contact securely over low-energy radio.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpContactSharingBullet8),
+              _Bullet(AppLocalizations.of(context).helpContactSharingBullet9),
+              _Bullet(AppLocalizations.of(context).helpContactSharingBullet10),
+              _Bullet(AppLocalizations.of(context).helpContactSharingBullet11),
             ],
           ),
 
-          SizedBox(height: 8),
-          _Footer(
-            'Tip: every sharing method here uses the standard vCard format, which Android, iOS and desktop address books all understand. To send a whole address book as a file instead, see the Import & export guide.',
-          ),
+          const SizedBox(height: 8),
+          _Footer(AppLocalizations.of(context).helpContactSharingFooter),
         ],
       ),
     );

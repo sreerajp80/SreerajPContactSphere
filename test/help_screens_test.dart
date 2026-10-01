@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/screens/help/app_lock_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/backup_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/biometrics_help_screen.dart';
@@ -55,8 +56,12 @@ final Map<String, Widget> _articles = {
   'FAQs & Troubleshooting': const FaqTroubleshootingHelpScreen(),
 };
 
-Widget _wrap(Widget screen) =>
-    MaterialApp(theme: AppTheme.calm(const Color(0xFF007A78)), home: screen);
+Widget _wrap(Widget screen) => MaterialApp(
+  theme: AppTheme.calm(const Color(0xFF007A78)),
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+  home: screen,
+);
 
 /// Pumps [screen] into a very tall viewport.
 ///

@@ -1,4 +1,5 @@
 // lib/screens/default_country_screen.dart
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -79,7 +80,9 @@ class _DefaultCountryScreenState extends State<DefaultCountryScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Default country')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).titleDefaultCountry),
+      ),
       body: Column(
         children: [
           _search(colors, accent),
@@ -92,7 +95,7 @@ class _DefaultCountryScreenState extends State<DefaultCountryScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Used to match incoming and dialed numbers to your contacts',
+                    AppLocalizations.of(context).descDefaultCountryInfo,
                     style: TextStyle(color: colors.mutedText, fontSize: 12.5),
                   ),
                 ),
@@ -103,7 +106,9 @@ class _DefaultCountryScreenState extends State<DefaultCountryScreen> {
             child: items.isEmpty
                 ? Center(
                     child: Text(
-                      'No countries match "$_query"',
+                      AppLocalizations.of(
+                        context,
+                      ).emptyNoCountriesMatch(_query),
                       style: TextStyle(color: colors.mutedText),
                     ),
                   )
@@ -141,7 +146,7 @@ class _DefaultCountryScreenState extends State<DefaultCountryScreen> {
         child: TextField(
           onChanged: (v) => setState(() => _query = v),
           decoration: InputDecoration(
-            hintText: 'Search country or code',
+            hintText: AppLocalizations.of(context).hintSearchCountry,
             prefixIcon: Icon(Icons.search, color: accent),
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(vertical: 16),
@@ -172,7 +177,7 @@ class _DefaultCountryScreenState extends State<DefaultCountryScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Selected',
+                    AppLocalizations.of(context).labelSelected,
                     style: TextStyle(
                       color: accent,
                       fontSize: 11.5,

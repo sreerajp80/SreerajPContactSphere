@@ -1,6 +1,7 @@
 // lib/widgets/number_picker_sheet.dart
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/phone_number.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
@@ -43,14 +44,14 @@ class _NumberPickerSheet extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Call $displayName',
+              AppLocalizations.of(context).titleCallName(displayName),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 2),
             Text(
-              'Choose a number',
+              AppLocalizations.of(context).descChooseNumber,
               style: TextStyle(color: colors.mutedText, fontSize: 13),
             ),
             const SizedBox(height: 12),

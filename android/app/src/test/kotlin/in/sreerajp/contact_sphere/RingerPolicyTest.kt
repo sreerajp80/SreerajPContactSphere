@@ -16,11 +16,15 @@ class RingerPolicyTest {
         interruptionFilter: Int = RingerPolicy.FILTER_ALL,
         vibrateWhenRinging: Boolean = true,
         appVibrateEnabled: Boolean = true,
+        callerAllowedByDnd: Boolean? = null,
+        internalRingerMode: Int? = null,
     ) = RingerPolicy.decide(
         ringerMode = ringerMode,
         interruptionFilter = interruptionFilter,
         vibrateWhenRinging = vibrateWhenRinging,
         appVibrateEnabled = appVibrateEnabled,
+        callerAllowedByDnd = callerAllowedByDnd,
+        internalRingerMode = internalRingerMode,
     )
 
     // ---- Normal ring mode ----
@@ -125,12 +129,111 @@ class RingerPolicyTest {
         assertFalse(d.vibrate)
     }
 
-    /** Documented non-goal: honouring this needs ACCESS_NOTIFICATION_POLICY. */
     @Test
-    fun `DND priority-only still rings, by design`() {
+    fun `DND priority-only rings when the app-facing mode is still normal`() {
         val d = decide(interruptionFilter = RingerPolicy.FILTER_PRIORITY)
         assertTrue(d.playSound)
         assertTrue(d.vibrate)
+    }
+
+    // ---- DND priority-only (e.g. Driving mode): app-facing mode forced to SILENT ----
+
+    /** The Driving-mode bug: an allowed caller was silenced by the forced SILENT. */
+    @Test
+    fun `priority DND rings an allowed caller using the real ringer mode`() {
+        assertEquals(
+            RingerPolicy.Decision(playSound = true, vibrate = true),
+            decide(
+                ringerMode = RingerPolicy.MODE_SILENT,
+                interruptionFilter = RingerPolicy.FILTER_PRIORITY,
+                callerAllowedByDnd = true,
+                internalRingerMode = RingerPolicy.MODE_NORMAL,
+            ),
+        )
+    }
+
+    @Test
+    fun `priority DND only vibrates an allowed caller when the phone is really on vibrate`() {
+        assertEquals(
+            RingerPolicy.Decision(playSound = false, vibrate = true),
+            decide(
+                ringerMode = RingerPolicy.MODE_SILENT,
+                interruptionFilter = RingerPolicy.FILTER_PRIORITY,
+                callerAllowedByDnd = true,
+                internalRingerMode = RingerPolicy.MODE_VIBRATE,
+            ),
+        )
+    }
+
+    @Test
+    fun `priority DND stays silent for an allowed caller when the phone is really silent`() {
+        assertEquals(
+            RingerPolicy.Decision(playSound = false, vibrate = false),
+            decide(
+                ringerMode = RingerPolicy.MODE_SILENT,
+                interruptionFilter = RingerPolicy.FILTER_PRIORITY,
+                callerAllowedByDnd = true,
+                internalRingerMode = RingerPolicy.MODE_SILENT,
+            ),
+        )
+    }
+
+    @Test
+    fun `priority DND never rings a caller it blocks`() {
+        assertEquals(
+            RingerPolicy.Decision(playSound = false, vibrate = false),
+            decide(
+                ringerMode = RingerPolicy.MODE_SILENT,
+                interruptionFilter = RingerPolicy.FILTER_PRIORITY,
+                callerAllowedByDnd = false,
+                internalRingerMode = RingerPolicy.MODE_NORMAL,
+            ),
+        )
+    }
+
+    @Test
+    fun `priority DND keeps the app-facing mode when the caller check is unavailable`() {
+        val d = decide(
+            ringerMode = RingerPolicy.MODE_SILENT,
+            interruptionFilter = RingerPolicy.FILTER_PRIORITY,
+            callerAllowedByDnd = null,
+            internalRingerMode = RingerPolicy.MODE_NORMAL,
+        )
+        assertFalse(d.playSound)
+        assertFalse(d.vibrate)
+    }
+
+    @Test
+    fun `priority DND keeps the app-facing mode when the real mode is unreadable`() {
+        val d = decide(
+            ringerMode = RingerPolicy.MODE_SILENT,
+            interruptionFilter = RingerPolicy.FILTER_PRIORITY,
+            callerAllowedByDnd = true,
+            internalRingerMode = null,
+        )
+        assertFalse(d.playSound)
+    }
+
+    @Test
+    fun `the real ringer mode is ignored outside priority DND`() {
+        val d = decide(
+            ringerMode = RingerPolicy.MODE_SILENT,
+            interruptionFilter = RingerPolicy.FILTER_ALL,
+            callerAllowedByDnd = true,
+            internalRingerMode = RingerPolicy.MODE_NORMAL,
+        )
+        assertFalse("a phone set to silent stays silent", d.playSound)
+    }
+
+    @Test
+    fun `an allowed caller still cannot break total silence`() {
+        val d = decide(
+            interruptionFilter = RingerPolicy.FILTER_NONE,
+            callerAllowedByDnd = true,
+            internalRingerMode = RingerPolicy.MODE_NORMAL,
+        )
+        assertFalse(d.playSound)
+        assertFalse(d.vibrate)
     }
 
     @Test

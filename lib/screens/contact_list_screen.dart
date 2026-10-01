@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/contact.dart';
 import 'package:smart_contacts_dialer/models/phone_number.dart';
 import 'package:smart_contacts_dialer/utils/malayalam_transliterator.dart';
@@ -402,6 +403,7 @@ class _ContactListScreenState extends State<ContactListScreen>
   }
 
   Future<void> _toggleSecret() async {
+    final l10n = AppLocalizations.of(context);
     if (_showSecretContacts) {
       setState(() => _showSecretContacts = false);
       await ScreenSecurity.release('secret_contacts');
@@ -410,7 +412,7 @@ class _ContactListScreenState extends State<ContactListScreen>
     }
     final ok = await _auth.authenticate();
     if (!ok) {
-      _showMessage('Authentication required to view secret contacts');
+      _showMessage(l10n.errorAuthRequiredSecret);
       return;
     }
     setState(() => _showSecretContacts = true);
@@ -453,23 +455,24 @@ class _ContactListScreenState extends State<ContactListScreen>
   /// Confirms and deletes [contact] from both the app and (when linked) the
   /// device address book via [ContactSyncService].
   Future<void> _confirmDelete(Contact contact) async {
+    final l10n = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Delete ${contact.fullName}?'),
+        title: Text(l10n.titleDeleteContactConfirm(contact.fullName)),
         content: Text(
           contact.deviceId != null
-              ? 'Removes this contact from the app and the device address book.'
-              : 'Removes this contact from the app.',
+              ? l10n.descDeleteContactAndDevice
+              : l10n.descDeleteContactApp,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.actionCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete'),
+            child: Text(l10n.actionDelete),
           ),
         ],
       ),
@@ -477,10 +480,10 @@ class _ContactListScreenState extends State<ContactListScreen>
     if (ok != true) return;
     try {
       await _sync.deleteContact(contact);
-      _showMessage('Deleted ${contact.fullName}');
+      _showMessage(l10n.msgDeletedName(contact.fullName));
       await _reload();
     } catch (e) {
-      _showMessage('Delete failed: $e');
+      _showMessage(l10n.errorDeleteFailed('$e'));
     }
   }
 
@@ -562,22 +565,20 @@ class _ContactListScreenState extends State<ContactListScreen>
     final selected = _selectedContacts();
     if (selected.isEmpty) return;
     final count = selected.length;
+    final l10n = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Delete $count contacts?'),
-        content: const Text(
-          'Removes them from the app, and from the device address book where '
-          'they are linked.',
-        ),
+        title: Text(l10n.titleDeleteContactsCount(count)),
+        content: Text(l10n.descDeleteSelected),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.actionCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete'),
+            child: Text(l10n.actionDelete),
           ),
         ],
       ),
@@ -596,8 +597,8 @@ class _ContactListScreenState extends State<ContactListScreen>
     _exitSelection();
     _showMessage(
       failed == 0
-          ? 'Deleted $deleted contact(s)'
-          : 'Deleted $deleted contact(s), $failed failed',
+          ? l10n.msgDeletedCount(deleted)
+          : l10n.msgDeletedCountFailed(deleted, failed),
     );
     await _reload();
   }
@@ -607,8 +608,9 @@ class _ContactListScreenState extends State<ContactListScreen>
   /// reconciles on resume and prompts for feedback. The slim list summary already
   /// loads the primary as the only/first number, so no extra query is needed.
   Future<void> _quickCall(Contact contact) async {
+    final l10n = AppLocalizations.of(context);
     if (contact.phoneNumbers.isEmpty) {
-      _showMessage('No phone number for ${contact.fullName}');
+      _showMessage(l10n.errorNoPhoneFor(contact.fullName));
       return;
     }
     await startCall(
@@ -633,6 +635,7 @@ class _ContactListScreenState extends State<ContactListScreen>
   /// email. Falls back to an on-demand load of the full emails when the slim
   /// summary carries none (defensive — the button is normally disabled then).
   Future<void> _quickEmail(Contact contact) async {
+    final l10n = AppLocalizations.of(context);
     var address = _primaryEmail(contact);
     if (address == null && contact.id != null) {
       try {
@@ -650,7 +653,7 @@ class _ContactListScreenState extends State<ContactListScreen>
     }
 
     if (address == null) {
-      _showMessage('No email address for ${contact.fullName}');
+      _showMessage(l10n.errorNoEmailFor(contact.fullName));
       return;
     }
 
@@ -658,10 +661,10 @@ class _ContactListScreenState extends State<ContactListScreen>
     try {
       final launched = await launchUrl(uri);
       if (!launched) {
-        _showMessage('No email app available');
+        _showMessage(l10n.errorNoEmailApp);
       }
     } catch (_) {
-      _showMessage('Could not open the email app');
+      _showMessage(l10n.errorCouldNotOpenEmail);
     }
   }
 
@@ -670,6 +673,7 @@ class _ContactListScreenState extends State<ContactListScreen>
   /// numbers on demand since the list summary only carries the primary. With a
   /// single number it behaves like a plain tap.
   Future<void> _pickNumberAndCall(Contact contact) async {
+    final l10n = AppLocalizations.of(context);
     var numbers = contact.phoneNumbers;
     if (contact.id != null) {
       try {
@@ -681,7 +685,7 @@ class _ContactListScreenState extends State<ContactListScreen>
     }
 
     if (numbers.isEmpty) {
-      _showMessage('No phone number for ${contact.fullName}');
+      _showMessage(l10n.errorNoPhoneFor(contact.fullName));
       return;
     }
 
@@ -711,28 +715,33 @@ class _ContactListScreenState extends State<ContactListScreen>
   void onCallReconciled() => _reload();
 
   Future<void> _handleMenu(String value) async {
+    final l10n = AppLocalizations.of(context);
     switch (value) {
       case 'profile':
         await _openSelf();
         break;
       case 'import_export':
         final action = await _showActionSheet(
-          title: 'Import / Export',
-          options: const [
-            ('import', Icons.file_download_outlined, 'Import CSV'),
-            ('export', Icons.file_upload_outlined, 'Export CSV'),
-            ('import_vcf', Icons.file_download_outlined, 'Import vCard (.vcf)'),
-            ('export_vcf', Icons.file_upload_outlined, 'Export vCard (.vcf)'),
+          title: l10n.titleImportExport,
+          options: [
+            ('import', Icons.file_download_outlined, l10n.actionImportCsv),
+            ('export', Icons.file_upload_outlined, l10n.actionExportCsv),
+            ('import_vcf', Icons.file_download_outlined, l10n.actionImportVcf),
+            ('export_vcf', Icons.file_upload_outlined, l10n.actionExportVcf),
           ],
         );
         if (action != null && mounted) await _handleMenu(action);
         break;
       case 'bluetooth':
         final action = await _showActionSheet(
-          title: 'Bluetooth transfer',
-          options: const [
-            ('send_all_ble', Icons.bluetooth, 'Send all via Bluetooth'),
-            ('receive_ble', Icons.bluetooth_searching, 'Receive via Bluetooth'),
+          title: l10n.titleBluetoothTransfer,
+          options: [
+            ('send_all_ble', Icons.bluetooth, l10n.actionSendAllViaBluetooth),
+            (
+              'receive_ble',
+              Icons.bluetooth_searching,
+              l10n.actionReceiveViaBluetooth,
+            ),
           ],
         );
         if (action != null && mounted) await _handleMenu(action);
@@ -741,11 +750,11 @@ class _ContactListScreenState extends State<ContactListScreen>
         try {
           final count = await _exportImport.importContacts();
           _showMessage(
-            count > 0 ? 'Imported $count contact(s)' : 'Nothing imported',
+            count > 0 ? l10n.msgImportedCount(count) : l10n.msgNothingImported,
           );
           if (count > 0) _reload();
         } catch (e) {
-          _showMessage('Import failed: $e');
+          _showMessage(l10n.errorImportFailed('$e'));
         }
         break;
       case 'export':
@@ -754,18 +763,18 @@ class _ContactListScreenState extends State<ContactListScreen>
             includeSecret: context.read<AppSettings>().includeSecretInExport,
           );
         } catch (e) {
-          _showMessage('Export failed: $e');
+          _showMessage(l10n.errorExportFailed('$e'));
         }
         break;
       case 'import_vcf':
         try {
           final count = await _exportImport.importContactsVcf();
           _showMessage(
-            count > 0 ? 'Imported $count contact(s)' : 'Nothing imported',
+            count > 0 ? l10n.msgImportedCount(count) : l10n.msgNothingImported,
           );
           if (count > 0) _reload();
         } catch (e) {
-          _showMessage('Import failed: $e');
+          _showMessage(l10n.errorImportFailed('$e'));
         }
         break;
       case 'export_vcf':
@@ -774,7 +783,7 @@ class _ContactListScreenState extends State<ContactListScreen>
             includeSecret: context.read<AppSettings>().includeSecretInExport,
           );
         } catch (e) {
-          _showMessage('Export failed: $e');
+          _showMessage(l10n.errorExportFailed('$e'));
         }
         break;
       case 'scan_qr':
@@ -803,13 +812,13 @@ class _ContactListScreenState extends State<ContactListScreen>
             includeSecret: includeSecret,
           );
           if (contacts.isEmpty) {
-            _showMessage('No contacts to send');
+            _showMessage(l10n.errorNoContactsToSend);
             break;
           }
           if (!mounted) return;
           await showBleShareAllDialog(context, contacts);
         } catch (e) {
-          _showMessage('Could not start Bluetooth sharing: $e');
+          _showMessage(l10n.errorCouldNotStartBleShareDetail('$e'));
         }
         break;
       case 'duplicates':
@@ -939,21 +948,24 @@ class _ContactListScreenState extends State<ContactListScreen>
           ],
         ),
       ),
-      floatingActionButton: (widget.pickerMode || _selectionMode) ? null : _buildFab(colors),
+      floatingActionButton: (widget.pickerMode || _selectionMode)
+          ? null
+          : _buildFab(colors),
     );
   }
 
   Widget _buildHeader(BuildContext context) {
     if (_selectionMode) return _buildSelectionHeader(context);
     final muted = Theme.of(context).extension<AppColors>()!.mutedText;
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 12, 8),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Text(
-              'Contacts',
-              style: TextStyle(
+              l10n.navContacts,
+              style: const TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.6,
@@ -965,43 +977,50 @@ class _ContactListScreenState extends State<ContactListScreen>
               _showSecretContacts ? Icons.lock_open : Icons.lock,
               color: muted,
             ),
-            tooltip: 'Secret contacts',
+            tooltip: l10n.tooltipSecretContacts,
             onPressed: _toggleSecret,
           ),
           IconButton(
             icon: Icon(Icons.favorite_outline, color: muted),
-            tooltip: 'Relation status',
+            tooltip: l10n.tooltipRelationStatus,
             onPressed: _openRelationStatus,
           ),
           IconButton(
             icon: Icon(Icons.group_outlined, color: muted),
-            tooltip: 'Groups',
+            tooltip: l10n.tooltipGroups,
             onPressed: () => _handleMenu('groups'),
           ),
           PopupMenuButton<String>(
             icon: Icon(Icons.more_vert, color: muted),
+            tooltip: l10n.tooltipMore,
             onSelected: _handleMenu,
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'profile', child: Text('My Profile')),
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'profile',
+                child: Text(l10n.actionMyProfile),
+              ),
               PopupMenuItem(
                 value: 'import_export',
-                child: Text('Import / Export'),
+                child: Text(l10n.titleImportExport),
               ),
               PopupMenuItem(
                 value: 'bluetooth',
-                child: Text('Bluetooth transfer'),
+                child: Text(l10n.titleBluetoothTransfer),
               ),
-              PopupMenuItem(value: 'scan_qr', child: Text('Scan QR code')),
+              PopupMenuItem(
+                value: 'scan_qr',
+                child: Text(l10n.actionScanQrCode),
+              ),
               PopupMenuItem(
                 value: 'scan_card',
-                child: Text('Scan business card'),
+                child: Text(l10n.actionScanBusinessCard),
               ),
               PopupMenuItem(
                 value: 'duplicates',
-                child: Text('Find Duplicates'),
+                child: Text(l10n.actionFindDuplicates),
               ),
-              PopupMenuDivider(),
-              PopupMenuItem(value: 'settings', child: Text('Settings')),
+              const PopupMenuDivider(),
+              PopupMenuItem(value: 'settings', child: Text(l10n.titleSettings)),
             ],
           ),
         ],
@@ -1014,18 +1033,19 @@ class _ContactListScreenState extends State<ContactListScreen>
   Widget _buildSelectionHeader(BuildContext context) {
     final muted = Theme.of(context).extension<AppColors>()!.mutedText;
     final count = _selectedKeys.length;
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
       child: Row(
         children: [
           IconButton(
             icon: Icon(Icons.close, color: muted),
-            tooltip: 'Cancel selection',
+            tooltip: l10n.tooltipCancelSelection,
             onPressed: _exitSelection,
           ),
           Expanded(
             child: Text(
-              '$count selected',
+              l10n.labelSelectedCount(count),
               style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
@@ -1035,12 +1055,12 @@ class _ContactListScreenState extends State<ContactListScreen>
           ),
           IconButton(
             icon: Icon(Icons.select_all, color: muted),
-            tooltip: 'Select all',
+            tooltip: l10n.tooltipSelectAll,
             onPressed: _selectAllVisible,
           ),
           IconButton(
             icon: Icon(Icons.delete_outline, color: muted),
-            tooltip: 'Delete selected',
+            tooltip: l10n.tooltipDeleteSelected,
             onPressed: count == 0 ? null : _confirmDeleteSelected,
           ),
         ],
@@ -1074,7 +1094,7 @@ class _ContactListScreenState extends State<ContactListScreen>
           focusNode: _searchFocusNode,
           onChanged: _filterContacts,
           decoration: InputDecoration(
-            hintText: 'Search contacts',
+            hintText: AppLocalizations.of(context).hintSearchContacts,
             prefixIcon: Icon(Icons.search, color: accent),
             suffixIcon: _searchQuery.isEmpty
                 // Voice search: partial results land in the field live, each
@@ -1090,7 +1110,7 @@ class _ContactListScreenState extends State<ContactListScreen>
                   )
                 : IconButton(
                     icon: Icon(Icons.close, color: colors.mutedText),
-                    tooltip: 'Clear search',
+                    tooltip: AppLocalizations.of(context).tooltipClearSearch,
                     onPressed: () {
                       _searchController.clear();
                       _filterContacts('');
@@ -1110,16 +1130,20 @@ class _ContactListScreenState extends State<ContactListScreen>
   Widget _buildFilterChips(BuildContext context, AppColors colors) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
-      child: Row(
+      // A Wrap, not a Row: Malayalam and Sanskrit labels are wider than the
+      // English ones, and on a narrow phone at a large font size the second
+      // chip moves to a new line instead of overflowing.
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
         children: [
           _FilterChipPill(
-            label: 'All',
+            label: AppLocalizations.of(context).labelAll,
             selected: !_favoritesOnly,
             onTap: () => _setFavoritesOnly(false),
           ),
-          const SizedBox(width: 8),
           _FilterChipPill(
-            label: 'Favorites',
+            label: AppLocalizations.of(context).labelFavorites,
             icon: Icons.star,
             selected: _favoritesOnly,
             onTap: () => _setFavoritesOnly(true),
@@ -1136,8 +1160,8 @@ class _ContactListScreenState extends State<ContactListScreen>
     final p = _syncProgress!;
     final merging = p.phase == SyncPhase.merging;
     final label = merging
-        ? 'Syncing contacts… ${p.processed} of ${p.total}'
-        : 'Reading device contacts…';
+        ? AppLocalizations.of(context).msgSyncingContacts(p.processed, p.total)
+        : AppLocalizations.of(context).msgReadingDeviceContacts;
     final double? value = (merging && p.total > 0)
         ? p.processed / p.total
         : null;
@@ -1164,17 +1188,23 @@ class _ContactListScreenState extends State<ContactListScreen>
     // Pin the Self contact above the list, but only in the unfiltered view; a
     // search matching Self already surfaces it (ordered first) in the results,
     // and the favorites view shows only what is actually starred.
-    final showSelf = _searchQuery.isEmpty && !_favoritesOnly && _self != null && !widget.pickerMode;
+    final showSelf =
+        _searchQuery.isEmpty &&
+        !_favoritesOnly &&
+        _self != null &&
+        !widget.pickerMode;
     final leading = showSelf ? 1 : 0;
 
     if (_filteredContacts.isEmpty && !showSelf) {
       final String message;
       if (_searchQuery.isNotEmpty) {
-        message = 'No contacts match "$_searchQuery".';
+        message = AppLocalizations.of(
+          context,
+        ).emptyNoContactsMatch(_searchQuery);
       } else if (_favoritesOnly) {
-        message = 'No favorites yet.\nStar a contact to see it here.';
+        message = AppLocalizations.of(context).emptyNoFavorites;
       } else {
-        message = 'No contacts yet. Tap + to add one.';
+        message = AppLocalizations.of(context).emptyNoContactsTapPlus;
       }
       return Center(
         child: Padding(
@@ -1432,8 +1462,12 @@ class _ContactListScreenState extends State<ContactListScreen>
                                 ),
                                 child: Text(
                                   contact.ephemeralAutoDeleteCall
-                                      ? '⏱️ 1-Call'
-                                      : '⏱️ Ephemeral',
+                                      ? AppLocalizations.of(
+                                          context,
+                                        ).labelOneCallBadge
+                                      : AppLocalizations.of(
+                                          context,
+                                        ).labelEphemeralBadge,
                                   style: TextStyle(
                                     color: accent,
                                     fontSize: 10,
@@ -1454,7 +1488,7 @@ class _ContactListScreenState extends State<ContactListScreen>
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
-                                  'YOU',
+                                  AppLocalizations.of(context).labelYou,
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w800,
@@ -1568,7 +1602,7 @@ class _ContactListScreenState extends State<ContactListScreen>
                         Expanded(
                           child: _QuickAction(
                             icon: Icons.person_outline,
-                            label: 'Profile',
+                            label: AppLocalizations.of(context).labelProfile,
                             filled: true,
                             onTap: () => _openContact(contact),
                           ),
@@ -1580,7 +1614,7 @@ class _ContactListScreenState extends State<ContactListScreen>
                         Expanded(
                           child: _QuickAction(
                             icon: Icons.call,
-                            label: 'Call',
+                            label: AppLocalizations.of(context).tooltipCall,
                             filled: true,
                             onTap: () => _quickCall(contact),
                             onLongPress: () => _pickNumberAndCall(contact),
@@ -1590,7 +1624,7 @@ class _ContactListScreenState extends State<ContactListScreen>
                         Expanded(
                           child: _QuickAction(
                             icon: Icons.person_outline,
-                            label: 'Profile',
+                            label: AppLocalizations.of(context).labelProfile,
                             filled: false,
                             onTap: () => _openContact(contact),
                           ),
@@ -1599,7 +1633,7 @@ class _ContactListScreenState extends State<ContactListScreen>
                         Expanded(
                           child: _QuickAction(
                             icon: Icons.mail_outline,
-                            label: 'Email',
+                            label: AppLocalizations.of(context).labelFieldEmail,
                             filled: false,
                             enabled: _primaryEmail(contact) != null,
                             onTap: () => _quickEmail(contact),
@@ -1609,7 +1643,7 @@ class _ContactListScreenState extends State<ContactListScreen>
                         Expanded(
                           child: _QuickAction(
                             icon: Icons.delete_outline,
-                            label: 'Delete',
+                            label: AppLocalizations.of(context).actionDelete,
                             filled: false,
                             onTap: () => _confirmDelete(contact),
                           ),
@@ -1662,12 +1696,13 @@ class _ContactListScreenState extends State<ContactListScreen>
     final today = DateTime(now.year, now.month, now.day);
     final thatDay = DateTime(when.year, when.month, when.day);
     final dayDiff = today.difference(thatDay).inDays;
-    if (dayDiff <= 0) return 'Today';
-    if (dayDiff == 1) return 'Yesterday';
-    if (dayDiff < 7) return '${dayDiff}d ago';
-    if (dayDiff < 30) return '${(dayDiff / 7).floor()}w ago';
-    if (dayDiff < 365) return '${(dayDiff / 30).floor()}mo ago';
-    return '${(dayDiff / 365).floor()}y ago';
+    final l10n = AppLocalizations.of(context);
+    if (dayDiff <= 0) return l10n.labelToday;
+    if (dayDiff == 1) return l10n.labelYesterday;
+    if (dayDiff < 7) return l10n.labelDaysAgo(dayDiff);
+    if (dayDiff < 30) return l10n.labelWeeksAgo((dayDiff / 7).floor());
+    if (dayDiff < 365) return l10n.labelMonthsAgo((dayDiff / 30).floor());
+    return l10n.labelYearsAgo((dayDiff / 365).floor());
   }
 }
 

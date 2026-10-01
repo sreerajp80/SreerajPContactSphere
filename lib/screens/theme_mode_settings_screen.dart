@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
@@ -16,28 +17,28 @@ class ThemeModeSettingsScreen extends StatelessWidget {
     final settings = context.watch<AppSettings>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Theme Mode')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).titleThemeMode)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
         children: [
-          _label(context, 'THEME MODE'),
+          _label(context, AppLocalizations.of(context).titleThemeMode),
           const SizedBox(height: 10),
           SegmentedButton<ThemeMode>(
-            segments: const [
+            segments: [
               ButtonSegment(
                 value: ThemeMode.light,
-                label: Text('Light'),
-                icon: Icon(Icons.light_mode_outlined),
+                label: Text(AppLocalizations.of(context).labelLight),
+                icon: const Icon(Icons.light_mode_outlined),
               ),
               ButtonSegment(
                 value: ThemeMode.dark,
-                label: Text('Dark'),
-                icon: Icon(Icons.dark_mode_outlined),
+                label: Text(AppLocalizations.of(context).labelDark),
+                icon: const Icon(Icons.dark_mode_outlined),
               ),
               ButtonSegment(
                 value: ThemeMode.system,
-                label: Text('System'),
-                icon: Icon(Icons.brightness_auto_outlined),
+                label: Text(AppLocalizations.of(context).labelSystem),
+                icon: const Icon(Icons.brightness_auto_outlined),
               ),
             ],
             selected: {settings.themeMode},
@@ -55,7 +56,7 @@ class ThemeModeSettingsScreen extends StatelessWidget {
                   const SizedBox(width: 14),
                   Expanded(
                     child: Text(
-                      'System mode automatically follows your device\'s system-wide dark mode setting.',
+                      AppLocalizations.of(context).descSystemTheme,
                       style: TextStyle(color: colors.mutedText, fontSize: 13),
                     ),
                   ),

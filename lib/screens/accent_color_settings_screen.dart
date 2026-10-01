@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
@@ -61,18 +62,17 @@ class _AccentColorSettingsScreenState extends State<AccentColorSettingsScreen> {
     final onAccent = AppTheme.contrastOn(selected);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Accent Color')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).titleAccentColor),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
         children: [
-          _label(context, 'LIVE PREVIEW'),
+          _label(context, AppLocalizations.of(context).labelLivePreview),
           const SizedBox(height: 14),
           Center(
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 22,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
               decoration: BoxDecoration(
                 color: selected,
                 borderRadius: BorderRadius.circular(30),
@@ -90,7 +90,7 @@ class _AccentColorSettingsScreenState extends State<AccentColorSettingsScreen> {
                   Icon(Icons.palette_outlined, color: onAccent, size: 18),
                   const SizedBox(width: 8),
                   Text(
-                    'Sample text',
+                    AppLocalizations.of(context).labelSampleText,
                     style: TextStyle(
                       color: onAccent,
                       fontWeight: FontWeight.w700,
@@ -101,7 +101,7 @@ class _AccentColorSettingsScreenState extends State<AccentColorSettingsScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          _label(context, 'PRESETS'),
+          _label(context, AppLocalizations.of(context).labelPresets),
           const SizedBox(height: 12),
           Wrap(
             spacing: 12,
@@ -117,7 +117,7 @@ class _AccentColorSettingsScreenState extends State<AccentColorSettingsScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          _label(context, 'CUSTOM COLOR WHEEL'),
+          _label(context, AppLocalizations.of(context).labelCustomColorWheel),
           const SizedBox(height: 14),
           Center(
             child: _HueWheel(
@@ -155,14 +155,16 @@ class _AccentColorSettingsScreenState extends State<AccentColorSettingsScreen> {
               },
               icon: const Icon(Icons.restart_alt),
               label: Text(
-                'Reset ${theme.brightness == Brightness.dark ? 'Dark' : 'Light'} to default',
+                theme.brightness == Brightness.dark
+                    ? AppLocalizations.of(context).actionResetDarkToDefault
+                    : AppLocalizations.of(context).actionResetLightToDefault,
               ),
             ),
           ),
           const SizedBox(height: 8),
           Center(
             child: Text(
-              'Text contrast is adjusted automatically for readability.',
+              AppLocalizations.of(context).descContrastAuto,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: colors.mutedText,
@@ -245,10 +247,7 @@ class _HueWheel extends StatelessWidget {
     return GestureDetector(
       onPanDown: (d) => _handle(d.localPosition),
       onPanUpdate: (d) => _handle(d.localPosition),
-      child: CustomPaint(
-        size: Size.square(size),
-        painter: _WheelPainter(hsv),
-      ),
+      child: CustomPaint(size: Size.square(size), painter: _WheelPainter(hsv)),
     );
   }
 }

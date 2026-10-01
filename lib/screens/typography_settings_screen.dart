@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:smart_contacts_dialer/l10n/settings_labels.dart';
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
@@ -14,11 +16,11 @@ class TypographySettingsScreen extends StatelessWidget {
     final settings = context.watch<AppSettings>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Typography & Text Size')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).titleTypography)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
         children: [
-          _label(context, 'FONT'),
+          _label(context, AppLocalizations.of(context).labelFont),
           const SizedBox(height: 10),
           for (final font in AppFont.values) ...[
             _FontTile(
@@ -29,12 +31,17 @@ class TypographySettingsScreen extends StatelessWidget {
             const SizedBox(height: 10),
           ],
           const SizedBox(height: 18),
-          _label(context, 'TEXT SIZE'),
+          _label(context, AppLocalizations.of(context).labelTextSize),
           const SizedBox(height: 10),
           SegmentedButton<AppTextScale>(
             segments: [
               for (final scale in AppTextScale.values)
-                ButtonSegment(value: scale, label: Text(scale.label)),
+                ButtonSegment(
+                  value: scale,
+                  label: Text(
+                    appTextScaleLabel(AppLocalizations.of(context), scale),
+                  ),
+                ),
             ],
             selected: {settings.appTextScale},
             showSelectedIcon: false,
@@ -104,7 +111,7 @@ class _FontTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      font.label,
+                      appFontLabel(AppLocalizations.of(context), font),
                       style: TextStyle(
                         fontFamily: family,
                         fontSize: 16,

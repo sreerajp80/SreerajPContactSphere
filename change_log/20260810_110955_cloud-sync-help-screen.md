@@ -1,6 +1,6 @@
 # Change Log: Added Cloud Sync & Backup Help Screen
 
-**Plan Reference:** [20260810_110800_cloud-sync-help-screen.md](file:///l:/Android/SreerajPContactSphere/plans/20260810_110800_cloud-sync-help-screen.md)
+**Plan Reference:** [20260810_110800_cloud-sync-help-screen.md](../plans/20260810_110800_cloud-sync-help-screen.md)
 **Timestamp:** 2026-08-10 11:09:55
 
 ## Summary of Changes

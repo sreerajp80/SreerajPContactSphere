@@ -20,6 +20,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/database/database_helper.dart';
 import 'package:smart_contacts_dialer/repositories/speed_dial_repository.dart';
 import 'package:smart_contacts_dialer/screens/dialer_screen.dart';
@@ -52,6 +53,8 @@ Future<void> _pumpDialer(WidgetTester tester) async {
       create: (_) => AppSettings(),
       child: MaterialApp(
         theme: AppTheme.calm(const Color(0xFF007A78)),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: const DialerScreen(),
       ),
     ),

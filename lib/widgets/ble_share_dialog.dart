@@ -16,6 +16,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/contact.dart';
 import 'package:smart_contacts_dialer/services/ble_receive_service.dart';
 import 'package:smart_contacts_dialer/services/ble_share_service.dart';
@@ -46,7 +47,9 @@ Future<void> showBleShareAllDialog(
   return showDialog<void>(
     context: context,
     builder: (_) => BleShareDialog(
-      title: 'Send ${contacts.length} contacts',
+      title: AppLocalizations.of(context).titleSendContacts(contacts.length),
+      // Stays ASCII in every language: the advertiser cuts the name to 13
+      // UTF-8 bytes, which is only about four Malayalam or Devanagari letters.
       advertisedName: '${contacts.length} contacts',
       contacts: contacts,
       defaultIncludePhoto: false,
@@ -174,13 +177,14 @@ class _BleShareDialogState extends State<BleShareDialog> {
     }
     if (!mounted) return;
     if (error != null) {
+      final l10n = AppLocalizations.of(context);
       setState(() {
         _phase = _Phase.error;
         _errorMessage = switch (error) {
-          'bluetooth_off' => 'Bluetooth is off. Turn it on and try again.',
-          'unsupported' => 'This phone can\'t share over Bluetooth LE.',
-          'no_permission' => 'Bluetooth permission was denied.',
-          _ => 'Could not start Bluetooth sharing.',
+          'bluetooth_off' => l10n.errorBluetoothOff,
+          'unsupported' => l10n.errorBleUnsupported,
+          'no_permission' => l10n.errorBluetoothPermissionDenied,
+          _ => l10n.errorCouldNotStartBleShare,
         };
       });
       return;
@@ -235,7 +239,8 @@ class _BleShareDialogState extends State<BleShareDialog> {
         _share.stop();
         setState(() {
           _phase = _Phase.error;
-          _errorMessage = event.message ?? 'Bluetooth sharing failed.';
+          _errorMessage =
+              event.message ?? AppLocalizations.of(context).errorBleShareFailed;
         });
     }
   }
@@ -243,6 +248,7 @@ class _BleShareDialogState extends State<BleShareDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final canRetry =
         _phase == _Phase.timedOut ||
         _phase == _Phase.error ||
@@ -263,8 +269,7 @@ class _BleShareDialogState extends State<BleShareDialog> {
           if (_phase == _Phase.waiting) ...[
             const SizedBox(height: 8),
             Text(
-              'On the other phone, open SreerajP Contacts Sphere and choose '
-              '"Receive via Bluetooth" from the contacts menu.',
+              l10n.descBleReceiveHowTo(l10n.actionReceiveViaBluetooth),
               style: theme.textTheme.bodySmall,
               textAlign: TextAlign.center,
             ),
@@ -290,7 +295,7 @@ class _BleShareDialogState extends State<BleShareDialog> {
                           },
                   ),
                   Text(
-                    'Include photos',
+                    l10n.labelIncludePhotos,
                     style: theme.textTheme.bodySmall,
                   ),
                 ],
@@ -303,11 +308,13 @@ class _BleShareDialogState extends State<BleShareDialog> {
           FilledButton.icon(
             onPressed: _begin,
             icon: const Icon(Icons.refresh, size: 18),
-            label: const Text('Try again'),
+            label: Text(l10n.actionTryAgain),
           ),
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: Text(_phase == _Phase.sent ? 'Done' : 'Close'),
+          child: Text(
+            _phase == _Phase.sent ? l10n.actionDone : l10n.actionClose,
+          ),
         ),
       ],
     );
@@ -361,20 +368,18 @@ class _BleShareDialogState extends State<BleShareDialog> {
   }
 
   String _statusText() {
+    final l10n = AppLocalizations.of(context);
     return switch (_phase) {
-      _Phase.starting => 'Starting Bluetooth sharing…',
-      _Phase.waiting => 'Waiting for a nearby phone…',
+      _Phase.starting => l10n.msgStartingBleShare,
+      _Phase.waiting => l10n.msgWaitingForNearbyPhone,
       _Phase.sending =>
         _progress == null
-            ? 'Sending…'
-            : 'Sending… ${(_progress! * 100).round()}%',
-      _Phase.sent => 'Sent.',
-      _Phase.permissionDenied =>
-        'Bluetooth permission is needed to share. Allow Nearby devices for '
-            'SreerajP Contacts Sphere and try again.',
-      _Phase.timedOut =>
-        'No phone connected. Try again when the receiver is ready.',
-      _Phase.error => _errorMessage ?? 'Bluetooth sharing failed.',
+            ? l10n.msgSending
+            : l10n.msgSendingPercent((_progress! * 100).round()),
+      _Phase.sent => l10n.msgSent,
+      _Phase.permissionDenied => l10n.errorBlePermissionNeeded,
+      _Phase.timedOut => l10n.errorNoPhoneConnected,
+      _Phase.error => _errorMessage ?? l10n.errorBleShareFailed,
     };
   }
 }

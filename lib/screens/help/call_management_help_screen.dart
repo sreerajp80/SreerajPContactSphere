@@ -1,6 +1,7 @@
 // lib/screens/help/call_management_help_screen.dart
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
 class CallManagementHelpScreen extends StatelessWidget {
@@ -9,138 +10,84 @@ class CallManagementHelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Calling & In-Call Controls')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).helpCallManagementText),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-        children: const [
-          _Intro(
-            'SreerajP Contacts Sphere provides an intelligent calling experience with '
-            'multi-party controls, dual-SIM management, automatic redial assistance, '
-            'and spoken caller announcements.',
-          ),
-          SizedBox(height: 24),
+        children: [
+          _Intro(AppLocalizations.of(context).helpCallManagementIntro),
+          const SizedBox(height: 24),
 
           _Section(
             icon: Icons.call_end_outlined,
-            title: 'In-Call Controls & Conference Calling',
+            title: AppLocalizations.of(context).helpCallManagementTitle1,
             children: [
-              _Bullet(
-                'Mute & Speaker: Tap Mute to silence your microphone, or Speaker for loud hands-free audio.',
-              ),
-              _Bullet(
-                'Hold & Keypad: Put active calls on hold or open the dialpad to enter IVR menu digits (like pressing 1 for English).',
-              ),
-              _Bullet(
-                'Add Call & Call Swap: Add a second participant while keeping the first call on hold. Tap Swap to switch between active callers.',
-              ),
-              _Bullet(
-                'Conference Merge: Tap Merge to combine both active calls into a single group conference conversation.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet1),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet2),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet3),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet4),
             ],
           ),
 
           _Section(
             icon: Icons.touch_app_outlined,
-            title: 'Speed Dial',
+            title: AppLocalizations.of(context).helpCallManagementTitle2,
             children: [
-              _Bullet(
-                'Keypad keys 1 to 9 can each hold one person. Hold a key on the dialer to call them.',
-              ),
-              _Bullet(
-                'Holding only works when the number box is empty, so a long press while you are typing never starts a call.',
-              ),
-              _Bullet(
-                'To set a key: hold an empty key on the dialer and pick a contact, or go to Settings → Speed Dial. If the contact has more than one number you are asked which one to save.',
-              ),
-              _Bullet(
-                'A key that holds someone shows a small coloured dot above the digit.',
-              ),
-              _Bullet(
-                'Secret contacts cannot be put on a key, and a key is freed automatically if you delete its contact or make it secret.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet5),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet6),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet7),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet8),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet9),
             ],
           ),
 
           _Section(
             icon: Icons.sim_card_outlined,
-            title: 'Dual-SIM Calling & Preferences',
+            title: AppLocalizations.of(context).helpCallManagementTitle3,
             children: [
-              _Bullet(
-                'On dual-SIM phones, the dialer gives you SIM 1 and SIM 2 call buttons for immediate selection.',
-              ),
-              _Bullet(
-                'Settings → SIM & calling → SIM Cards & Accounts sets the default SIM for outgoing calls, or switches on "Ask before each call" so you are asked every time.',
-              ),
-              _Bullet(
-                'One person can have their own SIM: open the contact, tap Edit, and choose it under "Preferred SIM". Calls to them then use that SIM instead of the default one.',
-              ),
-              _Bullet(
-                'With "Ask before each call" switched on you are still asked, but the SIM that call would have used is already ticked, so it is one tap.',
-              ),
-              _Bullet(
-                'If that SIM is later removed from the phone, calls quietly fall back to your default SIM.',
-              ),
-              _Bullet(
-                'The same screen gives each SIM its own colour, so you can tell at a glance which line a call is on.',
-              ),
-              _Bullet(
-                'Recents shows which SIM was used for each incoming, outgoing, or missed call.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet10),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet11),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet12),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet13),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet14),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet15),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet16),
             ],
           ),
 
           _Section(
             icon: Icons.replay_outlined,
-            title: 'Smart Redial & "Reach Me" SMS',
+            title: AppLocalizations.of(context).helpCallManagementTitle4,
             children: [
-              _Bullet(
-                'When an outgoing call is busy or unanswered, the app offers to redial the number for you after a delay.',
-              ),
-              _Bullet(
-                'You can instead send a preset "Reach Me" text in one tap, to say you tried to get through.',
-              ),
-              _Bullet(
-                'Settings → SIM & calling → Smart Redial & "Reach Me" sets the default retry delay and the preset message, and lists the redials that are waiting to run.',
-              ),
-              _Bullet(
-                'A scheduled redial is the one place the app dials on its own, and only because you set the delay yourself. Cancel a waiting redial from that same list.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet17),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet18),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet19),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet20),
             ],
           ),
 
           _Section(
             icon: Icons.record_voice_over_outlined,
-            title: 'Spoken Caller Announcements',
+            title: AppLocalizations.of(context).helpCallManagementTitle5,
             children: [
-              _Bullet(
-                'Turn it on under Settings → SIM & calling → Spoken caller announcement. The app then says the caller\'s name over the ringtone — "Amma calling".',
-              ),
-              _Bullet(
-                'A Malayalam name is announced in Malayalam. Use the Test button on that screen to hear how a name sounds before a real call arrives.',
-              ),
-              _Bullet(
-                'Switch on the quiet-hours exception, and set its time range, to stay silent at night while the phone still rings.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet21),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet22),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet23),
             ],
           ),
 
           _Section(
             icon: Icons.sms_outlined,
-            title: 'Quick SMS Decline Replies',
+            title: AppLocalizations.of(context).helpCallManagementTitle6,
             children: [
-              _Bullet(
-                'Cannot answer right now? Tap Reply on the incoming call screen to decline the call and send a preset text instead.',
-              ),
-              _Bullet(
-                'Write your own messages under Settings → SIM & calling → Quick replies.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet24),
+              _Bullet(AppLocalizations.of(context).helpCallManagementBullet25),
             ],
           ),
 
-          SizedBox(height: 8),
-          _Footer(
-            'Tip: make this your Default Phone App — Settings → Permissions shows whether it already is. Without that role, Android does not hand over the in-call controls or the full-screen incoming alert.',
-          ),
+          const SizedBox(height: 8),
+          _Footer(AppLocalizations.of(context).helpCallManagementFooter),
         ],
       ),
     );

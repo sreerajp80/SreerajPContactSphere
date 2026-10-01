@@ -8,6 +8,7 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/screens/help/help_article.dart';
 
 class CallerIdSpamHelpScreen extends StatelessWidget {
@@ -15,109 +16,55 @@ class CallerIdSpamHelpScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const HelpArticleScaffold(
-      title: 'Caller ID & spam filter',
+    return HelpArticleScaffold(
+      title: AppLocalizations.of(context).helpCallerIdSpamTitle1,
       children: [
-        HelpIntro(
-          'When a number that is not in your contacts calls, the app tries to '
-          'say something useful about it, and can make a suspected spam call '
-          'ring quietly instead of loudly. Both are switches you control, and '
-          'both work entirely on this phone.',
-        ),
-        SizedBox(height: 24),
+        HelpIntro(AppLocalizations.of(context).helpCallerIdSpamIntro),
+        const SizedBox(height: 24),
 
         HelpSection(
           icon: Icons.label_outline,
-          title: 'Caller identification',
+          title: AppLocalizations.of(context).helpCallerIdSpamTitle2,
           children: [
-            HelpBullet(
-              'Turn it on under Settings → SIM & calling → Identification → '
-              '"Caller identification".',
-            ),
-            HelpBullet(
-              'An unknown caller gets a label built from what can be worked '
-              'out locally: the telemarketing and service number series, '
-              'numbers you yourself marked as spam, and the network\'s own '
-              'verified-caller flag when it sends one.',
-            ),
-            HelpBullet(
-              'The badge appears on the call screen — red for suspected spam, '
-              'a softer colour for a telemarketing or service number.',
-            ),
-            HelpBullet(
-              'No number is ever looked up on the internet. There is no caller '
-              'ID database behind this and nothing is uploaded.',
-            ),
+            HelpBullet(AppLocalizations.of(context).helpCallerIdSpamBullet1),
+            HelpBullet(AppLocalizations.of(context).helpCallerIdSpamBullet2),
+            HelpBullet(AppLocalizations.of(context).helpCallerIdSpamBullet3),
+            HelpBullet(AppLocalizations.of(context).helpCallerIdSpamBullet4),
           ],
         ),
 
         HelpSection(
           icon: Icons.volume_off_outlined,
-          title: 'Filter suspected spam',
+          title: AppLocalizations.of(context).helpCallerIdSpamTitle3,
           children: [
-            HelpBullet(
-              'The second switch on the same screen, "Filter suspected spam", '
-              'makes flagged callers ring silently instead of loudly.',
-            ),
-            HelpBullet(
-              'The call still comes through and still lands in Recents. You '
-              'are simply not disturbed by it.',
-            ),
-            HelpBullet(
-              'Use this when you want to see who called but not be '
-              'interrupted. Use blocking when you do not want the call at all.',
-            ),
+            HelpBullet(AppLocalizations.of(context).helpCallerIdSpamBullet5),
+            HelpBullet(AppLocalizations.of(context).helpCallerIdSpamBullet6),
+            HelpBullet(AppLocalizations.of(context).helpCallerIdSpamBullet7),
           ],
         ),
 
         HelpSection(
           icon: Icons.no_accounts_outlined,
-          title: 'Block unknown callers',
+          title: AppLocalizations.of(context).helpCallerIdSpamTitle4,
           children: [
-            HelpBullet(
-              'Settings → Contacts → Blocked numbers has a "Block unknown '
-              'callers" switch for calls that arrive with no number or a '
-              'hidden one.',
-            ),
-            HelpBullet(
-              'With it on, those calls are rejected before your phone rings, '
-              'and are still written into Recents as blocked so you can see '
-              'that they happened.',
-            ),
-            HelpBullet(
-              'It does not affect a number you simply have not saved — only '
-              'calls with no caller number at all.',
-            ),
+            HelpBullet(AppLocalizations.of(context).helpCallerIdSpamBullet8),
+            HelpBullet(AppLocalizations.of(context).helpCallerIdSpamBullet9),
+            HelpBullet(AppLocalizations.of(context).helpCallerIdSpamBullet10),
           ],
         ),
 
         HelpSection(
           icon: Icons.report_outlined,
-          title: 'Marking a number as spam',
+          title: AppLocalizations.of(context).helpCallerIdSpamTitle5,
           children: [
-            HelpBullet(
-              'Long-press a call in Recents and choose "Mark as spam". The '
-              'same action reads "Not spam" afterwards, so you can take the '
-              'mark off again.',
-            ),
-            HelpBullet(
-              'A spam mark is separate from blocking. The number can still '
-              'ring you — it is now labelled, and the spam filter can silence '
-              'it if that switch is on.',
-            ),
-            HelpBullet(
-              'Your own marks feed the caller identification label, so the '
-              'next call from that number is recognised.',
-            ),
+            HelpBullet(AppLocalizations.of(context).helpCallerIdSpamBullet11),
+            HelpBullet(AppLocalizations.of(context).helpCallerIdSpamBullet12),
+            HelpBullet(AppLocalizations.of(context).helpCallerIdSpamBullet13),
           ],
         ),
 
-        SizedBox(height: 8),
-        HelpFooter(
-          'Tip: identification and spam filtering both need the app to be your '
-          'default phone app, because Android only lets the default dialer '
-          'inspect a call before it rings.',
-        ),
+        const SizedBox(height: 8),
+        HelpFooter(AppLocalizations.of(context).helpCallerIdSpamFooter),
       ],
     );
   }

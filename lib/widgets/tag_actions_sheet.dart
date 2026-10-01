@@ -13,6 +13,7 @@
 //     a tag (from the tag's contact list) makes it vanish on its own.
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/services/contact_sync_service.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
@@ -95,13 +96,14 @@ class _TagActionsSheetState extends State<_TagActionsSheet> {
     final isMerge = _otherTags.any(
       (t) => t.toLowerCase() == newName.toLowerCase(),
     );
+    final l10n = AppLocalizations.of(context);
     try {
       final changed = await _sync.retagAll(widget.tag, newName);
       if (!mounted) return;
       _showMessage(
         isMerge
-            ? 'Merged into #$newName ($changed contact(s) moved)'
-            : 'Renamed to #$newName',
+            ? l10n.msgTagMerged(newName, changed)
+            : l10n.msgTagRenamed(newName),
       );
       Navigator.pop(
         context,
@@ -111,7 +113,7 @@ class _TagActionsSheetState extends State<_TagActionsSheet> {
         ),
       );
     } catch (e) {
-      _showMessage('Could not rename: $e');
+      _showMessage(l10n.errorCouldNotRename('$e'));
     }
   }
 
@@ -126,35 +128,35 @@ class _TagActionsSheetState extends State<_TagActionsSheet> {
       ),
     );
     if (target == null || !mounted) return;
+    final l10n = AppLocalizations.of(context);
     try {
       final changed = await _sync.retagAll(widget.tag, target);
       if (!mounted) return;
-      _showMessage('Merged into #$target ($changed contact(s) moved)');
+      _showMessage(l10n.msgTagMerged(target, changed));
       Navigator.pop(
         context,
         TagActionResult(kind: TagActionKind.merged, newName: target),
       );
     } catch (e) {
-      _showMessage('Could not merge: $e');
+      _showMessage(l10n.errorCouldNotMerge('$e'));
     }
   }
 
   Future<void> _delete() async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Delete #${widget.tag}?'),
-        content: const Text(
-          'No contact uses this tag, so nothing else changes.',
-        ),
+        title: Text(l10n.titleDeleteTagConfirm(widget.tag)),
+        content: Text(l10n.descDeleteUnusedTag),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: Text(l10n.actionDelete),
           ),
         ],
       ),
@@ -165,20 +167,24 @@ class _TagActionsSheetState extends State<_TagActionsSheet> {
       if (!mounted) return;
       if (!gone) {
         // Someone tagged a contact between the count and the tap.
-        _showMessage('Tag is in use again — remove its contacts first');
+        _showMessage(l10n.errorTagInUseAgain);
         Navigator.pop(context);
         return;
       }
-      _showMessage('Deleted #${widget.tag}');
-      Navigator.pop(context, const TagActionResult(kind: TagActionKind.deleted));
+      _showMessage(l10n.msgTagDeleted(widget.tag));
+      Navigator.pop(
+        context,
+        const TagActionResult(kind: TagActionKind.deleted),
+      );
     } catch (e) {
-      _showMessage('Could not delete: $e');
+      _showMessage(l10n.errorCouldNotDelete('$e'));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
+    final l10n = AppLocalizations.of(context);
     final inUse = widget.contactCount > 0;
 
     return SafeArea(
@@ -203,35 +209,35 @@ class _TagActionsSheetState extends State<_TagActionsSheet> {
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                '${widget.contactCount} contact(s)',
+                l10n.labelContactCount(widget.contactCount),
                 style: TextStyle(fontSize: 13, color: colors.mutedText),
               ),
             ),
           ),
           ListTile(
             leading: const Icon(Icons.drive_file_rename_outline),
-            title: const Text('Rename tag'),
+            title: Text(l10n.actionRenameTag),
             onTap: _rename,
           ),
           ListTile(
             leading: const Icon(Icons.merge_type),
-            title: const Text('Merge into…'),
-            subtitle: _otherTags.isEmpty
-                ? const Text('No other tags to merge into')
-                : null,
+            title: Text(l10n.actionMergeInto),
+            subtitle: _otherTags.isEmpty ? Text(l10n.descNoOtherTags) : null,
             enabled: _otherTags.isNotEmpty,
             onTap: _otherTags.isEmpty ? null : _merge,
           ),
           ListTile(
             leading: Icon(
               Icons.delete_outline,
-              color: inUse ? colors.mutedText : Theme.of(context).colorScheme.error,
+              color: inUse
+                  ? colors.mutedText
+                  : Theme.of(context).colorScheme.error,
             ),
-            title: const Text('Delete tag'),
+            title: Text(l10n.actionDeleteTag),
             // Blocked while contacts carry it: deleting would strip the tag off
             // all of them at once. The hint says how to get there instead.
             subtitle: inUse
-                ? Text('Remove its contacts first (${widget.contactCount})')
+                ? Text(l10n.descRemoveContactsFirst(widget.contactCount))
                 : null,
             enabled: !inUse,
             onTap: inUse ? null : _delete,
@@ -279,29 +285,28 @@ class _RenameTagDialogState extends State<_RenameTagDialog> {
     );
     final isMerge = clash.isNotEmpty;
     final valid = typed.isNotEmpty;
+    final l10n = AppLocalizations.of(context);
 
     return AlertDialog(
-      title: Text('Rename #${widget.tag}'),
+      title: Text(l10n.titleRenameTag(widget.tag)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
             controller: _controller,
             autofocus: true,
-            decoration: const InputDecoration(
-              labelText: 'Tag name',
+            decoration: InputDecoration(
+              labelText: l10n.labelTagName,
               prefixText: '#',
             ),
             onChanged: (_) => setState(() {}),
-            onSubmitted: valid
-                ? (_) => Navigator.pop(context, typed)
-                : null,
+            onSubmitted: valid ? (_) => Navigator.pop(context, typed) : null,
           ),
           if (isMerge)
             Padding(
               padding: const EdgeInsets.only(top: 12),
               child: Text(
-                '#$clash already exists. Both tags become one.',
+                l10n.descTagAlreadyExists(clash),
                 style: TextStyle(
                   fontSize: 12,
                   color: Theme.of(context).colorScheme.error,
@@ -313,11 +318,13 @@ class _RenameTagDialogState extends State<_RenameTagDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.actionCancel),
         ),
         FilledButton(
           onPressed: valid ? () => Navigator.pop(context, typed) : null,
-          child: Text(isMerge ? 'Merge into #$clash' : 'Rename'),
+          child: Text(
+            isMerge ? l10n.actionMergeIntoTag(clash) : l10n.actionRename,
+          ),
         ),
       ],
     );
@@ -338,8 +345,9 @@ class _MergeTargetDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: Text('Merge #$tag into'),
+      title: Text(l10n.titleMergeTagInto(tag)),
       content: SizedBox(
         width: double.maxFinite,
         child: ListView.builder(
@@ -354,7 +362,7 @@ class _MergeTargetDialog extends StatelessWidget {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(l10n.actionCancel),
         ),
       ],
     );

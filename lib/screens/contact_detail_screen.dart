@@ -3,15 +3,20 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
+import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
+import 'package:smart_contacts_dialer/l10n/formatting_locale.dart';
+import 'package:smart_contacts_dialer/l10n/stored_labels.dart';
 import 'package:smart_contacts_dialer/models/call_summary.dart';
 import 'package:smart_contacts_dialer/utils/filename_utils.dart';
 import 'package:smart_contacts_dialer/utils/malayalam_transliterator.dart';
 import 'package:smart_contacts_dialer/models/contact.dart';
 import 'package:smart_contacts_dialer/models/relationship.dart';
+import 'package:smart_contacts_dialer/repositories/call_log_repository.dart';
 import 'package:smart_contacts_dialer/repositories/contact_repository.dart';
 import 'package:smart_contacts_dialer/repositories/relationship_repository.dart';
 import 'package:smart_contacts_dialer/services/connected_apps_service.dart';
@@ -21,6 +26,7 @@ import 'package:smart_contacts_dialer/services/pre_call_summary_service.dart';
 import 'package:smart_contacts_dialer/services/telecom_service.dart';
 import 'package:smart_contacts_dialer/services/vcard_service.dart';
 import 'package:smart_contacts_dialer/widgets/avatar_initial.dart';
+import 'package:smart_contacts_dialer/widgets/call_history_list.dart';
 import 'package:smart_contacts_dialer/widgets/call_lifecycle_mixin.dart';
 import 'package:smart_contacts_dialer/widgets/ble_share_dialog.dart';
 import 'package:smart_contacts_dialer/widgets/qr_share_dialog.dart';
@@ -29,10 +35,21 @@ import 'package:smart_contacts_dialer/widgets/screenshot_guard_mixin.dart';
 import 'package:smart_contacts_dialer/screens/add_edit_contact_screen.dart';
 import 'package:smart_contacts_dialer/screens/relationship_screen.dart';
 
+/// The tabs on [ContactDetailScreen].
+enum ContactDetailTab { details, history }
+
 class ContactDetailScreen extends StatefulWidget {
   final int contactId;
 
-  const ContactDetailScreen({super.key, required this.contactId});
+  /// The tab to open on. Recents opens on [ContactDetailTab.history] (the user
+  /// came from a call); everywhere else opens on the details.
+  final ContactDetailTab initialTab;
+
+  const ContactDetailScreen({
+    super.key,
+    required this.contactId,
+    this.initialTab = ContactDetailTab.details,
+  });
 
   @override
   State<ContactDetailScreen> createState() => _ContactDetailScreenState();
@@ -47,6 +64,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
   final _sync = ContactSyncService();
   final _summaryService = PreCallSummaryService();
   final _relationships = RelationshipRepository();
+  final _callLog = CallLogRepository();
 
   Contact? _contact;
   CallSummary? _summary;
@@ -80,6 +98,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
   /// native player, on the ring stream at ring volume — exactly like an actual
   /// call. Preview only — it does not set the OS incoming-call ringer.
   Future<void> _toggleRingtonePreview(String path) async {
+    final l10n = AppLocalizations.of(context);
     if (_previewPlaying) {
       await _telecom.stopRingtonePreview();
       if (mounted) setState(() => _previewPlaying = false);
@@ -89,12 +108,10 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
       case RingtonePreviewStatus.missing:
         // The tone's backing file is gone; this screen is read-only, so point
         // the user at Edit instead of silently rewriting the contact.
-        _showSnack(
-          'This ringtone is no longer available — pick a new one in Edit.',
-        );
+        _showSnack(l10n.errorRingtoneMissing);
         return;
       case RingtonePreviewStatus.muted:
-        _showSnack('Ring volume is muted — turn it up to hear the preview.');
+        _showSnack(l10n.errorRingVolumeMuted);
       case RingtonePreviewStatus.playing:
         break;
     }
@@ -114,6 +131,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
   Future<void> _share() async {
     final contact = _contact;
     if (contact == null) return;
+    final l10n = AppLocalizations.of(context);
     final choice = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
@@ -123,34 +141,32 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
           children: [
             ListTile(
               leading: const Icon(Icons.contact_page_outlined),
-              title: const Text('Share as vCard (.vcf)'),
-              subtitle: const Text('Send the contact card to WhatsApp or any app'),
+              title: Text(l10n.actionShareVcard),
+              subtitle: Text(l10n.descShareVcard),
               onTap: () => Navigator.of(sheetCtx).pop('vcf'),
             ),
             ListTile(
               leading: const Icon(Icons.article_outlined),
-              title: const Text('Share as Text'),
-              subtitle: const Text('Send name & phone numbers as a text message'),
+              title: Text(l10n.actionShareAsText),
+              subtitle: Text(l10n.descShareAsText),
               onTap: () => Navigator.of(sheetCtx).pop('text'),
             ),
             ListTile(
               leading: const Icon(Icons.copy_outlined),
-              title: const Text('Copy Name & Phone'),
-              subtitle: const Text('Copy contact details to clipboard'),
+              title: Text(l10n.actionCopyNamePhone),
+              subtitle: Text(l10n.descCopyContactDetails),
               onTap: () => Navigator.of(sheetCtx).pop('copy'),
             ),
             ListTile(
               leading: const Icon(Icons.qr_code_2),
-              title: const Text('Share as QR code'),
-              subtitle: const Text(
-                'Show a scannable code or send it as an image',
-              ),
+              title: Text(l10n.actionShareAsQr),
+              subtitle: Text(l10n.descShareAsQr),
               onTap: () => Navigator.of(sheetCtx).pop('qr'),
             ),
             ListTile(
               leading: const Icon(Icons.bluetooth),
-              title: const Text('Share via Bluetooth'),
-              subtitle: const Text('Send directly to a nearby phone'),
+              title: Text(l10n.actionShareViaBluetooth),
+              subtitle: Text(l10n.descSendToNearbyPhone),
               onTap: () => Navigator.of(sheetCtx).pop('ble'),
             ),
             const SizedBox(height: 8),
@@ -176,6 +192,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
   /// Writes the contact (photo included) as a standard vCard 3.0 file to the temp dir and
   /// opens the system share sheet (compatible with WhatsApp, Telegram, and address books).
   Future<void> _shareVcf(Contact contact) async {
+    final l10n = AppLocalizations.of(context);
     try {
       final vcf = VCardService().toVCard(contact, externalShare: true);
       final dir = await getTemporaryDirectory();
@@ -189,7 +206,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
         ),
       );
     } catch (e) {
-      _showSnack('Could not share contact: $e');
+      _showSnack(l10n.errorCouldNotShareContact('$e'));
     }
   }
 
@@ -198,7 +215,9 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
     final buffer = StringBuffer();
     buffer.writeln(contact.fullName);
     for (final ph in contact.phoneNumbers) {
-      final label = ph.label != null && ph.label!.isNotEmpty ? ' (${ph.label})' : '';
+      final label = ph.label != null && ph.label!.isNotEmpty
+          ? ' (${ph.label})'
+          : '';
       buffer.writeln('${ph.number}$label');
     }
     return buffer.toString().trim();
@@ -206,37 +225,37 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
 
   /// Shares name & phone numbers as plain text via system share sheet.
   Future<void> _shareText(Contact contact) async {
+    final l10n = AppLocalizations.of(context);
     try {
       final text = _formatContactText(contact);
       await SharePlus.instance.share(
-        ShareParams(
-          text: text,
-          subject: contact.fullName,
-        ),
+        ShareParams(text: text, subject: contact.fullName),
       );
     } catch (e) {
-      _showSnack('Could not share text: $e');
+      _showSnack(l10n.errorCouldNotShareText('$e'));
     }
   }
 
   /// Copies contact name and phone numbers to system clipboard.
   Future<void> _copyContactDetails(Contact contact) async {
+    final l10n = AppLocalizations.of(context);
     try {
       final text = _formatContactText(contact);
       await Clipboard.setData(ClipboardData(text: text));
-      _showSnack('Contact details copied to clipboard');
+      _showSnack(l10n.msgContactDetailsCopied);
     } catch (e) {
-      _showSnack('Could not copy contact details: $e');
+      _showSnack(l10n.errorCouldNotCopyDetails('$e'));
     }
   }
 
   /// Copies a single phone number to system clipboard.
   Future<void> _copyPhoneNumber(String number) async {
+    final l10n = AppLocalizations.of(context);
     try {
       await Clipboard.setData(ClipboardData(text: number));
-      _showSnack('Copied $number to clipboard');
+      _showSnack(l10n.msgCopiedNumber(number));
     } catch (e) {
-      _showSnack('Could not copy number: $e');
+      _showSnack(l10n.errorCouldNotCopyNumber('$e'));
     }
   }
 
@@ -275,9 +294,13 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to load contact: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).errorFailedToLoadContact('$e'),
+          ),
+        ),
+      );
     }
   }
 
@@ -290,8 +313,8 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
 
   /// Opens the tapped action (chat, call, …) in its owning app.
   Future<void> _openConnectedAppAction(ConnectedAppAction action) async {
-    if (!await _connectedAppsService.openAction(action)) {
-      _showSnack('Could not open this app.');
+    if (!await _connectedAppsService.openAction(action) && mounted) {
+      _showSnack(AppLocalizations.of(context).errorCouldNotOpenApp);
     }
   }
 
@@ -319,9 +342,13 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
     } catch (e) {
       if (!mounted) return;
       setState(() => contact.isFavorite = !next); // revert on failure
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Could not update favorite: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context).errorCouldNotUpdateFavorite('$e'),
+          ),
+        ),
+      );
     }
   }
 
@@ -340,23 +367,24 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
   Future<void> _delete() async {
     final contact = _contact;
     if (contact == null) return;
+    final l10n = AppLocalizations.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Delete ${contact.fullName}?'),
+        title: Text(l10n.titleDeleteContactConfirm(contact.fullName)),
         content: Text(
           contact.deviceId != null
-              ? 'Removes this contact from the app and the device address book.'
-              : 'Removes this contact from the app.',
+              ? l10n.descDeleteContactAndDevice
+              : l10n.descDeleteContactApp,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.actionCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Delete'),
+            child: Text(l10n.actionDelete),
           ),
         ],
       ),
@@ -369,7 +397,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Delete failed: $e')));
+      ).showSnackBar(SnackBar(content: Text(l10n.errorDeleteFailed('$e'))));
     }
   }
 
@@ -430,216 +458,253 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
   @override
   Widget build(BuildContext context) {
     final contact = _contact;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(contact?.fullName ?? 'Contact'),
-        actions: [
-          if (contact != null)
-            IconButton(
-              icon: Icon(
-                contact.isFavorite ? Icons.star : Icons.star_border,
-                color: contact.isFavorite ? Colors.amber : null,
+    final l10n = AppLocalizations.of(context);
+    return DefaultTabController(
+      length: ContactDetailTab.values.length,
+      initialIndex: widget.initialTab.index,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(contact?.fullName ?? l10n.labelContact),
+          bottom: contact == null
+              ? null
+              : TabBar(
+                  tabs: [
+                    Tab(text: l10n.tabDetails),
+                    Tab(text: l10n.tabHistory),
+                  ],
+                ),
+          actions: [
+            if (contact != null)
+              IconButton(
+                icon: Icon(
+                  contact.isFavorite ? Icons.star : Icons.star_border,
+                  color: contact.isFavorite ? Colors.amber : null,
+                ),
+                tooltip: contact.isFavorite
+                    ? l10n.tooltipRemoveFromFavorites
+                    : l10n.tooltipAddToFavorites,
+                onPressed: _toggleFavorite,
               ),
-              tooltip: contact.isFavorite
-                  ? 'Remove from favorites'
-                  : 'Add to favorites',
-              onPressed: _toggleFavorite,
-            ),
-          if (contact != null)
-            IconButton(
-              icon: const Icon(Icons.share_outlined),
-              tooltip: 'Share',
-              onPressed: _share,
-            ),
-          if (contact != null)
-            IconButton(icon: const Icon(Icons.edit), onPressed: _edit),
-          if (contact != null)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
-              tooltip: 'Delete',
-              onPressed: _delete,
-            ),
-        ],
+            if (contact != null)
+              IconButton(
+                icon: const Icon(Icons.share_outlined),
+                tooltip: l10n.actionShare,
+                onPressed: _share,
+              ),
+            if (contact != null)
+              IconButton(
+                icon: const Icon(Icons.edit),
+                tooltip: l10n.actionEdit,
+                onPressed: _edit,
+              ),
+            if (contact != null)
+              IconButton(
+                icon: const Icon(Icons.delete_outline),
+                tooltip: l10n.actionDelete,
+                onPressed: _delete,
+              ),
+          ],
+        ),
+        // The spinner only covers the first load: a reload (after an edit or a
+        // call) keeps the tabs on screen instead of flashing and resetting them.
+        body: _loading && contact == null
+            ? const Center(child: CircularProgressIndicator())
+            : contact == null
+            ? Center(child: Text(l10n.emptyContactNotFound))
+            : TabBarView(
+                children: [_buildDetails(contact), _buildHistory(contact)],
+              ),
       ),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : contact == null
-          ? const Center(child: Text('Contact not found'))
-          : ListView(
-              padding: EdgeInsets.fromLTRB(
-                16,
-                16,
-                16,
-                16 + MediaQuery.of(context).padding.bottom,
-              ),
-              children: [
-                if (contact.isEphemeral) _buildEphemeralBanner(contact),
-                Center(
-                  child: CircleAvatar(
-                    radius: 48,
-                    backgroundImage:
-                        (contact.photoPath != null &&
-                            File(contact.photoPath!).existsSync())
-                        ? FileImage(File(contact.photoPath!))
-                        : null,
-                    child:
-                        (contact.photoPath == null ||
-                            !File(contact.photoPath!).existsSync())
-                        ? AvatarInitial(
-                            initialFor(contact.firstName),
-                            style: const TextStyle(fontSize: 32),
-                          )
-                        : null,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Center(
-                  child: Text(
-                    contact.fullName,
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                if (contact.cardPhotoPath != null &&
-                    File(contact.cardPhotoPath!).existsSync())
-                  _buildCallingCard(contact.cardPhotoPath!),
-                if (_summary != null) _buildSummaryCard(_summary!),
-                if (_connectedApps.isNotEmpty) _buildConnectedApps(),
-                ...contact.phoneNumbers.map(
-                  (ph) => ListTile(
-                    leading: const Icon(Icons.phone),
-                    title: Text(ph.number),
-                    subtitle: ph.label != null ? Text(ph.label!) : null,
-                    onLongPress: () => _copyPhoneNumber(ph.number),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.call, color: Colors.green),
-                      onPressed: () => _call(ph.number),
-                    ),
-                  ),
-                ),
-                ...contact.emails.map(
-                  (e) => ListTile(
-                    leading: const Icon(Icons.email),
-                    title: Text(e.email),
-                    subtitle: e.label != null ? Text(e.label!) : null,
-                  ),
-                ),
-                ...contact.socialLinks.map(
-                  (s) => ListTile(
-                    leading: const Icon(Icons.link),
-                    title: Text(s.value),
-                    subtitle: (s.label != null && s.label!.isNotEmpty)
-                        ? Text(s.label!)
-                        : null,
-                  ),
-                ),
-                // An address whose every field is blank has nothing to show —
-                // skip it rather than render a tile with only the type label.
-                ...contact.addresses
-                    .where((a) => a.formatted.isNotEmpty)
-                    .map(
-                      (a) => ListTile(
-                        leading: const Icon(Icons.location_on),
-                        title: Text(a.formatted),
-                        subtitle: Text(a.type),
-                      ),
-                    ),
-                if (contact.dob != null)
-                  ListTile(
-                    leading: const Icon(Icons.cake_outlined),
-                    title: Text(_formatDate(contact.dob!)),
-                    subtitle: const Text('Birthday'),
-                  ),
-                if (contact.anniversary != null)
-                  ListTile(
-                    leading: const Icon(Icons.favorite_outline),
-                    title: Text(_formatDate(contact.anniversary!)),
-                    subtitle: const Text('Anniversary'),
-                  ),
-                if (contact.meetiversary != null)
-                  ListTile(
-                    leading: const Icon(Icons.handshake_outlined),
-                    title: Text(_formatDate(contact.meetiversary!)),
-                    subtitle: const Text('Meetiversary'),
-                  ),
-                if (contact.gender != null && contact.gender!.trim().isNotEmpty)
-                  ListTile(
-                    leading: const Icon(Icons.person_outline),
-                    title: Text(contact.gender!),
-                    subtitle: const Text('Gender'),
-                  ),
-                if (contact.formalName != null &&
-                    contact.formalName!.trim().isNotEmpty)
-                  ListTile(
-                    leading: const Icon(Icons.badge_outlined),
-                    title: Text(contact.formalName!),
-                    subtitle: const Text('Formal name'),
-                  ),
-                if (contact.bloodGroup != null &&
-                    contact.bloodGroup!.trim().isNotEmpty)
-                  ListTile(
-                    leading: const Icon(Icons.bloodtype_outlined),
-                    title: Text(contact.bloodGroup!),
-                    subtitle: const Text('Blood group'),
-                  ),
-                if (contact.ringtonePath != null)
-                  ListTile(
-                    leading: const Icon(Icons.music_note),
-                    title: Text(contact.ringtoneLabel ?? 'Custom ringtone'),
-                    subtitle: const Text('Ringtone'),
-                    trailing: IconButton(
-                      icon: Icon(
-                        _previewPlaying ? Icons.stop : Icons.play_arrow,
-                      ),
-                      tooltip: _previewPlaying ? 'Stop' : 'Preview',
-                      onPressed: () =>
-                          _toggleRingtonePreview(contact.ringtonePath!),
-                    ),
-                  ),
-                // Only shown when the contact has its own SIM preference —
-                // "no preference" is the norm and needs no row.
-                if (contact.preferredSimId != null &&
-                    contact.preferredSimId!.isNotEmpty)
-                  ListTile(
-                    leading: const Icon(Icons.sim_card_outlined),
-                    title: Text(contact.preferredSimLabel ?? 'Chosen SIM'),
-                    subtitle: const Text('Calls go out on this SIM'),
-                  ),
-                if (contact.officialDetails != null)
-                  ListTile(
-                    leading: const Icon(Icons.work),
-                    title: Text(contact.officialDetails!.designation ?? '—'),
-                    subtitle: Text(contact.officialDetails!.department ?? ''),
-                  ),
-                if (contact.groups.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Wrap(
-                      spacing: 6,
-                      children: contact.groups
-                          .map((g) => Chip(label: Text(g)))
-                          .toList(),
-                    ),
-                  ),
-                // Tags are free-text labels, distinct from group memberships —
-                // prefixed with '#' so the two chip rows read differently.
-                if (contact.tags.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Wrap(
-                      spacing: 6,
-                      children: contact.tags
-                          .map((t) => Chip(label: Text('#$t')))
-                          .toList(),
-                    ),
-                  ),
-                const SizedBox(height: 8),
-                _buildRelationships(contact),
-              ],
+    );
+  }
+
+  /// The History tab: calls with this contact, on any of their numbers.
+  Widget _buildHistory(Contact contact) {
+    final numbers = [for (final ph in contact.phoneNumbers) ph.number];
+    return CallHistoryList(
+      // A new key when the numbers change (after an edit) re-runs the lookup.
+      key: ValueKey(numbers.join('|')),
+      loader: () => _callLog.callsForContact(widget.contactId, numbers),
+      onCall: (call) => _call(call.phoneNumber),
+      emptyText: AppLocalizations.of(context).emptyNoCallsWithContact,
+      showNumber: numbers.length > 1,
+    );
+  }
+
+  /// The Details tab: everything saved about the contact.
+  Widget _buildDetails(Contact contact) {
+    final l10n = AppLocalizations.of(context);
+    return ListView(
+      padding: EdgeInsets.fromLTRB(
+        16,
+        16,
+        16,
+        16 + MediaQuery.of(context).padding.bottom,
+      ),
+      children: [
+        if (contact.isEphemeral) _buildEphemeralBanner(contact),
+        Center(
+          child: CircleAvatar(
+            radius: 48,
+            backgroundImage:
+                (contact.photoPath != null &&
+                    File(contact.photoPath!).existsSync())
+                ? FileImage(File(contact.photoPath!))
+                : null,
+            child:
+                (contact.photoPath == null ||
+                    !File(contact.photoPath!).existsSync())
+                ? AvatarInitial(
+                    initialFor(contact.firstName),
+                    style: const TextStyle(fontSize: 32),
+                  )
+                : null,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Center(
+          child: Text(
+            contact.fullName,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+          ),
+        ),
+        const SizedBox(height: 16),
+        if (contact.cardPhotoPath != null &&
+            File(contact.cardPhotoPath!).existsSync())
+          _buildCallingCard(contact.cardPhotoPath!),
+        if (_summary != null) _buildSummaryCard(_summary!),
+        if (_connectedApps.isNotEmpty) _buildConnectedApps(),
+        ...contact.phoneNumbers.map(
+          (ph) => ListTile(
+            leading: const Icon(Icons.phone),
+            title: Text(ph.number),
+            subtitle: ph.label != null
+                ? Text(storedLabelText(l10n, ph.label!))
+                : null,
+            onLongPress: () => _copyPhoneNumber(ph.number),
+            trailing: IconButton(
+              icon: const Icon(Icons.call, color: Colors.green),
+              tooltip: AppLocalizations.of(context).tooltipCall,
+              onPressed: () => _call(ph.number),
             ),
+          ),
+        ),
+        ...contact.emails.map(
+          (e) => ListTile(
+            leading: const Icon(Icons.email),
+            title: Text(e.email),
+            subtitle: e.label != null
+                ? Text(storedLabelText(l10n, e.label!))
+                : null,
+          ),
+        ),
+        ...contact.socialLinks.map(
+          (s) => ListTile(
+            leading: const Icon(Icons.link),
+            title: Text(s.value),
+            subtitle: (s.label != null && s.label!.isNotEmpty)
+                ? Text(storedLabelText(l10n, s.label!))
+                : null,
+          ),
+        ),
+        // An address whose every field is blank has nothing to show —
+        // skip it rather than render a tile with only the type label.
+        ...contact.addresses
+            .where((a) => a.formatted.isNotEmpty)
+            .map(
+              (a) => ListTile(
+                leading: const Icon(Icons.location_on),
+                title: Text(a.formatted),
+                subtitle: Text(storedLabelText(l10n, a.type)),
+              ),
+            ),
+        if (contact.dob != null)
+          ListTile(
+            leading: const Icon(Icons.cake_outlined),
+            title: Text(_formatDate(contact.dob!)),
+            subtitle: Text(l10n.labelBirthday),
+          ),
+        if (contact.anniversary != null)
+          ListTile(
+            leading: const Icon(Icons.favorite_outline),
+            title: Text(_formatDate(contact.anniversary!)),
+            subtitle: Text(l10n.labelAnniversary),
+          ),
+        if (contact.meetiversary != null)
+          ListTile(
+            leading: const Icon(Icons.handshake_outlined),
+            title: Text(_formatDate(contact.meetiversary!)),
+            subtitle: Text(l10n.labelMeetiversary),
+          ),
+        if (contact.gender != null && contact.gender!.trim().isNotEmpty)
+          ListTile(
+            leading: const Icon(Icons.person_outline),
+            title: Text(storedLabelText(l10n, contact.gender!)),
+            subtitle: Text(l10n.labelGender),
+          ),
+        if (contact.formalName != null && contact.formalName!.trim().isNotEmpty)
+          ListTile(
+            leading: const Icon(Icons.badge_outlined),
+            title: Text(contact.formalName!),
+            subtitle: Text(l10n.labelFormalName),
+          ),
+        if (contact.bloodGroup != null && contact.bloodGroup!.trim().isNotEmpty)
+          ListTile(
+            leading: const Icon(Icons.bloodtype_outlined),
+            title: Text(contact.bloodGroup!),
+            subtitle: Text(l10n.labelBloodGroup),
+          ),
+        if (contact.ringtonePath != null)
+          ListTile(
+            leading: const Icon(Icons.music_note),
+            title: Text(contact.ringtoneLabel ?? l10n.labelCustomRingtone),
+            subtitle: Text(l10n.labelRingtone),
+            trailing: IconButton(
+              icon: Icon(_previewPlaying ? Icons.stop : Icons.play_arrow),
+              tooltip: _previewPlaying ? l10n.tooltipStop : l10n.tooltipPreview,
+              onPressed: () => _toggleRingtonePreview(contact.ringtonePath!),
+            ),
+          ),
+        // Only shown when the contact has its own SIM preference —
+        // "no preference" is the norm and needs no row.
+        if (contact.preferredSimId != null &&
+            contact.preferredSimId!.isNotEmpty)
+          ListTile(
+            leading: const Icon(Icons.sim_card_outlined),
+            title: Text(contact.preferredSimLabel ?? l10n.labelChosenSim),
+            subtitle: Text(l10n.descCallsGoOutOnSim),
+          ),
+        if (contact.officialDetails != null)
+          ListTile(
+            leading: const Icon(Icons.work),
+            title: Text(contact.officialDetails!.designation ?? '—'),
+            subtitle: Text(contact.officialDetails!.department ?? ''),
+          ),
+        if (contact.groups.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Wrap(
+              spacing: 6,
+              children: contact.groups
+                  .map((g) => Chip(label: Text(g)))
+                  .toList(),
+            ),
+          ),
+        // Tags are free-text labels, distinct from group memberships —
+        // prefixed with '#' so the two chip rows read differently.
+        if (contact.tags.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Wrap(
+              spacing: 6,
+              children: contact.tags
+                  .map((t) => Chip(label: Text('#$t')))
+                  .toList(),
+            ),
+          ),
+        const SizedBox(height: 8),
+        _buildRelationships(contact),
+      ],
     );
   }
 
@@ -654,7 +719,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 6),
             child: Text(
-              'Calling card',
+              AppLocalizations.of(context).labelCallingCard,
               style: Theme.of(
                 context,
               ).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
@@ -706,26 +771,30 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
 
   Widget _buildRelationships(Contact contact) {
     final relations = contact.relationships;
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const Expanded(
+            Expanded(
               child: Text(
-                'Relationships',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                l10n.labelRelationships,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
             if (relations.isNotEmpty)
               IconButton(
                 icon: const Icon(Icons.hub_outlined),
-                tooltip: 'View sphere',
+                tooltip: l10n.tooltipViewSphere,
                 onPressed: _openSphere,
               ),
             IconButton(
               icon: const Icon(Icons.add_link),
-              tooltip: 'Add relationship',
+              tooltip: l10n.tooltipAddRelationship,
               onPressed: _addRelationship,
             ),
           ],
@@ -734,7 +803,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Text(
-              'No relationships yet. Tap the link icon to connect a contact.',
+              l10n.emptyNoRelationships,
               style: TextStyle(color: Theme.of(context).hintColor),
             ),
           )
@@ -756,12 +825,12 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
                 children: [
                   IconButton(
                     icon: const Icon(Icons.edit_outlined),
-                    tooltip: 'Edit type',
+                    tooltip: l10n.tooltipEditType,
                     onPressed: () => _editRelationship(r),
                   ),
                   IconButton(
                     icon: const Icon(Icons.link_off),
-                    tooltip: 'Remove',
+                    tooltip: l10n.actionRemove,
                     onPressed: () => _removeRelationship(r),
                   ),
                 ],
@@ -772,23 +841,12 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
     );
   }
 
-  static const _monthNames = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ];
-
-  String _formatDate(DateTime d) =>
-      '${d.day} ${_monthNames[d.month - 1]} ${d.year}';
+  /// Day, month name and year in the app's language ("5 March 2026"). Sanskrit
+  /// has no intl date data, so [formattingLocale] falls back to English there.
+  String _formatDate(DateTime d) => DateFormat(
+    'd MMMM y',
+    formattingLocale(Localizations.localeOf(context)),
+  ).format(d);
 
   /// Third-party apps that know this contact, one expandable row per app with
   /// its launchable actions (labels come from each app, already localized).
@@ -798,11 +856,11 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
             child: Text(
-              'Connected apps',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              AppLocalizations.of(context).labelConnectedApps,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
           ..._connectedApps.map(
@@ -839,16 +897,17 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
   }
 
   Widget _buildSummaryCard(CallSummary summary) {
+    final l10n = AppLocalizations.of(context);
     final lines = <String>[
-      if (summary.upcomingBirthday) '🎂 Birthday coming up within a week',
+      if (summary.upcomingBirthday) l10n.descBirthdayComingUp,
       // Measured from this contact's own call history; absent when the app has
       // too little to go on. Advice only — the user still places the call.
       if (summary.bestTimeToReach != null) summary.bestTimeToReach!.sentence,
       if (summary.lastCallDuration != null)
-        'Last call: ${summary.lastCallDuration}s',
+        l10n.descLastCall(l10n.labelDurationSeconds(summary.lastCallDuration!)),
       if (summary.currentTimeInContactTimezone != null)
-        'Their time: ${summary.currentTimeInContactTimezone}',
-      '${summary.recentInteractions.length} recent interaction(s)',
+        l10n.descTheirTime(summary.currentTimeInContactTimezone!),
+      l10n.descRecentInteractions(summary.recentInteractions.length),
     ];
     return Card(
       child: Padding(
@@ -856,9 +915,9 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Before you call',
-              style: TextStyle(fontWeight: FontWeight.bold),
+            Text(
+              l10n.labelBeforeYouCall,
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 6),
             ...lines.map(Text.new),
@@ -871,19 +930,20 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
   Widget _buildEphemeralBanner(Contact contact) {
     final theme = Theme.of(context);
     final accent = theme.colorScheme.primary;
+    final l10n = AppLocalizations.of(context);
 
     String countdownText = '';
     if (contact.ephemeralAutoDeleteCall) {
-      countdownText = 'Auto-deletes after 1 call (${contact.ephemeralCallCount}/1 calls logged)';
+      countdownText = l10n.descEphemeralAutoDelete(contact.ephemeralCallCount);
     } else if (contact.ephemeralExpiresAt != null) {
       final diff = contact.ephemeralExpiresAt!.difference(DateTime.now());
       if (diff.isNegative) {
-        countdownText = 'Expired — self-destructing soon...';
+        countdownText = l10n.descEphemeralExpired;
       } else {
         final hours = diff.inHours.toString().padLeft(2, '0');
         final minutes = (diff.inMinutes % 60).toString().padLeft(2, '0');
         final seconds = (diff.inSeconds % 60).toString().padLeft(2, '0');
-        countdownText = 'Self-destructs in: ${hours}h ${minutes}m ${seconds}s';
+        countdownText = l10n.descEphemeralCountdown(hours, minutes, seconds);
       }
     }
 
@@ -904,7 +964,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
                 const Icon(Icons.timer, color: Colors.amber, size: 20),
                 const SizedBox(width: 8),
                 Text(
-                  'Ephemeral Contact',
+                  l10n.labelEphemeralContact,
                   style: TextStyle(
                     color: Colors.amber.shade900,
                     fontWeight: FontWeight.w800,
@@ -913,14 +973,17 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.amber.shade700,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Text(
-                    'SQLCipher Local Only',
-                    style: TextStyle(
+                  child: Text(
+                    l10n.labelSqlcipherLocalOnly,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
@@ -945,7 +1008,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
               children: [
                 OutlinedButton.icon(
                   icon: const Icon(Icons.add_alarm, size: 16),
-                  label: const Text('+24 Hours'),
+                  label: Text(l10n.actionAdd24Hours),
                   style: OutlinedButton.styleFrom(
                     visualDensity: VisualDensity.compact,
                     foregroundColor: Colors.amber.shade900,
@@ -953,13 +1016,16 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
                   ),
                   onPressed: () async {
                     if (contact.id == null) return;
-                    await EphemeralContactService().extendExpiry(contact.id!, const Duration(hours: 24));
+                    await EphemeralContactService().extendExpiry(
+                      contact.id!,
+                      const Duration(hours: 24),
+                    );
                     _load();
                   },
                 ),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.lock_open, size: 16),
-                  label: const Text('Keep Permanently'),
+                  label: Text(l10n.actionKeepPermanently),
                   style: OutlinedButton.styleFrom(
                     visualDensity: VisualDensity.compact,
                     foregroundColor: accent,
@@ -972,7 +1038,7 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
                 ),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.delete_forever, size: 16),
-                  label: const Text('Scrub Now'),
+                  label: Text(l10n.actionScrubNow),
                   style: OutlinedButton.styleFrom(
                     visualDensity: VisualDensity.compact,
                     foregroundColor: Colors.red,
@@ -980,7 +1046,9 @@ class _ContactDetailScreenState extends State<ContactDetailScreen>
                   ),
                   onPressed: () async {
                     if (contact.id == null) return;
-                    await EphemeralContactService().scrubEphemeralContact(contact.id!);
+                    await EphemeralContactService().scrubEphemeralContact(
+                      contact.id!,
+                    );
                     if (mounted) Navigator.pop(context);
                   },
                 ),

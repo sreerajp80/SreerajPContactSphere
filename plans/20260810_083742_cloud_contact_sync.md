@@ -44,7 +44,7 @@ This plan details an **opt-in, manual-configuration online integration module** 
 - **Tombstone Queue**: Track local contact deletions in a pending deletion queue so remote endpoints receive explicit HTTP DELETE calls during sync.
 
 #### Feature B: Encrypted Cloud Backup & Restore (`.csbak` via Cloud Storage APIs)
-- Leverages [BackupService](file:///l:/Android/SreerajPContactSphere/lib/services/backup_service.dart) to generate or decrypt standard `.csbak` payloads using the user's passphrase.
+- Leverages [BackupService](../lib/services/backup_service.dart) to generate or decrypt standard `.csbak` payloads using the user's passphrase.
 - Uploads/downloads encrypted `.csbak` snapshot files directly to:
   - **Google Drive**: `drive.appdata` / private folder scope using Google Drive REST API v3.
   - **Microsoft OneDrive**: `/me/drive/special/approot` using MS Graph API.

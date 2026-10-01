@@ -21,6 +21,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/services/call_log_import_service.dart';
 import 'package:smart_contacts_dialer/services/contact_sync_service.dart';
 import 'package:smart_contacts_dialer/services/device_account.dart';
@@ -49,6 +50,7 @@ Future<WritableAccount?> _pickToDeviceAccount(BuildContext context) async {
   if (!context.mounted) return null;
 
   final theme = Theme.of(context);
+  final l10n = AppLocalizations.of(context);
 
   final chosen = await showModalBottomSheet<WritableAccount>(
     context: context,
@@ -64,7 +66,7 @@ Future<WritableAccount?> _pickToDeviceAccount(BuildContext context) async {
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
             child: Text(
-              'Save contacts to',
+              l10n.labelSaveContactsTo,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
               ),
@@ -106,24 +108,25 @@ class ContactSyncSettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Sync')),
+      appBar: AppBar(title: Text(l10n.titleSync)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-        children: const [
-          _SectionHeader('Contacts'),
-          _AddDeviceContactsToAppCard(),
-          SizedBox(height: 12),
-          _AddAppContactsToDeviceCard(),
-          SizedBox(height: 12),
-          _MirrorFromDeviceCard(),
-          SizedBox(height: 12),
-          _MirrorToDeviceCard(),
-          SizedBox(height: 24),
-          _SectionHeader('Call log'),
-          _ImportCallLogCard(),
-          SizedBox(height: 12),
-          _ReplaceCallLogCard(),
+        children: [
+          _SectionHeader(l10n.navContacts),
+          const _AddDeviceContactsToAppCard(),
+          const SizedBox(height: 12),
+          const _AddAppContactsToDeviceCard(),
+          const SizedBox(height: 12),
+          const _MirrorFromDeviceCard(),
+          const SizedBox(height: 12),
+          const _MirrorToDeviceCard(),
+          const SizedBox(height: 24),
+          _SectionHeader(l10n.labelCallLog),
+          const _ImportCallLogCard(),
+          const SizedBox(height: 12),
+          const _ReplaceCallLogCard(),
         ],
       ),
     );
@@ -163,6 +166,7 @@ Future<bool> _confirm(
   required String confirmLabel,
 }) async {
   final theme = Theme.of(context);
+  final l10n = AppLocalizations.of(context);
   final result = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
@@ -171,7 +175,7 @@ Future<bool> _confirm(
       actions: [
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(false),
-          child: const Text('Cancel'),
+          child: Text(l10n.actionCancel),
         ),
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(true),
@@ -219,6 +223,7 @@ class _SyncActionCardState extends State<_SyncActionCard> {
 
   Future<void> _run() async {
     if (_busy) return;
+    final l10n = AppLocalizations.of(context);
     if (widget.confirm != null) {
       final ok = await widget.confirm!(context);
       if (!ok) return;
@@ -229,7 +234,7 @@ class _SyncActionCardState extends State<_SyncActionCard> {
     try {
       message = await widget.action();
     } catch (_) {
-      message = 'Sync failed';
+      message = l10n.errorSyncFailed;
     }
     if (!mounted) return;
     setState(() => _busy = false);
@@ -292,7 +297,9 @@ class _SyncActionCardState extends State<_SyncActionCard> {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      _busy ? 'Working…' : widget.subtitle,
+                      _busy
+                          ? AppLocalizations.of(context).labelWorking
+                          : widget.subtitle,
                       style: TextStyle(color: colors.mutedText, fontSize: 13),
                     ),
                   ],
@@ -316,18 +323,19 @@ class _AddDeviceContactsToAppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return _SyncActionCard(
       icon: Icons.sync_outlined,
-      title: 'Add device contacts to app',
-      subtitle: "Pull the phone's address book into the app",
+      title: l10n.actionAddDeviceToApp,
+      subtitle: l10n.descAddDeviceToApp,
       action: () async {
         if (!await DeviceContactService().ensurePermission()) {
-          return 'Contacts permission is needed to sync';
+          return l10n.errorContactsPermissionSync;
         }
         final changed = await ContactSyncService().syncFromDevice();
         return changed > 0
-            ? 'Contacts synced — $changed added or updated'
-            : 'Contacts are already up to date';
+            ? l10n.msgContactsSynced(changed)
+            : l10n.msgContactsUpToDate;
       },
     );
   }
@@ -338,13 +346,14 @@ class _AddAppContactsToDeviceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return _SyncActionCard(
       icon: Icons.upload_outlined,
-      title: 'Add app contacts to device',
-      subtitle: "Copy your app contacts into the phone's contacts",
+      title: l10n.actionAddAppToDevice,
+      subtitle: l10n.descAddAppToDevice,
       action: () async {
         if (!await DeviceContactService().ensurePermission()) {
-          return 'Contacts permission is needed to sync';
+          return l10n.errorContactsPermissionSync;
         }
         if (!context.mounted) return '';
         final target = await _pickToDeviceAccount(context);
@@ -352,11 +361,16 @@ class _AddAppContactsToDeviceCard extends StatelessWidget {
         final result = await ContactSyncService().syncToDevice(target: target);
         if (result.total == 0) {
           return result.failed > 0
-              ? 'Could not save to ${target.label} — ${result.failed} failed'
-              : 'No contacts to sync to the device';
+              ? l10n.errorCouldNotSaveTo(target.label, result.failed)
+              : l10n.msgNoContactsToSyncToDevice;
         }
-        final tail = result.failed > 0 ? ' (${result.failed} failed)' : '';
-        return 'Saved to ${target.label} — ${result.total} added or updated$tail';
+        return result.failed > 0
+            ? l10n.msgSavedToWithFailed(
+                target.label,
+                result.total,
+                result.failed,
+              )
+            : l10n.msgSavedTo(target.label, result.total);
       },
     );
   }
@@ -367,31 +381,26 @@ class _MirrorFromDeviceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return _SyncActionCard(
       icon: Icons.sync_problem_outlined,
-      title: 'Add device contacts to app (destructive)',
-      subtitle:
-          'Make the app match the phone — removes app contacts that '
-          'are gone from the phone',
+      title: l10n.actionMirrorDeviceToApp,
+      subtitle: l10n.descMirrorDeviceToApp,
       destructive: true,
       confirm: (ctx) => _confirm(
         ctx,
-        title: 'Mirror device to app?',
-        body:
-            'This imports the phone\'s contacts, then deletes app contacts '
-            'that came from the phone but are no longer on it.\n\n'
-            'Your "Me" contact, secret contacts, and contacts you created only '
-            'in the app are never deleted.',
-        confirmLabel: 'Mirror',
+        title: l10n.titleMirrorDeviceToApp,
+        body: l10n.descMirrorDeviceToAppConfirm,
+        confirmLabel: l10n.actionMirror,
       ),
       action: () async {
         if (!await DeviceContactService().ensurePermission()) {
-          return 'Contacts permission is needed to sync';
+          return l10n.errorContactsPermissionSync;
         }
         final removed = await ContactSyncService().mirrorFromDevice();
         return removed > 0
-            ? 'Mirrored from device — $removed removed'
-            : 'Mirrored from device — nothing to remove';
+            ? l10n.msgMirroredFromDevice(removed)
+            : l10n.msgMirroredFromDeviceNone;
       },
     );
   }
@@ -402,26 +411,21 @@ class _MirrorToDeviceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return _SyncActionCard(
       icon: Icons.sync_problem_outlined,
-      title: 'Add app contacts to device (destructive)',
-      subtitle:
-          'Make the phone match the app — removes device contacts that '
-          'are not in the app',
+      title: l10n.actionMirrorAppToDevice,
+      subtitle: l10n.descMirrorAppToDevice,
       destructive: true,
       confirm: (ctx) => _confirm(
         ctx,
-        title: 'Mirror app to device?',
-        body:
-            'This copies your app contacts to the phone, then deletes device '
-            'contacts that are not in the app.\n\n'
-            'Device contacts that match your "Me" contact or a secret contact '
-            'are never deleted.',
-        confirmLabel: 'Mirror',
+        title: l10n.titleMirrorAppToDevice,
+        body: l10n.descMirrorAppToDeviceConfirm,
+        confirmLabel: l10n.actionMirror,
       ),
       action: () async {
         if (!await DeviceContactService().ensurePermission()) {
-          return 'Contacts permission is needed to sync';
+          return l10n.errorContactsPermissionSync;
         }
         if (!context.mounted) return '';
         final target = await _pickToDeviceAccount(context);
@@ -430,8 +434,8 @@ class _MirrorToDeviceCard extends StatelessWidget {
           target: target,
         );
         return removed > 0
-            ? 'Mirrored to ${target.label} — $removed removed'
-            : 'Mirrored to ${target.label} — nothing to remove';
+            ? l10n.msgMirroredTo(target.label, removed)
+            : l10n.msgMirroredToNone(target.label);
       },
     );
   }
@@ -446,22 +450,22 @@ class _ImportCallLogCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return _SyncActionCard(
       icon: Icons.call_outlined,
-      title: 'Add device call log to app',
-      subtitle: "Import the phone's older call history into Recents",
+      title: l10n.actionImportCallLog,
+      subtitle: l10n.descImportCallLog,
       action: () async {
         final result = await CallLogImportService().importFromDevice();
         if (result.failed) {
-          return "Couldn't read the phone's call log — allow the Call logs "
-              'permission in Android settings';
+          return l10n.errorCouldNotReadCallLog;
         }
-        if (!result.changedAnything) return 'Call log is already up to date';
+        if (!result.changedAnything) return l10n.msgCallLogUpToDate;
         final parts = <String>[
-          if (result.inserted > 0) '${result.inserted} added',
-          if (result.updated > 0) '${result.updated} updated',
+          if (result.inserted > 0) l10n.labelCountAdded(result.inserted),
+          if (result.updated > 0) l10n.labelCountUpdated(result.updated),
         ];
-        return 'Call log imported — ${parts.join(', ')}';
+        return l10n.msgCallLogImported(parts.join(', '));
       },
     );
   }
@@ -472,29 +476,26 @@ class _ReplaceCallLogCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return _SyncActionCard(
       icon: Icons.restore_page_outlined,
-      title: 'Add device call log to app (destructive)',
-      subtitle: "Replace Recents with the phone's call history",
+      title: l10n.actionReplaceCallLog,
+      subtitle: l10n.descReplaceCallLog,
       destructive: true,
       confirm: (ctx) => _confirm(
         ctx,
-        title: 'Replace call history?',
-        body:
-            'This clears the app\'s call history and rebuilds it from the '
-            'phone\'s call log. Call notes and feedback saved in the app will '
-            'be lost.',
-        confirmLabel: 'Replace',
+        title: l10n.titleReplaceCallHistory,
+        body: l10n.descReplaceCallHistoryConfirm,
+        confirmLabel: l10n.actionReplace,
       ),
       action: () async {
         final result = await CallLogImportService().importFromDevice(
           replace: true,
         );
         if (result.failed) {
-          return "Couldn't read the phone's call log — allow the Call logs "
-              'permission in Android settings';
+          return l10n.errorCouldNotReadCallLog;
         }
-        return 'Call log replaced — ${result.inserted} added';
+        return l10n.msgCallLogReplaced(result.inserted);
       },
     );
   }

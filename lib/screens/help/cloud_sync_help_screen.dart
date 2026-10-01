@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
 class CloudSyncHelpScreen extends StatelessWidget {
@@ -14,74 +15,45 @@ class CloudSyncHelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Cloud Sync & Backup')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).helpCloudSyncText),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-        children: const [
-          _Intro(
-            'SreerajP Contacts Sphere connects with Google, Microsoft, and CardDAV/WebDAV '
-            'servers. You can use a single provider or decouple them — syncing live '
-            'contacts with one service while backing up your encrypted database to another.',
-          ),
-          SizedBox(height: 24),
+        children: [
+          _Intro(AppLocalizations.of(context).helpCloudSyncIntro),
+          const SizedBox(height: 24),
 
           _Section(
             icon: Icons.sync_rounded,
-            title: 'Contact Sync vs Cloud Backup',
+            title: AppLocalizations.of(context).helpCloudSyncTitle1,
             children: [
-              _Bullet(
-                'Online Contact Sync (Live 2-Way): synchronizes individual contact cards '
-                '(names, phone numbers, emails) directly with Google People API, Microsoft Graph '
-                'Contacts, or CardDAV address books. Synced contacts appear in your online address book.',
-              ),
-              _Bullet(
-                'Encrypted Cloud Backup: exports a full, password-encrypted .csbak file '
-                'containing your complete database (all contacts, call history, call notes, tags, settings, '
-                'and emergency info) to cloud file storage (Google Drive AppData, Microsoft OneDrive, or WebDAV).',
-              ),
+              _Bullet(AppLocalizations.of(context).helpCloudSyncBullet1),
+              _Bullet(AppLocalizations.of(context).helpCloudSyncBullet2),
             ],
           ),
 
           _Section(
             icon: Icons.alt_route_rounded,
-            title: 'Mixing cloud providers',
+            title: AppLocalizations.of(context).helpCloudSyncTitle2,
             children: [
-              _Bullet(
-                'You can use Google for live contact sync while storing encrypted cloud backups on '
-                'Microsoft OneDrive or a self-hosted WebDAV server.',
-              ),
-              _Bullet(
-                'In Settings → Online Provider Sync, toggle "Contact Sync: On" and "Cloud Backup: Off" '
-                'for your Google account.',
-              ),
-              _Bullet(
-                'Add your Microsoft or WebDAV account separately and select it when uploading '
-                'encrypted cloud backups in Settings → Encrypted Cloud Backup.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpCloudSyncBullet3),
+              _Bullet(AppLocalizations.of(context).helpCloudSyncBullet4),
+              _Bullet(AppLocalizations.of(context).helpCloudSyncBullet5),
             ],
           ),
 
           _Section(
             icon: Icons.security_rounded,
-            title: 'Privacy & Security',
+            title: AppLocalizations.of(context).helpCloudSyncTitle3,
             children: [
-              _Bullet(
-                'Secret Vault Contacts: contacts saved as Secret in SreerajP Contacts Sphere are app-only and '
-                'are NEVER uploaded or synced to online contact providers (Google Contacts, Outlook, or CardDAV).',
-              ),
-              _Bullet(
-                'Encrypted Payload: Cloud backup files (.csbak) are encrypted locally using PBKDF2 '
-                'and AES-GCM with your personal passphrase before upload. The cloud provider cannot read '
-                'your backup data.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpCloudSyncBullet6),
+              _Bullet(AppLocalizations.of(context).helpCloudSyncBullet7),
             ],
           ),
 
-          SizedBox(height: 8),
-          _Footer(
-            'Tip: You can manage all configured accounts under Settings → Online Provider Sync. Each account can '
-            'have independent toggles for live contact sync and cloud backup.',
-          ),
+          const SizedBox(height: 8),
+          _Footer(AppLocalizations.of(context).helpCloudSyncFooter),
         ],
       ),
     );

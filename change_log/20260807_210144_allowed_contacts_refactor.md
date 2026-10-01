@@ -1,7 +1,7 @@
 # Change Log: Refactor Quiet Hours Allowed Tiers to Allowed Contacts
 
 **Date/Time:** 2026-08-07 21:01:44
-**Implemented Plan:** [plans/20260807_210022_allowed_contacts_refactor.md](file:///l:/Android/SreerajPContactSphere/plans/20260807_210022_allowed_contacts_refactor.md)
+**Implemented Plan:** [plans/20260807_210022_allowed_contacts_refactor.md](../plans/20260807_210022_allowed_contacts_refactor.md)
 
 ## Summary of Changes
 

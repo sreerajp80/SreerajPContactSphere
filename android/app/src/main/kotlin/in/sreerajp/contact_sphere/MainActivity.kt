@@ -302,6 +302,16 @@ class MainActivity : FlutterFragmentActivity(), CallRegistry.Listener {
                 "stopDtmf" -> { CallRegistry.stopDtmf(); result.success(null) }
                 "merge" -> { CallRegistry.merge(); result.success(null) }
                 "swap" -> { CallRegistry.swap(); result.success(null) }
+                "disconnectParticipant" -> {
+                    val id = call.argument<Number>("callId")?.toLong()
+                    if (id != null) CallRegistry.disconnectParticipant(id)
+                    result.success(null)
+                }
+                "separateParticipant" -> {
+                    val id = call.argument<Number>("callId")?.toLong()
+                    if (id != null) CallRegistry.separateParticipant(id)
+                    result.success(null)
+                }
                 "setSecureFlag" -> {
                     // Add/clear the window FLAG_SECURE so sensitive UI (secret
                     // contacts, the app-lock screen) is excluded from

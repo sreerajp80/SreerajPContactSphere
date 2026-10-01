@@ -1,7 +1,7 @@
 # Change Log: Spoken caller announcement, English and Malayalam (Size S)
 
 - **Date:** 2026-08-07
-- **Plan Implemented:** [plans/20260807_012830_spoken_caller_announcement.md](file:///l:/Android/SreerajPContactSphere/plans/20260807_012830_spoken_caller_announcement.md)
+- **Plan Implemented:** [plans/20260807_012830_spoken_caller_announcement.md](../plans/20260807_012830_spoken_caller_announcement.md)
 
 ## Summary of Changes
 

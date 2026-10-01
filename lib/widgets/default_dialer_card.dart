@@ -1,5 +1,6 @@
 // lib/widgets/default_dialer_card.dart
 import 'package:flutter/material.dart';
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/services/telecom_service.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
@@ -71,9 +72,9 @@ class _DefaultDialerCardState extends State<DefaultDialerCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Default phone app',
-                      style: TextStyle(
+                    Text(
+                      AppLocalizations.of(context).labelDefaultPhoneApp,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
@@ -81,8 +82,8 @@ class _DefaultDialerCardState extends State<DefaultDialerCard> {
                     const SizedBox(height: 2),
                     Text(
                       _isDefault
-                          ? 'SreerajP Contacts Sphere handles your calls'
-                          : 'Set SreerajP Contacts Sphere as your default dialer',
+                          ? AppLocalizations.of(context).descHandlesYourCalls
+                          : AppLocalizations.of(context).descSetAsDefaultDialer,
                       style: TextStyle(color: colors.mutedText, fontSize: 13),
                     ),
                   ],

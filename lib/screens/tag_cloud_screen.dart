@@ -1,10 +1,11 @@
 // lib/screens/tag_cloud_screen.dart
 //
-// The "Tags" tab: every tag used across the address book, drawn as a tag cloud
+// The AppLocalizations.of(context).navTags tab: every tag used across the address book, drawn as a tag cloud
 // where a chip's size grows with how many contacts carry that tag. Tapping a
 // tag opens [TagContactsScreen], the list of contacts with that tag.
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/repositories/contact_repository.dart'
     show TagCount;
 import 'package:smart_contacts_dialer/services/contact_sync_service.dart';
@@ -90,14 +91,14 @@ class TagCloudScreenState extends State<TagCloudScreen> {
   }
 
   Widget _header(AppColors colors) {
-    return const Padding(
-      padding: EdgeInsets.fromLTRB(20, 10, 12, 4),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 10, 12, 4),
       child: Row(
         children: [
           Expanded(
             child: Text(
-              'Tags',
-              style: TextStyle(
+              AppLocalizations.of(context).navTags,
+              style: const TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.6,
@@ -118,7 +119,7 @@ class TagCloudScreenState extends State<TagCloudScreen> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            'No tags yet. Add tags to a contact and they show up here.',
+            AppLocalizations.of(context).emptyNoTags,
             textAlign: TextAlign.center,
             style: TextStyle(color: colors.mutedText, fontSize: 14),
           ),
@@ -155,7 +156,7 @@ class TagCloudScreenState extends State<TagCloudScreen> {
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: Text(
-              'Tap a tag to see its contacts. Long-press to rename, merge or delete.',
+              AppLocalizations.of(context).descTagCloudHint,
               style: TextStyle(fontSize: 12, color: colors.mutedText),
             ),
           ),

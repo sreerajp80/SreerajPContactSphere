@@ -1,7 +1,7 @@
 # Change Log - Generic Notification Scheduler
 
 **Date:** 2026-08-07
-**Plan Implemented:** [plans/20260807_032000_generic_notification_scheduler.md](file:///l:/Android/SreerajPContactSphere/plans/20260807_032000_generic_notification_scheduler.md)
+**Plan Implemented:** [plans/20260807_032000_generic_notification_scheduler.md](../plans/20260807_032000_generic_notification_scheduler.md)
 
 ## Summary of Changes
 Implemented a generic, persistent, boot-surviving notification scheduler natively in Android Kotlin using exact `AlarmManager` alarms and integrated it with Flutter via `MethodChannel`.

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
@@ -16,7 +17,9 @@ class ScreenshotGuardSettingsScreen extends StatelessWidget {
     final enabled = context.watch<AppSettings>().screenshotGuardEnabled;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Screenshot Guard')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).titleScreenshotGuard),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
@@ -32,12 +35,15 @@ class ScreenshotGuardSettingsScreen extends StatelessWidget {
               onChanged: (v) =>
                   context.read<AppSettings>().setScreenshotGuardEnabled(v),
               secondary: const Icon(Icons.screenshot_monitor_outlined),
-              title: const Text(
-                'Block screenshots',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              title: Text(
+                AppLocalizations.of(context).labelBlockScreenshots,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               subtitle: Text(
-                'Keeps contact details and calls out of screenshots, screen recordings and the Recents preview',
+                AppLocalizations.of(context).descBlockScreenshots,
                 style: TextStyle(color: colors.mutedText, fontSize: 13),
               ),
             ),

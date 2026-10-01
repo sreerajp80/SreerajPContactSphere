@@ -18,16 +18,42 @@ import 'package:smart_contacts_dialer/utils/malayalam_transliterator.dart';
 /// - 0: Space / +
 class T9Utils {
   static const Map<String, String> _charToT9Map = {
-    'a': '2', 'b': '2', 'c': '2',
-    'd': '3', 'e': '3', 'f': '3',
-    'g': '4', 'h': '4', 'i': '4',
-    'j': '5', 'k': '5', 'l': '5',
-    'm': '6', 'n': '6', 'o': '6',
-    'p': '7', 'q': '7', 'r': '7', 's': '7',
-    't': '8', 'u': '8', 'v': '8',
-    'w': '9', 'x': '9', 'y': '9', 'z': '9',
-    '0': '0', '1': '1', '2': '2', '3': '3', '4': '4',
-    '5': '5', '6': '6', '7': '7', '8': '8', '9': '9',
+    'a': '2',
+    'b': '2',
+    'c': '2',
+    'd': '3',
+    'e': '3',
+    'f': '3',
+    'g': '4',
+    'h': '4',
+    'i': '4',
+    'j': '5',
+    'k': '5',
+    'l': '5',
+    'm': '6',
+    'n': '6',
+    'o': '6',
+    'p': '7',
+    'q': '7',
+    'r': '7',
+    's': '7',
+    't': '8',
+    'u': '8',
+    'v': '8',
+    'w': '9',
+    'x': '9',
+    'y': '9',
+    'z': '9',
+    '0': '0',
+    '1': '1',
+    '2': '2',
+    '3': '3',
+    '4': '4',
+    '5': '5',
+    '6': '6',
+    '7': '7',
+    '8': '8',
+    '9': '9',
   };
 
   /// Malayalam character to T9 digit mapping.
@@ -65,79 +91,237 @@ class T9Utils {
 
   /// Devanagari character to T9 digit mapping (Sanskrit / Hindi / Marathi).
   static const Map<String, String> _devanagariCharToT9Map = {
-    'अ': '2', 'आ': '2', 'ा': '2', 'ि': '2', 'ी': '2',
-    'क': '2', 'ख': '2', 'ग': '2', 'घ': '2', 'ङ': '2',
+    'अ': '2',
+    'आ': '2',
+    'ा': '2',
+    'ि': '2',
+    'ी': '2',
+    'क': '2',
+    'ख': '2',
+    'ग': '2',
+    'घ': '2',
+    'ङ': '2',
 
-    'इ': '3', 'ई': '3', 'ु': '3', 'ू': '3', 'ृ': '3',
-    'च': '3', 'छ': '3', 'ज': '3', 'झ': '3', 'ञ': '3',
+    'इ': '3',
+    'ई': '3',
+    'ु': '3',
+    'ू': '3',
+    'ृ': '3',
+    'च': '3',
+    'छ': '3',
+    'ज': '3',
+    'झ': '3',
+    'ञ': '3',
 
-    'उ': '4', 'ऊ': '4', 'ऋ': '4', 'े': '4', 'ै': '4',
-    'ट': '4', 'ठ': '4', 'ड': '4', 'ढ': '4', 'ण': '4',
+    'उ': '4',
+    'ऊ': '4',
+    'ऋ': '4',
+    'े': '4',
+    'ै': '4',
+    'ट': '4',
+    'ठ': '4',
+    'ड': '4',
+    'ढ': '4',
+    'ण': '4',
 
-    'ए': '5', 'ऐ': '5', 'ओ': '5', 'औ': '5', 'ो': '5', 'ौ': '5',
-    'त': '5', 'थ': '5', 'द': '5', 'ध': '5', 'न': '5',
+    'ए': '5',
+    'ऐ': '5',
+    'ओ': '5',
+    'औ': '5',
+    'ो': '5',
+    'ौ': '5',
+    'त': '5',
+    'थ': '5',
+    'द': '5',
+    'ध': '5',
+    'न': '5',
 
-    'प': '6', 'फ': '6', 'ब': '6', 'भ': '6', 'म': '6',
+    'प': '6',
+    'फ': '6',
+    'ब': '6',
+    'भ': '6',
+    'म': '6',
 
-    'य': '7', 'र': '7', 'ल': '7', 'व': '7',
+    'य': '7',
+    'र': '7',
+    'ल': '7',
+    'व': '7',
 
-    'श': '8', 'ष': '8', 'स': '8', 'ह': '8',
+    'श': '8',
+    'ष': '8',
+    'स': '8',
+    'ह': '8',
 
-    'ळ': '9', 'ऴ': '9', 'क्ष': '9', 'ज्ञ': '9',
-    'ः': '9', 'ं': '9', 'ँ': '9',
+    'ळ': '9',
+    'ऴ': '9',
+    'क्ष': '9',
+    'ज्ञ': '9',
+    'ः': '9',
+    'ं': '9',
+    'ँ': '9',
   };
 
   /// Cyrillic character to T9 digit mapping (Russian / Ukrainian / Bulgarian).
   static const Map<String, String> _cyrillicCharToT9Map = {
-    'а': '2', 'б': '2', 'в': '2', 'г': '2', 'ґ': '2',
-    'д': '3', 'е': '3', 'ё': '3', 'ж': '3', 'з': '3',
-    'и': '4', 'й': '4', 'к': '4', 'л': '4', 'і': '4', 'ї': '4',
-    'м': '5', 'н': '5', 'о': '5', 'п': '5', 'р': '5',
-    'с': '6', 'т': '6', 'у': '6', 'ф': '6',
-    'х': '7', 'ц': '7', 'ч': '7', 'ш': '7',
-    'щ': '8', 'ъ': '8', 'ы': '8', 'ь': '8', 'э': '8',
-    'ю': '9', 'я': '9',
+    'а': '2',
+    'б': '2',
+    'в': '2',
+    'г': '2',
+    'ґ': '2',
+    'д': '3',
+    'е': '3',
+    'ё': '3',
+    'ж': '3',
+    'з': '3',
+    'и': '4',
+    'й': '4',
+    'к': '4',
+    'л': '4',
+    'і': '4',
+    'ї': '4',
+    'м': '5',
+    'н': '5',
+    'о': '5',
+    'п': '5',
+    'р': '5',
+    'с': '6',
+    'т': '6',
+    'у': '6',
+    'ф': '6',
+    'х': '7',
+    'ц': '7',
+    'ч': '7',
+    'ш': '7',
+    'щ': '8',
+    'ъ': '8',
+    'ы': '8',
+    'ь': '8',
+    'э': '8',
+    'ю': '9',
+    'я': '9',
   };
 
   /// Arabic character to T9 digit mapping (Arabic / Persian / Urdu).
   static const Map<String, String> _arabicCharToT9Map = {
-    'ا': '2', 'أ': '2', 'إ': '2', 'آ': '2', 'ب': '2', 'ت': '2', 'ث': '2',
-    'ج': '3', 'ح': '3', 'خ': '3',
-    'د': '4', 'ذ': '4', 'ر': '4', 'ز': '4', 'ژ': '4',
-    'س': '5', 'ش': '5', 'ص': '5', 'ض': '5',
-    'ط': '6', 'ظ': '6', 'ع': '6', 'غ': '6',
-    'ف': '7', 'ق': '7', 'ك': '7', 'گ': '7', 'ل': '7',
-    'م': '8', 'ن': '8', 'ه': '8', 'ة': '8',
-    'و': '9', 'ي': '9', 'ى': '9', 'ء': '9', 'ؤ': '9', 'ئ': '9',
+    'ا': '2',
+    'أ': '2',
+    'إ': '2',
+    'آ': '2',
+    'ب': '2',
+    'ت': '2',
+    'ث': '2',
+    'ج': '3',
+    'ح': '3',
+    'خ': '3',
+    'د': '4',
+    'ذ': '4',
+    'ر': '4',
+    'ز': '4',
+    'ژ': '4',
+    'س': '5',
+    'ش': '5',
+    'ص': '5',
+    'ض': '5',
+    'ط': '6',
+    'ظ': '6',
+    'ع': '6',
+    'غ': '6',
+    'ف': '7',
+    'ق': '7',
+    'ك': '7',
+    'گ': '7',
+    'ل': '7',
+    'م': '8',
+    'ن': '8',
+    'ه': '8',
+    'ة': '8',
+    'و': '9',
+    'ي': '9',
+    'ى': '9',
+    'ء': '9',
+    'ؤ': '9',
+    'ئ': '9',
   };
 
   /// Greek character to T9 digit mapping.
   static const Map<String, String> _greekCharToT9Map = {
-    'α': '2', 'β': '2', 'γ': '2', 'ά': '2',
-    'δ': '3', 'ε': '3', 'ζ': '3', 'έ': '3',
-    'η': '4', 'θ': '4', 'ι': '4', 'ή': '4', 'ί': '4', 'ϊ': '4', 'ΐ': '4',
-    'κ': '5', 'λ': '5', 'μ': '5',
-    'ν': '6', 'ξ': '6', 'ο': '6', 'ό': '6',
-    'π': '7', 'ρ': '7', 'σ': '7', 'ς': '7',
-    'τ': '8', 'υ': '8', 'φ': '8', 'ύ': '8', 'ϋ': '8', 'ΰ': '8',
-    'χ': '9', 'ψ': '9', 'ω': '9', 'ώ': '9',
+    'α': '2',
+    'β': '2',
+    'γ': '2',
+    'ά': '2',
+    'δ': '3',
+    'ε': '3',
+    'ζ': '3',
+    'έ': '3',
+    'η': '4',
+    'θ': '4',
+    'ι': '4',
+    'ή': '4',
+    'ί': '4',
+    'ϊ': '4',
+    'ΐ': '4',
+    'κ': '5',
+    'λ': '5',
+    'μ': '5',
+    'ν': '6',
+    'ξ': '6',
+    'ο': '6',
+    'ό': '6',
+    'π': '7',
+    'ρ': '7',
+    'σ': '7',
+    'ς': '7',
+    'τ': '8',
+    'υ': '8',
+    'φ': '8',
+    'ύ': '8',
+    'ϋ': '8',
+    'ΰ': '8',
+    'χ': '9',
+    'ψ': '9',
+    'ω': '9',
+    'ώ': '9',
   };
 
   /// Latin diacritics mapping.
   static const Map<String, String> _diacriticsToT9Map = {
-    'à': '2', 'á': '2', 'â': '2', 'ã': '2', 'ä': '2', 'å': '2', 'æ': '2', 'ç': '2',
-    'è': '3', 'é': '3', 'ê': '3', 'ë': '3',
-    'ì': '4', 'í': '4', 'î': '4', 'ï': '4',
-    'ñ': '6', 'ò': '6', 'ó': '6', 'ô': '6', 'õ': '6', 'ö': '6', 'ø': '6',
-    'ù': '8', 'ú': '8', 'û': '8', 'ü': '8',
-    'ý': '9', 'ÿ': '9',
+    'à': '2',
+    'á': '2',
+    'â': '2',
+    'ã': '2',
+    'ä': '2',
+    'å': '2',
+    'æ': '2',
+    'ç': '2',
+    'è': '3',
+    'é': '3',
+    'ê': '3',
+    'ë': '3',
+    'ì': '4',
+    'í': '4',
+    'î': '4',
+    'ï': '4',
+    'ñ': '6',
+    'ò': '6',
+    'ó': '6',
+    'ô': '6',
+    'õ': '6',
+    'ö': '6',
+    'ø': '6',
+    'ù': '8',
+    'ú': '8',
+    'û': '8',
+    'ü': '8',
+    'ý': '9',
+    'ÿ': '9',
   };
 
   /// Resolves secondary script key legends for digits 0–9 based on [script].
   static Map<String, String> getScriptKeyLegends(DialpadScript script) {
     DialpadScript effectiveScript = script;
     if (script == DialpadScript.auto) {
-      final lang = PlatformDispatcher.instance.locale.languageCode.toLowerCase();
+      final lang = PlatformDispatcher.instance.locale.languageCode
+          .toLowerCase();
       if (lang == 'ml') {
         effectiveScript = DialpadScript.malayalam;
       } else if (['hi', 'sa', 'mr', 'ne'].contains(lang)) {
@@ -157,28 +341,58 @@ class T9Utils {
     switch (effectiveScript) {
       case DialpadScript.malayalam:
         return const {
-          '2': 'ക-ങ', '3': 'ച-ഞ', '4': 'ട-ണ', '5': 'ത-ന',
-          '6': 'പ-മ', '7': 'യ-വ', '8': 'ശ-ഹ', '9': 'ള-റ',
+          '2': 'ക-ങ',
+          '3': 'ച-ഞ',
+          '4': 'ട-ണ',
+          '5': 'ത-ന',
+          '6': 'പ-മ',
+          '7': 'യ-വ',
+          '8': 'ശ-ഹ',
+          '9': 'ള-റ',
         };
       case DialpadScript.devanagari:
         return const {
-          '2': 'क-ङ', '3': 'च-ञ', '4': 'ट-ण', '5': 'त-न',
-          '6': 'प-म', '7': 'य-व', '8': 'श-ह', '9': 'ळ-क्ष',
+          '2': 'क-ङ',
+          '3': 'च-ञ',
+          '4': 'ट-ण',
+          '5': 'त-न',
+          '6': 'प-म',
+          '7': 'य-व',
+          '8': 'श-ह',
+          '9': 'ळ-क्ष',
         };
       case DialpadScript.cyrillic:
         return const {
-          '2': 'АБВГ', '3': 'ДЕЖЗ', '4': 'ИЙКЛ', '5': 'МНОПР',
-          '6': 'СТУФ', '7': 'ХЦЧШ', '8': 'ЩЪЫЬ', '9': 'ЭЮЯ',
+          '2': 'АБВГ',
+          '3': 'ДЕЖЗ',
+          '4': 'ИЙКЛ',
+          '5': 'МНОПР',
+          '6': 'СТУФ',
+          '7': 'ХЦЧШ',
+          '8': 'ЩЪЫЬ',
+          '9': 'ЭЮЯ',
         };
       case DialpadScript.arabic:
         return const {
-          '2': 'ا ب ت ث', '3': 'ج ح خ', '4': 'د ذ ر ز', '5': 'س ش ص ض',
-          '6': 'ط ظ ع غ', '7': 'ف ق ك ل', '8': 'م ن هـ', '9': 'و ي',
+          '2': 'ا ب ت ث',
+          '3': 'ج ح خ',
+          '4': 'د ذ ر ز',
+          '5': 'س ش ص ض',
+          '6': 'ط ظ ع غ',
+          '7': 'ف ق ك ل',
+          '8': 'م ن هـ',
+          '9': 'و ي',
         };
       case DialpadScript.greek:
         return const {
-          '2': 'ΑΒΓ', '3': 'ΔΕΖ', '4': 'ΗΘΙ', '5': 'ΚΛΜ',
-          '6': 'ΝΞΟ', '7': 'ΠΡΣ', '8': 'ΤΥΦ', '9': 'ΧΨΩ',
+          '2': 'ΑΒΓ',
+          '3': 'ΔΕΖ',
+          '4': 'ΗΘΙ',
+          '5': 'ΚΛΜ',
+          '6': 'ΝΞΟ',
+          '7': 'ΠΡΣ',
+          '8': 'ΤΥΦ',
+          '9': 'ΧΨΩ',
         };
       case DialpadScript.none:
       case DialpadScript.auto:
@@ -261,8 +475,8 @@ class T9Utils {
 
   /// Returns whether [typedDigits] matches [name] using T9 Smart Dialing rules.
   ///
-  /// Matches if [typedDigits] is a T9 prefix of any word in [name], or a prefix
-  /// of the full transliterated or direct Malayalam name.
+  /// Matches if [typedDigits] appears inside any single word of [name]
+  /// (transliterated or direct Malayalam). Matches never span a word break.
   static bool isT9Match(String name, String typedDigits) {
     final cleanDigits = typedDigits.replaceAll(RegExp(r'\D'), '');
     if (cleanDigits.isEmpty || name.trim().isEmpty) return false;
@@ -274,17 +488,12 @@ class T9Utils {
     for (final variant in [latinName, keyName]) {
       final words = variant.toLowerCase().split(RegExp(r'\s+'));
 
+      // A match must sit inside one word, never across a word break.
       for (final word in words) {
         if (word.isEmpty) continue;
-        final wordT9 = textToT9(word);
-        if (wordT9.startsWith(cleanDigits)) {
+        if (textToT9(word).contains(cleanDigits)) {
           return true;
         }
-      }
-
-      final fullT9 = textToT9(variant).replaceAll(' ', '');
-      if (fullT9.contains(cleanDigits)) {
-        return true;
       }
     }
 
@@ -296,14 +505,9 @@ class T9Utils {
       final words = mlT9Text.split(RegExp(r'\s+'));
       for (final word in words) {
         if (word.isEmpty) continue;
-        if (word.startsWith(cleanDigits)) {
+        if (word.contains(cleanDigits)) {
           return true;
         }
-      }
-
-      final fullT9 = mlT9Text.replaceAll(' ', '');
-      if (fullT9.contains(cleanDigits)) {
-        return true;
       }
     }
 
@@ -351,18 +555,22 @@ class T9Utils {
           }
         }
 
-        if (!wordPrefixMatched) {
-          final fullT9 = textToT9(variant).replaceAll(' ', '');
-          if (fullT9.contains(cleanDigits)) {
-            const score = 65;
-            if (score > maxScore) maxScore = score;
-          }
+        // Mid-word match: must sit inside one word, never across a word break.
+        if (!wordPrefixMatched &&
+            words.any(
+              (w) => w.isNotEmpty && textToT9(w).contains(cleanDigits),
+            )) {
+          const score = 65;
+          if (score > maxScore) maxScore = score;
         }
       }
 
       // 3. Direct Malayalam script T9 scoring (full & consonant-only)
       for (final consonantsOnly in [false, true]) {
-        final mlT9Text = textToMalayalamT9(name, consonantsOnly: consonantsOnly);
+        final mlT9Text = textToMalayalamT9(
+          name,
+          consonantsOnly: consonantsOnly,
+        );
         if (mlT9Text.trim().isEmpty) continue;
 
         final words = mlT9Text.split(RegExp(r'\s+'));
@@ -377,12 +585,9 @@ class T9Utils {
           }
         }
 
-        if (!wordPrefixMatched) {
-          final fullT9 = mlT9Text.replaceAll(' ', '');
-          if (fullT9.contains(cleanDigits)) {
-            const score = 65;
-            if (score > maxScore) maxScore = score;
-          }
+        if (!wordPrefixMatched && words.any((w) => w.contains(cleanDigits))) {
+          const score = 65;
+          if (score > maxScore) maxScore = score;
         }
       }
     }

@@ -4,6 +4,7 @@
 // reachable from Settings → Help → T9 Dialing & Malayalam.
 
 import 'package:flutter/material.dart';
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
 class T9DialingHelpScreen extends StatelessWidget {
@@ -12,70 +13,47 @@ class T9DialingHelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('T9 Dialing & Malayalam')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).helpT9DialingText),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-        children: const [
-          _Intro(
-            'SreerajP Contacts Sphere features a smart multi-script T9 dialpad. You can '
-            'search your contacts seamlessly using English or regional script '
-            'key presses (Malayalam, Devanagari, etc.).',
-          ),
-          SizedBox(height: 24),
+        children: [
+          _Intro(AppLocalizations.of(context).helpT9DialingIntro),
+          const SizedBox(height: 24),
 
           _Section(
             icon: Icons.sort_by_alpha,
-            title: 'Malayalam Vowels Mapping (അ to അഃ)',
+            title: AppLocalizations.of(context).helpT9DialingTitle1,
             children: [
-              _Bullet('Key 2 (ക-ങ): Vowels അ, ആ + Matras ാ, ി, ീ'),
-              _Bullet('Key 3 (ച-ഞ): Vowels ഉ, ഊ, ഋ + Matras ു, ൂ, ൃ'),
-              _Bullet('Key 4 (ട-ണ): Vowels എ, ഏ, ഐ + Matras െ, േ, ൈ'),
-              _Bullet('Key 5 (ത-ന): Vowels ഒ, ഓ, ഔ + Matras ൊ, ോ, ൌ, ൗ'),
-              _Bullet(
-                'Key 9 (ള-റ): Anusvaram & Visargam (ം, ഃ) + Chillu letters (ൺ, ൻ, ർ, ൽ, ൾ, ൿ)',
-              ),
+              _Bullet(AppLocalizations.of(context).helpT9DialingBullet1),
+              _Bullet(AppLocalizations.of(context).helpT9DialingBullet2),
+              _Bullet(AppLocalizations.of(context).helpT9DialingBullet3),
+              _Bullet(AppLocalizations.of(context).helpT9DialingBullet4),
+              _Bullet(AppLocalizations.of(context).helpT9DialingBullet5),
             ],
           ),
 
           _Section(
             icon: Icons.keyboard_outlined,
-            title: 'Why Vowels Aren\'t Printed on Key Labels',
+            title: AppLocalizations.of(context).helpT9DialingTitle2,
             children: [
-              _Bullet(
-                'Key legends display consonant group ranges (e.g. ക-ങ, ച-ഞ) '
-                'to keep the dialpad clean and easy to read.',
-              ),
-              _Bullet(
-                'Even though vowels are not printed on the button face, all '
-                'vowels (അ-ഔ), matras, and chillu letters are fully mapped '
-                'and active in T9 search.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpT9DialingBullet6),
+              _Bullet(AppLocalizations.of(context).helpT9DialingBullet7),
             ],
           ),
 
           _Section(
             icon: Icons.g_translate_outlined,
-            title: 'Manglish & Transliteration Search',
+            title: AppLocalizations.of(context).helpT9DialingTitle3,
             children: [
-              _Bullet(
-                'English T9 key presses automatically match Malayalam names. '
-                'For example, typing 2-6-4-5 (A-N-I-L) will match both '
-                '"Anil" and "അനിൽ".',
-              ),
-              _Bullet(
-                'To change the script shown on the keys, use the "Dialpad '
-                'script" card on the main Settings page.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpT9DialingBullet8),
+              _Bullet(AppLocalizations.of(context).helpT9DialingBullet9),
             ],
           ),
 
-          SizedBox(height: 8),
-          _Footer(
-            'Tip: the "Dialpad script" card offers Auto, Malayalam, '
-            'Devanagari, Cyrillic, Arabic, Greek, or None. Auto follows the '
-            'app language. Whichever you pick, search still matches every '
-            'script — the setting only changes what is printed on the keys.',
-          ),
+          const SizedBox(height: 8),
+          _Footer(AppLocalizations.of(context).helpT9DialingFooter),
         ],
       ),
     );

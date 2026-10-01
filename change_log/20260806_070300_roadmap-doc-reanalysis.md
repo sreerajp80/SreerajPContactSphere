@@ -13,7 +13,7 @@ No code changed. Documentation only.
 ## Why
 
 The roadmap document had drifted from the code, and it was written without any awareness of the
-other 18 apps in the family (listed in `L:\Android\MyFlutterApps\myapps.md`). I re-checked every
+other 18 apps in the family (listed in the author's list of other apps). I re-checked every
 claim against `lib/`, `android/app/src/main/kotlin/` and `docs/features.md`, and read the feature
 docs of all 18 sibling apps.
 

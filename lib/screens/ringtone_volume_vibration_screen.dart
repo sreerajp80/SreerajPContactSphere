@@ -1,4 +1,5 @@
 // lib/screens/ringtone_volume_vibration_screen.dart
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -26,7 +27,9 @@ class _RingtoneVolumeVibrationScreenState
     final value = _volumeDrag ?? settings.ringtoneVolumePercent;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Volume & Vibration')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).titleVolumeVibration),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
@@ -37,17 +40,20 @@ class _RingtoneVolumeVibrationScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Ringtone volume',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  Text(
+                    AppLocalizations.of(context).labelRingtoneVolume,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     value == 0
-                        ? 'Muted — the ringtone won’t sound, but the phone still '
-                              'vibrates if vibration is on below'
-                        : 'Plays incoming-call ringtones at $value% of your '
-                              'phone’s ring volume',
+                        ? AppLocalizations.of(context).descRingtoneMuted
+                        : AppLocalizations.of(
+                            context,
+                          ).descRingtoneVolumePercent(value),
                     style: TextStyle(color: colors.mutedText, fontSize: 13),
                   ),
                   Row(
@@ -99,13 +105,15 @@ class _RingtoneVolumeVibrationScreenState
               activeThumbColor: accent,
               onChanged: (v) =>
                   context.read<AppSettings>().setVibrateOnIncomingCall(v),
-              title: const Text(
-                'Vibrate on incoming calls',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              title: Text(
+                AppLocalizations.of(context).labelVibrateIncoming,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               subtitle: Text(
-                'Your phone comes first: silent mode, Do Not Disturb and the '
-                'phone’s own “Vibrate for calls” setting all override this',
+                AppLocalizations.of(context).descVibrateIncoming,
                 style: TextStyle(color: colors.mutedText, fontSize: 13),
               ),
             ),

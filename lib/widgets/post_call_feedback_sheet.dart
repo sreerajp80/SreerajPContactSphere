@@ -2,7 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
+import 'package:smart_contacts_dialer/l10n/formatting_locale.dart';
 
 /// The result of the post-call feedback form. Null fields are simply not
 /// written by the caller.
@@ -56,28 +58,26 @@ Future<PostCallFeedback?> showPostCallFeedbackSheet(
 /// same visual language as relationship health elsewhere in the app.
 class _Sentiment {
   final String value;
-  final String label;
   final IconData icon;
   final Color color;
-  const _Sentiment(this.value, this.label, this.icon, this.color);
+  const _Sentiment(this.value, this.icon, this.color);
+
+  String label(AppLocalizations l10n) => switch (value) {
+    'positive' => l10n.labelToneGreat,
+    'neutral' => l10n.labelToneOkay,
+    _ => l10n.labelToneRough,
+  };
 }
 
 const _sentiments = <_Sentiment>[
-  _Sentiment(
-    'positive',
-    'Great',
-    Icons.sentiment_very_satisfied,
-    Color(0xFF10B981),
-  ),
-  _Sentiment('neutral', 'Okay', Icons.sentiment_neutral, Color(0xFFF59E0B)),
-  _Sentiment(
-    'negative',
-    'Rough',
-    Icons.sentiment_dissatisfied,
-    Color(0xFFEF4444),
-  ),
+  _Sentiment('positive', Icons.sentiment_very_satisfied, Color(0xFF10B981)),
+  _Sentiment('neutral', Icons.sentiment_neutral, Color(0xFFF59E0B)),
+  _Sentiment('negative', Icons.sentiment_dissatisfied, Color(0xFFEF4444)),
 ];
 
+/// The topic chips. These English words are what gets saved to
+/// `call_logs.call_intent`, so they never change with the UI language; only
+/// the chip label is translated, via [postCallIntentLabel].
 const _intentPresets = <String>[
   'Catch-up',
   'Work',
@@ -86,6 +86,19 @@ const _intentPresets = <String>[
   'Family',
   'Urgent',
 ];
+
+/// The label to show for a saved call topic. Known presets are translated; a
+/// value this list does not know is shown as saved.
+String postCallIntentLabel(AppLocalizations l10n, String intent) =>
+    switch (intent) {
+      'Catch-up' => l10n.labelIntentCatchUp,
+      'Work' => l10n.labelIntentWork,
+      'Scheduling' => l10n.labelIntentScheduling,
+      'Follow-up' => l10n.labelIntentFollowUp,
+      'Family' => l10n.labelIntentFamily,
+      'Urgent' => l10n.labelIntentUrgent,
+      _ => intent,
+    };
 
 class _PostCallFeedbackSheet extends StatefulWidget {
   final String displayName;
@@ -164,6 +177,7 @@ class _PostCallFeedbackSheetState extends State<_PostCallFeedbackSheet> {
     final colors = theme.extension<AppColors>()!;
     final accent = theme.colorScheme.primary;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final l10n = AppLocalizations.of(context);
 
     return Padding(
       padding: EdgeInsets.only(bottom: bottomInset),
@@ -194,9 +208,9 @@ class _PostCallFeedbackSheetState extends State<_PostCallFeedbackSheet> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'How did it go?',
-                  style: TextStyle(
+                Text(
+                  l10n.titleHowDidItGo,
+                  style: const TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.4,
@@ -204,7 +218,7 @@ class _PostCallFeedbackSheetState extends State<_PostCallFeedbackSheet> {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Call with ${widget.displayName}',
+                  l10n.labelCallWith(widget.displayName),
                   style: TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w500,
@@ -214,11 +228,11 @@ class _PostCallFeedbackSheetState extends State<_PostCallFeedbackSheet> {
                 const SizedBox(height: 18),
                 _sentimentRow(colors),
                 const SizedBox(height: 20),
-                _label('What was it about?', colors),
+                _label(l10n.labelWhatWasItAbout, colors),
                 const SizedBox(height: 10),
                 _intentChips(accent, colors),
                 const SizedBox(height: 20),
-                _label('Notes', colors),
+                _label(l10n.labelNotes, colors),
                 const SizedBox(height: 10),
                 _notesField(accent, colors),
                 if (widget.canRemind) ...[
@@ -282,7 +296,7 @@ class _PostCallFeedbackSheetState extends State<_PostCallFeedbackSheet> {
               ),
               const SizedBox(height: 6),
               Text(
-                s.label,
+                s.label(AppLocalizations.of(context)),
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w700,
@@ -297,13 +311,14 @@ class _PostCallFeedbackSheetState extends State<_PostCallFeedbackSheet> {
   }
 
   Widget _intentChips(Color accent, AppColors colors) {
+    final l10n = AppLocalizations.of(context);
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: [
         for (final preset in _intentPresets)
           _chip(
-            label: preset,
+            label: postCallIntentLabel(l10n, preset),
             selected: _intent == preset,
             accent: accent,
             colors: colors,
@@ -348,7 +363,7 @@ class _PostCallFeedbackSheetState extends State<_PostCallFeedbackSheet> {
       minLines: 2,
       maxLines: 4,
       decoration: InputDecoration(
-        hintText: 'Anything worth remembering?',
+        hintText: AppLocalizations.of(context).hintAnythingWorthRemembering,
         filled: true,
         fillColor: colors.searchFill,
         border: OutlineInputBorder(
@@ -368,6 +383,7 @@ class _PostCallFeedbackSheetState extends State<_PostCallFeedbackSheet> {
   }
 
   Widget _followUpSection(Color accent, AppColors colors) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -378,16 +394,16 @@ class _PostCallFeedbackSheetState extends State<_PostCallFeedbackSheet> {
             activeThumbColor: accent,
             value: _addFollowUp,
             onChanged: (v) => setState(() => _addFollowUp = v),
-            title: const Text(
-              'Add a follow-up reminder',
-              style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600),
+            title: Text(
+              l10n.labelAddFollowUpReminder,
+              style: const TextStyle(
+                fontSize: 14.5,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             subtitle: Text(
-              'Saved for reference — notifications coming soon',
-              style: TextStyle(
-                fontSize: 11.5,
-                color: colors.mutedText,
-              ),
+              l10n.descFollowUpSavedForReference,
+              style: TextStyle(fontSize: 11.5, color: colors.mutedText),
             ),
           ),
         ),
@@ -396,7 +412,7 @@ class _PostCallFeedbackSheetState extends State<_PostCallFeedbackSheet> {
           TextField(
             controller: _followUpController,
             decoration: InputDecoration(
-              hintText: 'e.g. Send the contract',
+              hintText: l10n.hintFollowUpExample,
               filled: true,
               fillColor: colors.searchFill,
               border: OutlineInputBorder(
@@ -425,9 +441,10 @@ class _PostCallFeedbackSheetState extends State<_PostCallFeedbackSheet> {
                   const SizedBox(width: 8),
                   Text(
                     _followUpTime == null
-                        ? 'Pick date & time (optional)'
+                        ? l10n.hintPickFollowUpTime
                         : DateFormat(
                             'EEE, MMM d · h:mm a',
+                            formattingLocale(Localizations.localeOf(context)),
                           ).format(_followUpTime!),
                     style: TextStyle(
                       fontSize: 13.5,
@@ -445,6 +462,7 @@ class _PostCallFeedbackSheetState extends State<_PostCallFeedbackSheet> {
   }
 
   Widget _actions(Color accent, AppColors colors) {
+    final l10n = AppLocalizations.of(context);
     return Row(
       children: [
         Expanded(
@@ -454,9 +472,9 @@ class _PostCallFeedbackSheetState extends State<_PostCallFeedbackSheet> {
               padding: const EdgeInsets.symmetric(vertical: 14),
               foregroundColor: colors.mutedText,
             ),
-            child: const Text(
-              'Skip',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+            child: Text(
+              l10n.actionSkip,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
             ),
           ),
         ),
@@ -485,7 +503,7 @@ class _PostCallFeedbackSheetState extends State<_PostCallFeedbackSheet> {
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   child: Center(
                     child: Text(
-                      'Save',
+                      l10n.actionSave,
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w800,

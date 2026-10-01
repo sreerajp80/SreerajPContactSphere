@@ -20,30 +20,30 @@ Enable explicit SIM selection for Call Retry Scheduler, handle rescheduling unan
 
 ### Security Settings & Settings Screen Reorganization
 
-#### [NEW] [security_screen.dart](file:///l:/Android/SreerajPContactSphere/lib/screens/security_screen.dart)
+#### [NEW] [security_screen.dart](../lib/screens/security_screen.dart)
 - Create `SecurityScreen` (`lib/screens/security_screen.dart`).
 - Move/integrate the following cards:
   - `_AppLockCard` (App lock settings: Off, Device lock, App PIN)
   - `_ScreenshotGuardCard` (Block screenshots switch)
   - `Audit Log` card (navigates to `AuditLogScreen`)
 
-#### [MODIFY] [settings_screen.dart](file:///l:/Android/SreerajPContactSphere/lib/screens/settings_screen.dart)
+#### [MODIFY] [settings_screen.dart](../lib/screens/settings_screen.dart)
 - Remove direct cards for `_AppLockCard`, `_ScreenshotGuardCard`, `Audit Log`, and `_DefaultDialerCard` from the main `SettingsScreen` list.
 - Add a new `Security` card navigating to `SecurityScreen`.
 - Move `_DefaultDialerCard` definition/usage so it can be rendered inside `SimSettingsScreen`.
 
-#### [MODIFY] [sim_settings_screen.dart](file:///l:/Android/SreerajPContactSphere/lib/screens/sim_settings_screen.dart)
+#### [MODIFY] [sim_settings_screen.dart](../lib/screens/sim_settings_screen.dart)
 - Integrate `_DefaultDialerCard` into `SimSettingsScreen` so "Default phone app" resides under **Settings -> SIM & Calling**.
 
 ---
 
 ### Call Retry Scheduler SIM Selection & Rescheduling
 
-#### [MODIFY] [smart_redial_service.dart](file:///l:/Android/SreerajPContactSphere/lib/services/smart_redial_service.dart)
+#### [MODIFY] [smart_redial_service.dart](../lib/services/smart_redial_service.dart)
 - Add `cancelTasksForNumber(String phoneNumber)` to cancel any active pending smart redial task matching the target phone number.
 - In `scheduleAutoRedial(...)`, invoke `cancelTasksForNumber(...)` before creating and arming the new retry task to ensure previous schedules for that number are cancelled when a new one is scheduled.
 
-#### [MODIFY] [smart_redial_sheet.dart](file:///l:/Android/SreerajPContactSphere/lib/widgets/smart_redial_sheet.dart)
+#### [MODIFY] [smart_redial_sheet.dart](../lib/widgets/smart_redial_sheet.dart)
 - Load available SIM accounts via `SimService().list()`.
 - Add a SIM selection section showing the currently selected SIM (defaulting to the original call's SIM or default SIM) and allowing the user to select/change SIM before arming auto-retry.
 - Pass the user-selected `simId` into `scheduleAutoRedial(...)`.

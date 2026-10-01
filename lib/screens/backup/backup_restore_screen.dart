@@ -1,6 +1,6 @@
 // lib/screens/backup/backup_restore_screen.dart
 //
-// "Backup & Restore" hub, reached from Settings behind a biometric check (a
+// AppLocalizations.of(context).titleBackupRestore hub, reached from Settings behind a biometric check (a
 // backup can include secret contacts). Two actions:
 //   • Back up now   — asks for a password, writes an encrypted backup file, then
 //                     opens the share sheet so the user picks where to save it.
@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/services/backup_service.dart';
 import 'package:smart_contacts_dialer/services/contact_sync_service.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
@@ -36,7 +37,9 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Backup & Restore')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).titleBackupRestore),
+      ),
       body: Stack(
         children: [
           ListView(
@@ -44,26 +47,20 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
             children: [
               _ActionCard(
                 icon: Icons.backup_outlined,
-                title: 'Back up now',
-                subtitle:
-                    'Save all your contacts, photos and settings to one '
-                    'password-protected file.',
+                title: AppLocalizations.of(context).actionBackUpNow,
+                subtitle: AppLocalizations.of(context).descBackUpNow,
                 onTap: _busy ? null : _startBackup,
               ),
               const SizedBox(height: 12),
               _ActionCard(
                 icon: Icons.restore_outlined,
-                title: 'Restore from a file',
-                subtitle:
-                    'Load a backup file. This replaces everything currently in '
-                    'the app.',
+                title: AppLocalizations.of(context).actionRestoreFromFile,
+                subtitle: AppLocalizations.of(context).descRestoreFromFile,
                 onTap: _busy ? null : _startRestore,
               ),
               const SizedBox(height: 20),
               Text(
-                'The backup is locked with your password. Keep it safe — without '
-                'it the file cannot be opened, on this or any other phone. That '
-                'same password is what lets you restore on a new phone.',
+                AppLocalizations.of(context).descBackupPasswordNote,
                 style: TextStyle(color: colors.mutedText, fontSize: 12.5),
                 textAlign: TextAlign.center,
               ),
@@ -106,9 +103,10 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
 
     setState(() {
       _busy = true;
-      _busyLabel = 'Creating backup…';
+      _busyLabel = AppLocalizations.of(context).msgCreatingBackup;
     });
     final messenger = ScaffoldMessenger.of(context);
+    final l = AppLocalizations.of(context);
     try {
       final file = await _service.createBackup(password);
       if (!mounted) return;
@@ -118,12 +116,10 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
           subject: _service.suggestedFileName(),
         ),
       );
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Backup ready. Choose where to save it.')),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(l.msgBackupReady)));
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Backup failed: ${_message(e)}')),
+        SnackBar(content: Text(l.errorBackupFailed(_message(e)))),
       );
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -152,9 +148,10 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
 
     setState(() {
       _busy = true;
-      _busyLabel = 'Restoring…';
+      _busyLabel = AppLocalizations.of(context).msgRestoring;
     });
     final messenger = ScaffoldMessenger.of(context);
+    final l = AppLocalizations.of(context);
     final navigator = Navigator.of(context);
     final settings = context.read<AppSettings>();
     try {
@@ -165,9 +162,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
       // re-reads the DB (Dialer/Recents reload themselves on tab selection).
       ContactSyncService().notifyLocalDataChanged();
       if (!mounted) return;
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Restore complete.')),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(l.msgRestoreComplete)));
       // Back out to the main screen so its lists reload from the new data.
       navigator.popUntil((route) => route.isFirst);
     } catch (e) {
@@ -175,7 +170,7 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
         setState(() => _busy = false);
       }
       messenger.showSnackBar(
-        SnackBar(content: Text('Restore failed: ${_message(e)}')),
+        SnackBar(content: Text(l.errorRestoreFailed(_message(e)))),
       );
     }
   }
@@ -184,20 +179,16 @@ class _BackupRestoreScreenState extends State<BackupRestoreScreen> {
     return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Replace all data?'),
-        content: const Text(
-          'Restoring will DELETE everything currently in the app — all '
-          'contacts, call history, groups and settings — and replace it with '
-          'the backup. This cannot be undone.',
-        ),
+        title: Text(AppLocalizations.of(context).titleReplaceAllData),
+        content: Text(AppLocalizations.of(context).descReplaceAllData),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Replace'),
+            child: Text(AppLocalizations.of(context).actionReplace),
           ),
         ],
       ),
@@ -312,15 +303,23 @@ class _PasswordDialogState extends State<_PasswordDialog> {
     final pass = _pass.text;
     if (widget.confirm) {
       if (pass.length < _minLen) {
-        setState(() => _error = 'Use at least $_minLen characters.');
+        setState(
+          () => _error = AppLocalizations.of(
+            context,
+          ).errorPasswordTooShort(_minLen),
+        );
         return;
       }
       if (pass != _confirm.text) {
-        setState(() => _error = 'The passwords do not match.');
+        setState(
+          () => _error = AppLocalizations.of(context).errorPasswordsDontMatch,
+        );
         return;
       }
     } else if (pass.isEmpty) {
-      setState(() => _error = 'Enter the backup password.');
+      setState(
+        () => _error = AppLocalizations.of(context).errorEnterBackupPassword,
+      );
       return;
     }
     Navigator.of(context).pop(pass);
@@ -329,7 +328,11 @@ class _PasswordDialogState extends State<_PasswordDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.confirm ? 'Set a backup password' : 'Backup password'),
+      title: Text(
+        widget.confirm
+            ? AppLocalizations.of(context).titleSetBackupPassword
+            : AppLocalizations.of(context).titleBackupPassword,
+      ),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -338,9 +341,14 @@ class _PasswordDialogState extends State<_PasswordDialog> {
             obscureText: _obscure,
             autofocus: true,
             decoration: InputDecoration(
-              labelText: widget.confirm ? 'Password' : 'Enter password',
+              labelText: widget.confirm
+                  ? AppLocalizations.of(context).labelPassword
+                  : AppLocalizations.of(context).labelEnterPassword,
               suffixIcon: IconButton(
                 icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                tooltip: _obscure
+                    ? AppLocalizations.of(context).tooltipShowPassword
+                    : AppLocalizations.of(context).tooltipHidePassword,
                 onPressed: () => setState(() => _obscure = !_obscure),
               ),
             ),
@@ -351,7 +359,9 @@ class _PasswordDialogState extends State<_PasswordDialog> {
             TextField(
               controller: _confirm,
               obscureText: _obscure,
-              decoration: const InputDecoration(labelText: 'Confirm password'),
+              decoration: InputDecoration(
+                labelText: AppLocalizations.of(context).labelConfirmPassword,
+              ),
               onSubmitted: (_) => _submit(),
             ),
           ],
@@ -370,11 +380,15 @@ class _PasswordDialogState extends State<_PasswordDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         FilledButton(
           onPressed: _submit,
-          child: Text(widget.confirm ? 'Back up' : 'Restore'),
+          child: Text(
+            widget.confirm
+                ? AppLocalizations.of(context).actionBackUp
+                : AppLocalizations.of(context).actionRestore,
+          ),
         ),
       ],
     );

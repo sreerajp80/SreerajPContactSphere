@@ -5,7 +5,7 @@ description: Advanced contacts and dialer app with SQLite
 # Drives flutter.versionName/versionCode (android/app/build.gradle.kts) and
 # PackageInfo.fromPlatform(). Keep in sync with assets/config/app_config.json
 # (version/build); ConfigService.loadAndVerify() logs a debug drift note if they differ.
-version: 15.17.12+95
+version: 15.17.14+97
 
 environment:
   sdk: '^3.12.0'
@@ -54,6 +54,11 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  # Generate AppLocalizations from lib/l10n/*.arb (see l10n.yaml). Required by
+  # engineering standard 8.1/8.2 — every user-visible string lives in an ARB
+  # file and is read through AppLocalizations.of(context).
+  generate: true
+
   # Runtime config. `assets/config/app_config.json` is the source of truth for
   # the About screen (loaded via lib/core/config/config_service.dart).
   assets:
@@ -78,4 +83,13 @@ flutter:
       fonts:
         - asset: assets/fonts/NotoSansMalayalam-Regular.ttf
         - asset: assets/fonts/NotoSansMalayalam-Bold.ttf
+          weight: 700
+    # Devanagari fallback for the Sanskrit (sa) UI (standard §8.3.3). Not a
+    # user-pickable font: AppTheme lists it in fontFamilyFallback so Devanagari
+    # glyphs resolve under every font the user can pick. Subset to the
+    # Devanagari blocks only (Latin comes from the primary font).
+    - family: Noto Sans Devanagari
+      fonts:
+        - asset: assets/fonts/NotoSansDevanagari-Regular.ttf
+        - asset: assets/fonts/NotoSansDevanagari-Bold.ttf
           weight: 700

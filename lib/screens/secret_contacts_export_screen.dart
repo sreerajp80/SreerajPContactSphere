@@ -1,4 +1,5 @@
 // lib/screens/secret_contacts_export_screen.dart
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -22,19 +23,14 @@ class _SecretContactsExportScreenState
 
   Future<void> _exportSecrets(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l = AppLocalizations.of(context);
     final auth = AuthService();
 
     if (await auth.isAvailable) {
-      final ok = await auth.authenticate(
-        reason: 'Authenticate to export your secret contacts',
-      );
+      final ok = await auth.authenticate(reason: l.descAuthExportSecret);
       if (!ok) {
         messenger.showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Authentication required to export secret contacts',
-            ),
-          ),
+          SnackBar(content: Text(l.errorAuthRequiredExportSecret)),
         );
         return;
       }
@@ -46,14 +42,12 @@ class _SecretContactsExportScreenState
       final path = await ExportImportService().exportSecretContactsVcf();
       if (!context.mounted) return;
       messenger.showSnackBar(
-        SnackBar(
-          content: Text('Exported secret contacts to $path'),
-        ),
+        SnackBar(content: Text(l.msgExportedSecretTo(path))),
       );
     } catch (e) {
       if (!context.mounted) return;
       messenger.showSnackBar(
-        SnackBar(content: Text('Failed to export secret contacts: $e')),
+        SnackBar(content: Text(l.errorExportSecretFailed('$e'))),
       );
     } finally {
       if (mounted) setState(() => _exporting = false);
@@ -67,7 +61,9 @@ class _SecretContactsExportScreenState
     final settings = context.watch<AppSettings>();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Secret Contacts & Export')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).titleSecretContactsExport),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
@@ -80,15 +76,17 @@ class _SecretContactsExportScreenState
               ),
               value: settings.includeSecretInExport,
               activeThumbColor: accent,
-              onChanged: (v) => context
-                  .read<AppSettings>()
-                  .setIncludeSecretInExport(v),
-              title: const Text(
-                'Include secret contacts in export',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              onChanged: (v) =>
+                  context.read<AppSettings>().setIncludeSecretInExport(v),
+              title: Text(
+                AppLocalizations.of(context).labelIncludeSecretInExport,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               subtitle: Text(
-                'When off, standard VCF exports skip contacts flagged as secret',
+                AppLocalizations.of(context).descIncludeSecretInExport,
                 style: TextStyle(color: colors.mutedText, fontSize: 13),
               ),
             ),
@@ -117,16 +115,20 @@ class _SecretContactsExportScreenState
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Export secret contacts',
-                            style: TextStyle(
+                          Text(
+                            AppLocalizations.of(
+                              context,
+                            ).labelExportSecretContacts,
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Save a separate VCF file containing only secret contacts (gated by auth)',
+                            AppLocalizations.of(
+                              context,
+                            ).descExportSecretContacts,
                             style: TextStyle(
                               color: colors.mutedText,
                               fontSize: 13,

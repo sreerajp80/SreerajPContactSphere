@@ -9,17 +9,17 @@ The user requested two specific updates to Settings:
 
 ## 1. Files to Change / Create
 
-### A. [lib/core/constants/app_permissions.dart](file:///l:/Android/SreerajPContactSphere/lib/core/constants/app_permissions.dart)
+### A. [lib/core/constants/app_permissions.dart](../lib/core/constants/app_permissions.dart)
 - Simplify `PermissionGroup` enum to `explicit` and `implicit`.
 - Categorize `Default phone app` under `PermissionGroup.explicit` (since it requires runtime user selection/prompt).
 - Add any missing manifest implicit permission entries (e.g. `Foreground Service & Audio/Vibration` covering `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_PHONE_CALL`, `VIBRATE`, `USE_FULL_SCREEN_INTENT`).
 - Ensure all permissions declared in `AndroidManifest.xml` are accurately represented.
 
-### B. [lib/screens/permissions_screen.dart](file:///l:/Android/SreerajPContactSphere/lib/screens/permissions_screen.dart)
+### B. [lib/screens/permissions_screen.dart](../lib/screens/permissions_screen.dart)
 - Update grouping logic to group `kAppPermissions` strictly into `Explicit` and `Implicit`.
 - Render section headers for `Explicit` ("Runtime permissions and system roles requiring user interaction") and `Implicit` ("Declared in manifest; granted automatically by system at install").
 
-### C. [lib/screens/features_screen.dart](file:///l:/Android/SreerajPContactSphere/lib/screens/features_screen.dart) [NEW]
+### C. [lib/screens/features_screen.dart](../lib/screens/features_screen.dart) [NEW]
 - Implement `FeaturesScreen` widget with rich styling matching the app theme design.
 - Structure features into comprehensive categories:
   1. **Smart T9 Dialer & In-Call Experience** (T9 search, default dialer controls, top contacts).
@@ -30,7 +30,7 @@ The user requested two specific updates to Settings:
   6. **QR & Bluetooth Contact Exchange** (vCard QR generation/scanning, nearby BLE discovery).
   7. **Personalization & SIM Settings** (Light/dark themes, multi-SIM handling, custom ringtones & vibration).
 
-### D. [lib/screens/settings_screen.dart](file:///l:/Android/SreerajPContactSphere/lib/screens/settings_screen.dart)
+### D. [lib/screens/settings_screen.dart](../lib/screens/settings_screen.dart)
 - Import `FeaturesScreen`.
 - Add a `_SettingsCard` for **Features** in the list view (with `Icons.stars_outlined` icon, title "Features", and subtitle "Explore all features of ContactSphere").
 

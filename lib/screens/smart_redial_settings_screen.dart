@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/services/smart_redial_service.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
@@ -17,8 +18,7 @@ class SmartRedialSettingsScreen extends StatefulWidget {
       _SmartRedialSettingsScreenState();
 }
 
-class _SmartRedialSettingsScreenState
-    extends State<SmartRedialSettingsScreen> {
+class _SmartRedialSettingsScreenState extends State<SmartRedialSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColors>()!;
@@ -26,7 +26,9 @@ class _SmartRedialSettingsScreenState
     final enabled = settings.smartRedialEnabled;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Smart Redial & "Reach Me"')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).titleSmartRedialReachMe),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
@@ -63,12 +65,15 @@ class _SmartRedialSettingsScreenState
               activeThumbColor: accent,
               onChanged: (v) =>
                   context.read<AppSettings>().setSmartRedialEnabled(v),
-              title: const Text(
-                'Smart Redial & "Reach Me"',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              title: Text(
+                AppLocalizations.of(context).titleSmartRedialReachMe,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               subtitle: Text(
-                'Offer 1-tap auto-retry and reach-me SMS when a call is unanswered',
+                AppLocalizations.of(context).descSmartRedialIntro,
                 style: TextStyle(color: colors.mutedText, fontSize: 13),
               ),
             ),
@@ -77,20 +82,21 @@ class _SmartRedialSettingsScreenState
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                 leading: Icon(Icons.timer_outlined, color: accent),
-                title: const Text('Default retry delay'),
+                title: Text(
+                  AppLocalizations.of(context).labelDefaultRetryDelay,
+                ),
                 trailing: Text(
-                  '${settings.smartRedialDelayMinutes} min',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: accent,
-                  ),
+                  AppLocalizations.of(
+                    context,
+                  ).labelMinutesShort(settings.smartRedialDelayMinutes),
+                  style: TextStyle(fontWeight: FontWeight.w700, color: accent),
                 ),
                 onTap: () => _showDelayDialog(settings),
               ),
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                 leading: Icon(Icons.message_outlined, color: accent),
-                title: const Text('Preset Reach Me message'),
+                title: Text(AppLocalizations.of(context).labelPresetReachMe),
                 subtitle: Text(
                   settings.presetReachMeMessage,
                   maxLines: 1,
@@ -102,11 +108,10 @@ class _SmartRedialSettingsScreenState
               if (activeCount > 0)
                 ListTile(
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                  leading: const Icon(
-                    Icons.alarm_on,
-                    color: Color(0xFF10B981),
+                  leading: const Icon(Icons.alarm_on, color: Color(0xFF10B981)),
+                  title: Text(
+                    AppLocalizations.of(context).labelActiveScheduledRedials,
                   ),
-                  title: const Text('Active scheduled redials'),
                   trailing: Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 10,
@@ -117,7 +122,9 @@ class _SmartRedialSettingsScreenState
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      '$activeCount active',
+                      AppLocalizations.of(
+                        context,
+                      ).labelActiveCount(activeCount),
                       style: const TextStyle(
                         color: Color(0xFF10B981),
                         fontWeight: FontWeight.w700,
@@ -139,13 +146,15 @@ class _SmartRedialSettingsScreenState
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Default Retry Delay'),
+        title: Text(AppLocalizations.of(context).labelDefaultRetryDelay),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             for (final mins in options)
               ListTile(
-                title: Text('$mins minutes'),
+                title: Text(
+                  AppLocalizations.of(context).labelMinutesLong(mins),
+                ),
                 trailing: settings.smartRedialDelayMinutes == mins
                     ? Icon(
                         Icons.check,
@@ -170,25 +179,25 @@ class _SmartRedialSettingsScreenState
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Preset Reach Me Message'),
+        title: Text(AppLocalizations.of(context).labelPresetReachMe),
         content: TextField(
           controller: controller,
           maxLines: 3,
-          decoration: const InputDecoration(
-            hintText: 'Enter your preset reach-me message...',
+          decoration: InputDecoration(
+            hintText: AppLocalizations.of(context).hintPresetReachMe,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           FilledButton(
             onPressed: () {
               settings.setPresetReachMeMessage(controller.text);
               Navigator.pop(ctx);
             },
-            child: const Text('Save'),
+            child: Text(AppLocalizations.of(context).actionSave),
           ),
         ],
       ),
@@ -240,9 +249,9 @@ class _ActiveRedialsDialogContentState
       builder: (context, _) {
         final tasks = service.activeTasks;
         return AlertDialog(
-          title: const Text('Active Auto-Redials'),
+          title: Text(AppLocalizations.of(context).titleActiveAutoRedials),
           content: tasks.isEmpty
-              ? const Text('No active scheduled redials.')
+              ? Text(AppLocalizations.of(context).emptyNoActiveRedials)
               : SizedBox(
                   width: double.maxFinite,
                   child: ListView.builder(
@@ -253,10 +262,16 @@ class _ActiveRedialsDialogContentState
                       return ListTile(
                         title: Text(t.displayName),
                         subtitle: Text(
-                          '${t.phoneNumber} · in ${t.remainingDuration.inMinutes} min',
+                          AppLocalizations.of(context).labelRedialIn(
+                            t.phoneNumber,
+                            t.remainingDuration.inMinutes,
+                          ),
                         ),
                         trailing: IconButton(
                           icon: const Icon(Icons.cancel, color: Colors.red),
+                          tooltip: AppLocalizations.of(
+                            context,
+                          ).tooltipCancelRedial,
                           onPressed: () => service.cancelTask(t.id),
                         ),
                       );
@@ -266,7 +281,7 @@ class _ActiveRedialsDialogContentState
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Close'),
+              child: Text(AppLocalizations.of(context).actionClose),
             ),
           ],
         );

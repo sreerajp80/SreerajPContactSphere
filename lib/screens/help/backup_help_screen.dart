@@ -8,6 +8,7 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
 class BackupHelpScreen extends StatelessWidget {
@@ -16,85 +17,47 @@ class BackupHelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Backup & Restore')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).helpBackupText)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-        children: const [
-          _Intro(
-            'A backup saves everything in the app into one file that you keep. '
-            'You can use it to move to a new phone or to recover after a reset — '
-            'even if the new app was installed from a different source.',
-          ),
-          SizedBox(height: 24),
+        children: [
+          _Intro(AppLocalizations.of(context).helpBackupIntro),
+          const SizedBox(height: 24),
 
           _Section(
             icon: Icons.inventory_2_outlined,
-            title: 'What the backup holds',
+            title: AppLocalizations.of(context).helpBackupTitle1,
             children: [
-              _Bullet(
-                'All contacts and their details, call history, groups, '
-                'relationships, and blocked / spam numbers.',
-              ),
-              _Bullet(
-                'Contact photos and calling-card images are included inside '
-                'the file.',
-              ),
-              _Bullet('Your app settings, such as theme and accent color.'),
-              _Bullet(
-                'Your emergency info card, with its emergency contacts and the '
-                '"show on lock screen" switches.',
-              ),
-              _Bullet(
-                'Custom ringtones are not included — they point at files on '
-                'this phone that would not exist elsewhere.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpBackupBullet1),
+              _Bullet(AppLocalizations.of(context).helpBackupBullet2),
+              _Bullet(AppLocalizations.of(context).helpBackupBullet3),
+              _Bullet(AppLocalizations.of(context).helpBackupBullet4),
+              _Bullet(AppLocalizations.of(context).helpBackupBullet5),
             ],
           ),
 
           _Section(
             icon: Icons.password_outlined,
-            title: 'Your password is the key',
+            title: AppLocalizations.of(context).helpBackupTitle2,
             children: [
-              _Bullet(
-                'The backup file is locked with a password you choose. The '
-                'app does not store it anywhere.',
-              ),
-              _Bullet(
-                'You need the same password to restore — on this phone or any '
-                'other. Keep it somewhere safe.',
-              ),
-              _Bullet(
-                'If you lose the password, the file cannot be opened. There is '
-                'no way to recover it — that is what keeps your data private.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpBackupBullet6),
+              _Bullet(AppLocalizations.of(context).helpBackupBullet7),
+              _Bullet(AppLocalizations.of(context).helpBackupBullet8),
             ],
           ),
 
           _Section(
             icon: Icons.restore_outlined,
-            title: 'Restoring replaces everything',
+            title: AppLocalizations.of(context).helpBackupTitle3,
             children: [
-              _Bullet(
-                'Restoring DELETES what is currently in the app and rebuilds '
-                'it as an exact copy of the backup.',
-              ),
-              _Bullet(
-                'It is not a merge. If you want to combine two phones without '
-                'losing data, use "Sync to Another Device" instead.',
-              ),
-              _Bullet(
-                'Restore a backup made with the same app version. A backup '
-                'from a very different version may be refused.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpBackupBullet9),
+              _Bullet(AppLocalizations.of(context).helpBackupBullet10),
+              _Bullet(AppLocalizations.of(context).helpBackupBullet11),
             ],
           ),
 
-          SizedBox(height: 8),
-          _Footer(
-            'Tip: after making a backup, the app opens the share sheet so you '
-            'can save the file to Files, Drive, or send it to yourself. Store it '
-            'somewhere other than this phone.',
-          ),
+          const SizedBox(height: 8),
+          _Footer(AppLocalizations.of(context).helpBackupFooter),
         ],
       ),
     );

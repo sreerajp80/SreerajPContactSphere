@@ -153,7 +153,7 @@ features, not bugs.
   Sender: contact detail → Share → "Share via Bluetooth" advertises the (photo-less) vCard
   from a native Kotlin peripheral (`BleShareServer.kt`: advertiser + GATT server behind the
   `contact_sphere/ble_share` channels — flutter_blue_plus is central-only, so the peripheral
-  role had to be native). Receiver: contacts list menu → "Receive via Bluetooth"
+  role had to be native). Receiver: contacts list menu → "Get via Bluetooth"
   (`ble_receive_screen.dart`) scans via `flutter_blue_plus`, downloads over the chunked
   `size`/`offset`/`data` GATT protocol (`ble_protocol.dart`), and reuses the QR/.vcf
   review/import flow. Manifest gained `BLUETOOTH_ADVERTISE`. Contact **photos are not

@@ -1,6 +1,7 @@
 // lib/screens/ringtone_settings_screen.dart
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 import 'package:smart_contacts_dialer/screens/per_sim_ringtone_screen.dart';
 import 'package:smart_contacts_dialer/screens/ringtone_volume_vibration_screen.dart';
@@ -12,21 +13,21 @@ class RingtoneSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Ringtone')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).labelRingtone)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           _SettingsSectionCard(
             icon: Icons.volume_up_outlined,
-            title: 'Volume & vibration',
-            subtitle: 'Ringtone volume and incoming call vibration',
+            title: AppLocalizations.of(context).labelVolumeVibration,
+            subtitle: AppLocalizations.of(context).descVolumeVibration,
             onTap: () => _push(context, const RingtoneVolumeVibrationScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsSectionCard(
             icon: Icons.notifications_active_outlined,
-            title: 'Per-SIM ringtones',
-            subtitle: 'Assign distinct ringtones for calls received on each SIM',
+            title: AppLocalizations.of(context).labelPerSimRingtones,
+            subtitle: AppLocalizations.of(context).descPerSimRingtones,
             onTap: () => _push(context, const PerSimRingtoneScreen()),
           ),
         ],

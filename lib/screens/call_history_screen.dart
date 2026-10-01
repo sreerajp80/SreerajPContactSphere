@@ -4,9 +4,9 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
-import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/call_record.dart';
 import 'package:smart_contacts_dialer/utils/call_type_mapper.dart';
 import 'package:smart_contacts_dialer/utils/malayalam_transliterator.dart';
@@ -17,12 +17,14 @@ import 'package:smart_contacts_dialer/services/call_log_import_service.dart';
 import 'package:smart_contacts_dialer/state/call_log_events.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 import 'package:smart_contacts_dialer/widgets/avatar_initial.dart';
+import 'package:smart_contacts_dialer/widgets/call_history_list.dart';
 import 'package:smart_contacts_dialer/widgets/call_lifecycle_mixin.dart';
+import 'package:smart_contacts_dialer/widgets/post_call_feedback_sheet.dart';
 import 'package:smart_contacts_dialer/widgets/smart_redial_sheet.dart';
 import 'package:smart_contacts_dialer/widgets/voice_input_button.dart';
 
 import 'package:smart_contacts_dialer/screens/contact_detail_screen.dart';
-import 'package:smart_contacts_dialer/screens/add_edit_contact_screen.dart';
+import 'package:smart_contacts_dialer/screens/number_detail_screen.dart';
 import 'package:smart_contacts_dialer/screens/settings_screen.dart';
 
 /// The "Recents" call history: every logged call, newest first, grouped by day.
@@ -162,22 +164,21 @@ class CallHistoryScreenState extends State<CallHistoryScreen>
   }
 
   Future<void> _clear() async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Clear call history?'),
-        content: const Text(
-          'This removes all logged calls from SreerajP Contacts Sphere.',
-        ),
+        title: Text(l10n.titleClearCallHistory),
+        content: Text(l10n.descClearCallHistory),
         actions: [
           TextButton(
             autofocus: true,
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('No'),
+            child: Text(l10n.actionNo),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Yes'),
+            child: Text(l10n.actionYes),
           ),
         ],
       ),
@@ -191,20 +192,23 @@ class CallHistoryScreenState extends State<CallHistoryScreen>
     await _load();
   }
 
-  /// Left-zone tap: open the linked contact, or — for an unknown number with no
-  /// contact page — start "Add to contact" with the number prefilled. Reloads
+  /// Left-zone tap: open the linked contact on its History tab, or — for an
+  /// unknown number — the number's own screen (History | Add contact). Reloads
   /// afterwards so a newly linked/created contact shows on the row.
   Future<void> _openLeft(CallRecord call) async {
     if (call.contactId != null) {
       await Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => ContactDetailScreen(contactId: call.contactId!),
+          builder: (_) => ContactDetailScreen(
+            contactId: call.contactId!,
+            initialTab: ContactDetailTab.history,
+          ),
         ),
       );
     } else {
       await Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (_) => AddEditContactScreen(initialNumber: call.phoneNumber),
+          builder: (_) => NumberDetailScreen(number: call.phoneNumber),
         ),
       );
     }
@@ -240,10 +244,10 @@ class CallHistoryScreenState extends State<CallHistoryScreen>
       padding: const EdgeInsets.fromLTRB(20, 10, 12, 4),
       child: Row(
         children: [
-          const Expanded(
+          Expanded(
             child: Text(
-              'Recents',
-              style: TextStyle(
+              AppLocalizations.of(context).navRecents,
+              style: const TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w800,
                 letterSpacing: -0.6,
@@ -252,7 +256,7 @@ class CallHistoryScreenState extends State<CallHistoryScreen>
           ),
           IconButton(
             icon: Icon(Icons.settings_outlined, color: colors.mutedText),
-            tooltip: 'Settings',
+            tooltip: AppLocalizations.of(context).tooltipSettings,
             onPressed: _openSettings,
           ),
           // Hidden while searching — "Clear history" wipes everything, not the
@@ -260,7 +264,7 @@ class CallHistoryScreenState extends State<CallHistoryScreen>
           if (_searchQuery.isEmpty && _calls.isNotEmpty)
             IconButton(
               icon: Icon(Icons.delete_sweep_outlined, color: colors.mutedText),
-              tooltip: 'Clear history',
+              tooltip: AppLocalizations.of(context).tooltipClearHistory,
               onPressed: _clear,
             ),
         ],
@@ -297,7 +301,7 @@ class CallHistoryScreenState extends State<CallHistoryScreen>
           focusNode: _searchFocusNode,
           onChanged: _onSearchChanged,
           decoration: InputDecoration(
-            hintText: 'Search calls',
+            hintText: AppLocalizations.of(context).hintSearchCalls,
             prefixIcon: Icon(Icons.search, color: accent),
             suffixIcon: _searchQuery.isEmpty
                 // Voice search: partial results land in the field live, each
@@ -313,7 +317,7 @@ class CallHistoryScreenState extends State<CallHistoryScreen>
                   )
                 : IconButton(
                     icon: Icon(Icons.close, color: colors.mutedText),
-                    tooltip: 'Clear search',
+                    tooltip: AppLocalizations.of(context).tooltipClearSearch,
                     onPressed: () {
                       _searchController.clear();
                       _onSearchChanged('');
@@ -356,8 +360,8 @@ class CallHistoryScreenState extends State<CallHistoryScreen>
           padding: const EdgeInsets.all(24),
           child: Text(
             _searchQuery.isEmpty
-                ? 'No calls yet. Calls you place show up here.'
-                : 'No calls match that search.',
+                ? AppLocalizations.of(context).emptyNoCallsYet
+                : AppLocalizations.of(context).emptyNoCallsMatch,
             textAlign: TextAlign.center,
             style: TextStyle(color: colors.mutedText, fontSize: 14),
           ),
@@ -369,7 +373,7 @@ class CallHistoryScreenState extends State<CallHistoryScreen>
     final items = <_HistoryItem>[];
     String? lastBucket;
     for (final call in _calls) {
-      final bucket = _dayBucket(call.timestamp);
+      final bucket = callDayBucket(context, call.timestamp);
       if (bucket != lastBucket) {
         items.add(_HistoryItem.header(bucket));
         lastBucket = bucket;
@@ -404,22 +408,31 @@ class CallHistoryScreenState extends State<CallHistoryScreen>
 
   Widget _callCard(CallRecord call, AppColors colors) {
     final accent = Theme.of(context).colorScheme.primary;
-    final (icon, iconColor) = _typeIcon(call.callType, call.callOutcome, accent);
+    final (icon, iconColor) = callTypeIcon(
+      call.callType,
+      call.callOutcome,
+      accent,
+    );
     // What happened, for a call that has no duration to show. Null for an
     // answered call (the duration already says it) and for a call whose outcome
     // we never learned — an old or imported row then reads exactly as before.
-    final outcomeLabel = callOutcomeLabel(call.callOutcome, call.callType);
+    final l10n = AppLocalizations.of(context);
+    final outcomeLabel = callOutcomeLabel(
+      call.callOutcome,
+      call.callType,
+      l10n,
+    );
     // First subtitle line: time · [Blocked] · duration|outcome · SIM · intent.
     final subtitleParts = <String>[
-      _timeOfDay(call.timestamp),
-      if (call.callType == 'blocked') 'Blocked',
+      callTimeOfDay(context, call.timestamp),
+      if (call.callType == 'blocked') l10n.labelBlocked,
       if (call.duration != null && call.duration! > 0)
-        _formatDuration(call.duration!)
+        formatCallDuration(l10n, call.duration!)
       else
         ?outcomeLabel,
       if (call.simLabel != null && call.simLabel!.isNotEmpty) call.simLabel!,
       if (call.callIntent != null && call.callIntent!.isNotEmpty)
-        call.callIntent!,
+        postCallIntentLabel(l10n, call.callIntent!),
     ];
     // Show the raw number as a second line only when the title is a name (for
     // an unknown caller the title already *is* the number).
@@ -519,11 +532,8 @@ class CallHistoryScreenState extends State<CallHistoryScreen>
                     children: [
                       Icon(icon, color: iconColor, size: 18),
                       IconButton(
-                        icon: const Icon(
-                          Icons.call,
-                          color: Color(0xFF10B981),
-                        ),
-                        tooltip: 'Call back',
+                        icon: const Icon(Icons.call, color: Color(0xFF10B981)),
+                        tooltip: l10n.tooltipCallBack,
                         onPressed: () => _callBack(call),
                       ),
                     ],
@@ -600,6 +610,7 @@ class CallHistoryScreenState extends State<CallHistoryScreen>
       }
     }
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
 
     final action = await showModalBottomSheet<String>(
       context: context,
@@ -631,7 +642,11 @@ class CallHistoryScreenState extends State<CallHistoryScreen>
                         ? colors.mutedText
                         : const Color(0xFFEF4444),
                   ),
-                  title: Text(isBlocked ? 'Unblock number' : 'Block number'),
+                  title: Text(
+                    isBlocked
+                        ? l10n.actionUnblockNumber
+                        : l10n.actionBlockNumber,
+                  ),
                   onTap: () => Navigator.of(
                     sheetContext,
                   ).pop(isBlocked ? 'unblock' : 'block'),
@@ -641,32 +656,37 @@ class CallHistoryScreenState extends State<CallHistoryScreen>
                     isSpam ? Icons.report_off_outlined : Icons.report_outlined,
                     color: isSpam ? colors.mutedText : const Color(0xFFF59E0B),
                   ),
-                  title: Text(isSpam ? 'Not spam' : 'Mark as spam'),
+                  title: Text(
+                    isSpam ? l10n.actionNotSpam : l10n.actionMarkAsSpam,
+                  ),
                   onTap: () => Navigator.of(
                     sheetContext,
                   ).pop(isSpam ? 'unspam' : 'spam'),
                 ),
               ],
               ListTile(
-                leading: const Icon(Icons.timer_outlined, color: Color(0xFFF59E0B)),
-                title: const Text('Smart Redial & Reach Me'),
+                leading: const Icon(
+                  Icons.timer_outlined,
+                  color: Color(0xFFF59E0B),
+                ),
+                title: Text(l10n.actionSmartRedialReachMe),
                 onTap: () => Navigator.of(sheetContext).pop('smart_redial'),
               ),
               if (number.isNotEmpty) ...[
                 ListTile(
                   leading: Icon(Icons.copy_outlined, color: colors.mutedText),
-                  title: const Text('Copy number'),
+                  title: Text(l10n.actionCopyNumber),
                   onTap: () => Navigator.of(sheetContext).pop('copy'),
                 ),
                 ListTile(
                   leading: Icon(Icons.share_outlined, color: colors.mutedText),
-                  title: const Text('Share number'),
+                  title: Text(l10n.actionShareNumber),
                   onTap: () => Navigator.of(sheetContext).pop('share'),
                 ),
               ],
               ListTile(
                 leading: Icon(Icons.delete_outline, color: colors.mutedText),
-                title: const Text('Remove from history'),
+                title: Text(l10n.actionRemoveFromHistory),
                 onTap: () => Navigator.of(sheetContext).pop('delete'),
               ),
 
@@ -682,22 +702,22 @@ class CallHistoryScreenState extends State<CallHistoryScreen>
     switch (action) {
       case 'block':
         await flagged.add(number, kind: FlaggedNumberRepository.kindBlocked);
-        message = '$number blocked — it can no longer ring you';
+        message = l10n.msgNumberBlocked(number);
       case 'unblock':
         await flagged.removeNumber(
           number,
           kind: FlaggedNumberRepository.kindBlocked,
         );
-        message = '$number unblocked';
+        message = l10n.msgNumberUnblocked(number);
       case 'spam':
         await flagged.add(number, kind: FlaggedNumberRepository.kindSpam);
-        message = '$number marked as spam';
+        message = l10n.msgMarkedAsSpam(number);
       case 'unspam':
         await flagged.removeNumber(
           number,
           kind: FlaggedNumberRepository.kindSpam,
         );
-        message = '$number is no longer marked as spam';
+        message = l10n.msgNoLongerSpam(number);
       case 'smart_redial':
         await showSmartRedialSheet(
           context,
@@ -709,7 +729,7 @@ class CallHistoryScreenState extends State<CallHistoryScreen>
         );
       case 'copy':
         await Clipboard.setData(ClipboardData(text: number));
-        message = 'Copied $number to clipboard';
+        message = l10n.msgCopiedNumber(number);
       case 'share':
         await SharePlus.instance.share(ShareParams(text: number));
       case 'delete':
@@ -722,56 +742,6 @@ class CallHistoryScreenState extends State<CallHistoryScreen>
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
     }
-  }
-
-  /// The trailing arrow: direction first, outcome second.
-  ///
-  /// Outgoing gets two states rather than one icon per outcome. The glyph's job
-  /// here is direction — read at a glance while scrolling — and only the arrow
-  /// family carries that; a per-outcome icon set would have to borrow marks like
-  /// `block` (already the blocked-call icon, meaning the opposite thing: we
-  /// turned *them* away) and direction would stop being readable. The precise
-  /// reason is spelled out in the subtitle instead.
-  ///
-  /// Amber, not red, for an outgoing call that didn't connect: red in this list
-  /// means "needs you" (a missed call) or "hostile" (a blocked one), and neither
-  /// fits someone simply not picking up.
-  (IconData, Color) _typeIcon(String? type, String? outcome, Color accent) {
-    switch (type) {
-      case 'incoming':
-        return (Icons.call_received, const Color(0xFF10B981));
-      case 'missed':
-        return (Icons.call_missed, const Color(0xFFEF4444));
-      case 'blocked':
-        return (Icons.block, const Color(0xFFEF4444));
-      case 'outgoing':
-      default:
-        // An unknown outcome keeps the plain outgoing arrow, so rows written
-        // before this column existed look exactly as they always did.
-        return outgoingDidNotConnect(outcome)
-            ? (Icons.call_missed_outgoing, const Color(0xFFF59E0B))
-            : (Icons.call_made, accent);
-    }
-  }
-
-  String _dayBucket(DateTime when) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final that = DateTime(when.year, when.month, when.day);
-    final diff = today.difference(that).inDays;
-    if (diff <= 0) return 'Today';
-    if (diff == 1) return 'Yesterday';
-    if (diff < 7) return DateFormat('EEEE').format(when); // weekday name
-    return DateFormat('MMM d, yyyy').format(when);
-  }
-
-  String _timeOfDay(DateTime when) => DateFormat.jm().format(when);
-
-  String _formatDuration(int seconds) {
-    if (seconds < 60) return '${seconds}s';
-    final m = seconds ~/ 60;
-    final s = seconds % 60;
-    return s == 0 ? '${m}m' : '${m}m ${s}s';
   }
 }
 

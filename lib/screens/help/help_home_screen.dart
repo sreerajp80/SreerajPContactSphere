@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 import 'package:smart_contacts_dialer/screens/help/app_lock_help_screen.dart';
 import 'package:smart_contacts_dialer/screens/help/backup_help_screen.dart';
@@ -38,7 +39,7 @@ class HelpHomeScreen extends StatelessWidget {
     final colors = theme.extension<AppColors>()!;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Help & User Guides')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).helpHomeText1)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
@@ -47,219 +48,197 @@ class HelpHomeScreen extends StatelessWidget {
 
           _buildSectionHeader(
             context,
-            'Calling & Dialer',
+            AppLocalizations.of(context).helpHomeHeading1,
             Icons.dialpad_outlined,
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.grid_3x3_outlined,
-            title: 'T9 Dialing & Malayalam',
-            subtitle:
-                'How multi-script T9 search works and where Malayalam vowels (അ to അഃ) are mapped.',
+            title: AppLocalizations.of(context).helpHomeTitle1,
+            subtitle: AppLocalizations.of(context).helpHomeSub1,
             onTap: () => _push(context, const T9DialingHelpScreen()),
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.call_end_outlined,
-            title: 'Calling & In-Call Controls',
-            subtitle:
-                'Conference merge, hold and swap, dual-SIM options, smart redial, and spoken caller names.',
+            title: AppLocalizations.of(context).helpHomeTitle2,
+            subtitle: AppLocalizations.of(context).helpHomeSub2,
             onTap: () => _push(context, const CallManagementHelpScreen()),
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.phone_disabled_outlined,
-            title: 'Call Screening & Blocking',
-            subtitle:
-                'Blocking a number before it rings, blocked unknown callers, and why the default dialer role is needed.',
+            title: AppLocalizations.of(context).helpHomeTitle3,
+            subtitle: AppLocalizations.of(context).helpHomeSub3,
             onTap: () => _push(context, const CallScreeningHelpScreen()),
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.label_outline,
-            title: 'Caller ID & Spam Filter',
-            subtitle:
-                'Labelling unknown callers, ringing suspected spam silently, and marking a number as spam.',
+            title: AppLocalizations.of(context).helpHomeTitle4,
+            subtitle: AppLocalizations.of(context).helpHomeSub4,
             onTap: () => _push(context, const CallerIdSpamHelpScreen()),
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.insights_outlined,
-            title: 'Call Context & Notes',
-            subtitle:
-                'Pre-call summary, "Likely to answer now", and the notes you write after a call.',
+            title: AppLocalizations.of(context).helpHomeTitle5,
+            subtitle: AppLocalizations.of(context).helpHomeSub5,
             onTap: () => _push(context, const CallerIntelligenceHelpScreen()),
           ),
           const SizedBox(height: 22),
 
           _buildSectionHeader(
             context,
-            'Organization & Sharing',
+            AppLocalizations.of(context).helpHomeHeading2,
             Icons.people_alt_outlined,
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.hub_outlined,
-            title: 'Relationship Spheres',
-            subtitle:
-                'The 7 categories from Immediate Family to Service, your own labels, and quiet hours.',
+            title: AppLocalizations.of(context).helpHomeTitle6,
+            subtitle: AppLocalizations.of(context).helpHomeSub6,
             onTap: () =>
                 _push(context, const RelationshipCategoriesHelpScreen()),
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.sell_outlined,
-            title: 'Groups & Tags',
-            subtitle:
-                'Building groups, group ringtones, the tag cloud, and selecting many contacts at once.',
+            title: AppLocalizations.of(context).helpHomeTitle7,
+            subtitle: AppLocalizations.of(context).helpHomeSub7,
             onTap: () => _push(context, const GroupsTagsHelpScreen()),
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.merge_type_outlined,
-            title: 'Duplicate Contacts & Merge',
-            subtitle:
-                'How identical names, phones, and emails are detected and merged without data loss.',
+            title: AppLocalizations.of(context).helpHomeTitle8,
+            subtitle: AppLocalizations.of(context).helpHomeSub8,
             onTap: () => _push(context, const DuplicateMergeHelpScreen()),
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.qr_code_scanner_outlined,
-            title: 'Sharing & Card Scanning',
-            subtitle:
-                'QR contact codes, the on-device business card scanner, and sharing over Bluetooth.',
+            title: AppLocalizations.of(context).helpHomeTitle9,
+            subtitle: AppLocalizations.of(context).helpHomeSub9,
             onTap: () => _push(context, const ContactSharingHelpScreen()),
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.import_export_outlined,
-            title: 'Import & Export Files',
-            subtitle:
-                'CSV and vCard files in and out, and AirQR for sending more than one QR code can hold.',
+            title: AppLocalizations.of(context).helpHomeTitle10,
+            subtitle: AppLocalizations.of(context).helpHomeSub10,
             onTap: () => _push(context, const ImportExportHelpScreen()),
           ),
           const SizedBox(height: 22),
 
           _buildSectionHeader(
             context,
-            'Privacy & Protection',
+            AppLocalizations.of(context).helpHomeHeading3,
             Icons.security_outlined,
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.lock_outline,
-            title: 'Privacy, Security & Vault',
-            subtitle:
-                'Secret contacts vault, biometric/PIN protection, screenshot guard, and security audit log.',
+            title: AppLocalizations.of(context).helpHomeTitle11,
+            subtitle: AppLocalizations.of(context).helpHomeSub11,
             onTap: () => _push(context, const PrivacySecurityHelpScreen()),
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.fingerprint,
-            title: 'Biometric Lock Details',
-            subtitle:
-                'Every place the app asks for your fingerprint or face, and what happens without a screen lock.',
+            title: AppLocalizations.of(context).helpHomeTitle12,
+            subtitle: AppLocalizations.of(context).helpHomeSub12,
             onTap: () => _push(context, const BiometricsHelpScreen()),
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.pin_outlined,
-            title: 'App Lock & PIN',
-            subtitle:
-                'The three lock modes, setting an App PIN, and the recovery code if you forget it.',
+            title: AppLocalizations.of(context).helpHomeTitle13,
+            subtitle: AppLocalizations.of(context).helpHomeSub13,
             onTap: () => _push(context, const AppLockHelpScreen()),
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.verified_user_outlined,
-            title: 'Permissions Explained',
-            subtitle:
-                'What each permission is for, which are optional, and what stops working if you say no.',
+            title: AppLocalizations.of(context).helpHomeTitle14,
+            subtitle: AppLocalizations.of(context).helpHomeSub14,
             onTap: () => _push(context, const PermissionsHelpScreen()),
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.medical_information_outlined,
-            title: 'Emergency Info Card',
-            subtitle:
-                'Setting lock-screen medical details and emergency contacts for first responders.',
+            title: AppLocalizations.of(context).helpHomeTitle15,
+            subtitle: AppLocalizations.of(context).helpHomeSub15,
             onTap: () => _push(context, const EmergencyInfoHelpScreen()),
           ),
           const SizedBox(height: 22),
 
           _buildSectionHeader(
             context,
-            'Sync & Backups',
+            AppLocalizations.of(context).helpHomeHeading4,
             Icons.cloud_sync_outlined,
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.wifi_tethering,
-            title: 'Local Wi-Fi P2P Device Sync',
-            subtitle:
-                'How direct device-to-device Wi-Fi transfer works with end-to-end encryption and zero cloud.',
+            title: AppLocalizations.of(context).helpHomeTitle16,
+            subtitle: AppLocalizations.of(context).helpHomeSub16,
             onTap: () => _push(context, const P2PSyncHelpScreen()),
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.sync_outlined,
-            title: 'Phonebook & Call Log Sync',
-            subtitle:
-                'Merging or mirroring contacts and call history with Android system storage.',
+            title: AppLocalizations.of(context).helpHomeTitle17,
+            subtitle: AppLocalizations.of(context).helpHomeSub17,
             onTap: () => _push(context, const ContactSyncHelpScreen()),
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.cloud_outlined,
-            title: 'Cloud Sync & Google Drive',
-            subtitle:
-                'Two-way online sync, encrypted cloud backups, WebDAV setup, and vault privacy.',
+            title: AppLocalizations.of(context).helpHomeTitle18,
+            subtitle: AppLocalizations.of(context).helpHomeSub18,
             onTap: () => _push(context, const CloudSyncHelpScreen()),
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.backup_outlined,
-            title: 'Offline Backup & Restore',
-            subtitle:
-                'Exporting encrypted backup files, password safety, and restoring on a new phone.',
+            title: AppLocalizations.of(context).helpHomeTitle19,
+            subtitle: AppLocalizations.of(context).helpHomeSub19,
             onTap: () => _push(context, const BackupHelpScreen()),
           ),
           const SizedBox(height: 22),
 
           _buildSectionHeader(
             context,
-            'Personalization & Tools',
+            AppLocalizations.of(context).helpHomeHeading5,
             Icons.tune_outlined,
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.palette_outlined,
-            title: 'Look, Sound & Region',
-            subtitle:
-                'Theme and accent colour, fonts and text size, ringtones and vibration, and the default country.',
+            title: AppLocalizations.of(context).helpHomeTitle20,
+            subtitle: AppLocalizations.of(context).helpHomeSub20,
             onTap: () => _push(context, const PersonalizationHelpScreen()),
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.handyman_outlined,
-            title: 'Contact Tools',
-            subtitle:
-                'Temporary self-deleting contacts, connected messaging apps, and the search index.',
+            title: AppLocalizations.of(context).helpHomeTitle21,
+            subtitle: AppLocalizations.of(context).helpHomeSub21,
             onTap: () => _push(context, const ContactToolsHelpScreen()),
           ),
           const SizedBox(height: 22),
 
           _buildSectionHeader(
             context,
-            'Frequently Asked Questions',
+            AppLocalizations.of(context).helpHomeHeading6,
             Icons.question_answer_outlined,
           ),
           const SizedBox(height: 10),
           _HelpTopicCard(
             icon: Icons.help_outline,
-            title: 'FAQs & Troubleshooting Guide',
-            subtitle:
-                'Direct answers to top questions: permissions, default dialer, quiet hours, and search indexing.',
+            title: AppLocalizations.of(context).helpHomeTitle22,
+            subtitle: AppLocalizations.of(context).helpHomeSub22,
             onTap: () => _push(context, const FaqTroubleshootingHelpScreen()),
           ),
         ],
@@ -316,14 +295,14 @@ class HelpHomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Help Center & Knowledge Base',
+                    AppLocalizations.of(context).helpHomeText2,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'Browse in-depth guides and solutions for all features of SreerajP Contacts Sphere.',
+                    AppLocalizations.of(context).helpHomeText3,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: colors.mutedText,
                       height: 1.35,
@@ -350,12 +329,14 @@ class HelpHomeScreen extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: theme.colorScheme.primary),
           const SizedBox(width: 8),
-          Text(
-            title.toUpperCase(),
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.primary,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.6,
+          Expanded(
+            child: Text(
+              title.toUpperCase(),
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.6,
+              ),
             ),
           ),
         ],

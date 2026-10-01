@@ -7,6 +7,7 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
 class EmergencyInfoHelpScreen extends StatelessWidget {
@@ -15,141 +16,70 @@ class EmergencyInfoHelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Emergency info')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).helpEmergencyInfoText),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-        children: const [
-          _Intro(
-            'The emergency card holds a few facts that could help someone who '
-            'finds you unwell — your blood group, your allergies, and who to '
-            'call. It can be read on your lock screen without your PIN.',
-          ),
-          SizedBox(height: 24),
+        children: [
+          _Intro(AppLocalizations.of(context).helpEmergencyInfoIntro),
+          const SizedBox(height: 24),
 
           _Section(
             icon: Icons.lock_open_outlined,
-            title: 'What "without unlocking" means',
+            title: AppLocalizations.of(context).helpEmergencyInfoTitle1,
             children: [
-              _Bullet(
-                'While the card is on, a notification called "Emergency info" '
-                'sits on your lock screen. Tapping it opens the card straight '
-                'away — no PIN, fingerprint, or face needed.',
-              ),
-              _Bullet(
-                'The phone stays locked. Only the card opens; the rest of the '
-                'app, and everything else on the phone, stays shut.',
-              ),
-              _Bullet(
-                'Android keeps its own "Emergency information" page behind the '
-                'lock screen Emergency button. That page belongs to the phone '
-                'maker, and no app can write into it — which is why '
-                'SreerajP Contacts Sphere uses its own notification instead.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpEmergencyInfoBullet1),
+              _Bullet(AppLocalizations.of(context).helpEmergencyInfoBullet2),
+              _Bullet(AppLocalizations.of(context).helpEmergencyInfoBullet3),
             ],
           ),
 
           _Section(
             icon: Icons.visibility_outlined,
-            title: 'You choose every line',
+            title: AppLocalizations.of(context).helpEmergencyInfoTitle2,
             children: [
-              _Bullet('The whole feature is off until you switch it on.'),
-              _Bullet(
-                'Each field has its own "Show on lock screen" switch. A field '
-                'you leave switched off never leaves the app.',
-              ),
-              _Bullet(
-                'The preview at the bottom of the edit screen shows exactly '
-                'what a stranger would see.',
-              ),
-              _Bullet(
-                'Switching the card off removes the notification and wipes the '
-                'copy the lock screen was reading. What you typed stays saved '
-                'inside the app.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpEmergencyInfoBullet4),
+              _Bullet(AppLocalizations.of(context).helpEmergencyInfoBullet5),
+              _Bullet(AppLocalizations.of(context).helpEmergencyInfoBullet6),
+              _Bullet(AppLocalizations.of(context).helpEmergencyInfoBullet7),
             ],
           ),
 
           _Section(
             icon: Icons.call_outlined,
-            title: 'Calling for help',
+            title: AppLocalizations.of(context).helpEmergencyInfoTitle3,
             children: [
-              _Bullet(
-                'Each person you add gets a Call button on the card. Tapping '
-                'it dials them right away from the lock screen.',
-              ),
-              _Bullet(
-                'People picked from your contacts are copied onto the card as '
-                'a name and one number. Editing that contact later does not '
-                'change the card — open this screen and save again.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpEmergencyInfoBullet8),
+              _Bullet(AppLocalizations.of(context).helpEmergencyInfoBullet9),
             ],
           ),
 
           _Section(
             icon: Icons.visibility_outlined,
-            title: 'If the card is missing from the lock screen',
+            title: AppLocalizations.of(context).helpEmergencyInfoTitle4,
             children: [
-              _Bullet(
-                'Your phone decides which notifications the lock screen shows. '
-                'Open Settings → Notifications → Notifications on lock screen '
-                'and pick "Show conversations, default and silent".',
-              ),
-              _Bullet(
-                'If that is set to "Hide silent notifications" or "Don\'t show '
-                'any notifications", the card cannot appear there. No app can '
-                'override that choice.',
-              ),
-              _Bullet(
-                'Also check that notifications for SreerajP Contacts Sphere are on, and '
-                'that the "Emergency info" notification is not turned down to '
-                'silent. The edit screen warns you when either is the case, and '
-                'the button there opens the right settings page.',
-              ),
-              _Bullet(
-                'The card stays in the notification shade all the time on '
-                'purpose — it is meant to be one tap away, and it cannot be '
-                'swiped off by accident.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpEmergencyInfoBullet10),
+              _Bullet(AppLocalizations.of(context).helpEmergencyInfoBullet11),
+              _Bullet(AppLocalizations.of(context).helpEmergencyInfoBullet12),
+              _Bullet(AppLocalizations.of(context).helpEmergencyInfoBullet13),
             ],
           ),
 
           _Section(
             icon: Icons.shield_outlined,
-            title: 'How it is stored',
+            title: AppLocalizations.of(context).helpEmergencyInfoTitle5,
             children: [
-              _Bullet(
-                'Your full record stays in the app\'s encrypted database, like '
-                'the rest of your contacts.',
-              ),
-              _Bullet(
-                'Only the lines you switched on are copied into a small, plain '
-                'file that the lock-screen card can read while the phone is '
-                'locked. That copy cannot be encrypted — a locked phone has no '
-                'way to unlock it for a stranger.',
-              ),
-              _Bullet(
-                'The copy stays inside the app\'s private storage. Other apps '
-                'cannot read it, and it is left out of phone backups.',
-              ),
-              _Bullet(
-                'The card is saved inside a password-protected SreerajP Contacts Sphere '
-                'backup, so a restore on a new phone brings it back.',
-              ),
-              _Bullet(
-                'It also travels on a Full Sync to another phone, or when you '
-                'tick "Emergency info card" while choosing what to share. The '
-                'other phone only takes it if it has no card of its own — your '
-                'card never replaces someone else\'s.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpEmergencyInfoBullet14),
+              _Bullet(AppLocalizations.of(context).helpEmergencyInfoBullet15),
+              _Bullet(AppLocalizations.of(context).helpEmergencyInfoBullet16),
+              _Bullet(AppLocalizations.of(context).helpEmergencyInfoBullet17),
+              _Bullet(AppLocalizations.of(context).helpEmergencyInfoBullet18),
             ],
           ),
 
-          SizedBox(height: 8),
-          _Footer(
-            'Tip: keep it short. Blood group, serious allergies, and one or '
-            'two people to call are worth far more to a helper than a long '
-            'medical history.',
-          ),
+          const SizedBox(height: 8),
+          _Footer(AppLocalizations.of(context).helpEmergencyInfoFooter),
         ],
       ),
     );

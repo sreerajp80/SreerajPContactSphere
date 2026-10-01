@@ -2,12 +2,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'package:smart_contacts_dialer/l10n/audit_labels.dart';
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/audit_entry.dart';
 import 'package:smart_contacts_dialer/repositories/contact_repository.dart';
 import 'package:smart_contacts_dialer/screens/audit_log_screen.dart'
     show auditActionStyle;
 import 'package:smart_contacts_dialer/screens/contact_detail_screen.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
+import 'package:smart_contacts_dialer/l10n/formatting_locale.dart';
 
 /// One audit entry in full: what changed, who changed it, when — and the Undo
 /// button that puts it back.
@@ -36,16 +39,18 @@ class _AuditEntryDetailScreenState extends State<AuditEntryDetailScreen> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Undo this change?'),
-        content: Text(_entry.undoDescription),
+        title: Text(AppLocalizations.of(context).titleUndoThisChange),
+        content: Text(
+          auditUndoDescription(AppLocalizations.of(context), _entry.action),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Undo'),
+            child: Text(AppLocalizations.of(context).actionUndo),
           ),
         ],
       ),
@@ -63,7 +68,9 @@ class _AuditEntryDetailScreenState extends State<AuditEntryDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            contactId == null ? 'Contact removed again' : 'Change undone',
+            contactId == null
+                ? AppLocalizations.of(context).msgContactRemovedAgain
+                : AppLocalizations.of(context).msgChangeUndone,
           ),
         ),
       );
@@ -76,9 +83,11 @@ class _AuditEntryDetailScreenState extends State<AuditEntryDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _busy = false);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Undo failed: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context).errorUndoFailed('$e')),
+        ),
+      );
     }
   }
 
@@ -99,12 +108,11 @@ class _AuditEntryDetailScreenState extends State<AuditEntryDetailScreen> {
       onPopInvokedWithResult: (didPop, _) {},
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Change details'),
+          title: Text(AppLocalizations.of(context).titleChangeDetails),
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
-            onPressed: _busy
-                ? null
-                : () => Navigator.of(context).pop(_undone),
+            tooltip: AppLocalizations.of(context).tooltipBack,
+            onPressed: _busy ? null : () => Navigator.of(context).pop(_undone),
           ),
         ),
         body: ListView(
@@ -113,11 +121,7 @@ class _AuditEntryDetailScreenState extends State<AuditEntryDetailScreen> {
             _headerCard(colors),
             const SizedBox(height: 12),
             if (_entry.action == AuditAction.update && changes.isEmpty)
-              _note(
-                colors,
-                'No field visible in the log is different. The change was '
-                'recorded because something was written to this contact.',
-              )
+              _note(colors, AppLocalizations.of(context).descNoVisibleChange)
             else if (changes.isNotEmpty)
               _changesCard(colors, changes),
             const SizedBox(height: 12),
@@ -134,7 +138,10 @@ class _AuditEntryDetailScreenState extends State<AuditEntryDetailScreen> {
   }
 
   Widget _headerCard(AppColors colors) {
-    final style = auditActionStyle(_entry.action, Theme.of(context).colorScheme);
+    final style = auditActionStyle(
+      _entry.action,
+      Theme.of(context).colorScheme,
+    );
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
@@ -165,18 +172,23 @@ class _AuditEntryDetailScreenState extends State<AuditEntryDetailScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${_entry.action.label} · ${_entry.source.label}',
+                    '${auditActionLabel(AppLocalizations.of(context), _entry.action)} · '
+                    '${auditSourceLabel(AppLocalizations.of(context), _entry.source)}',
                     style: TextStyle(color: colors.mutedText, fontSize: 13),
                   ),
                   Text(
                     DateFormat(
                       'd MMMM yyyy, h:mm a',
+                      formattingLocale(Localizations.localeOf(context)),
                     ).format(_entry.changedAt),
                     style: TextStyle(color: colors.mutedText, fontSize: 13),
                   ),
                   if (_entry.summary.isNotEmpty) ...[
                     const SizedBox(height: 6),
-                    Text(_entry.summary, style: const TextStyle(fontSize: 13.5)),
+                    Text(
+                      _entry.summary,
+                      style: const TextStyle(fontSize: 13.5),
+                    ),
                   ],
                 ],
               ),
@@ -195,9 +207,9 @@ class _AuditEntryDetailScreenState extends State<AuditEntryDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'What changed',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            Text(
+              AppLocalizations.of(context).labelWhatChanged,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 4),
             for (final change in changes) _changeRow(colors, change),
@@ -214,7 +226,7 @@ class _AuditEntryDetailScreenState extends State<AuditEntryDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            change.label,
+            auditFieldLabel(AppLocalizations.of(context), change.label),
             style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
@@ -222,7 +234,12 @@ class _AuditEntryDetailScreenState extends State<AuditEntryDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: _valueBlock(colors, 'Before', change.before, faded: true),
+                child: _valueBlock(
+                  colors,
+                  AppLocalizations.of(context).labelBefore,
+                  change.before,
+                  faded: true,
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -233,7 +250,11 @@ class _AuditEntryDetailScreenState extends State<AuditEntryDetailScreen> {
                 ),
               ),
               Expanded(
-                child: _valueBlock(colors, 'After', change.after),
+                child: _valueBlock(
+                  colors,
+                  AppLocalizations.of(context).labelAfter,
+                  change.after,
+                ),
               ),
             ],
           ),
@@ -251,12 +272,11 @@ class _AuditEntryDetailScreenState extends State<AuditEntryDetailScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(label, style: TextStyle(fontSize: 11, color: colors.mutedText)),
         Text(
-          label,
-          style: TextStyle(fontSize: 11, color: colors.mutedText),
-        ),
-        Text(
-          value.isEmpty ? '—' : value,
+          value.isEmpty
+              ? '—'
+              : auditValueText(AppLocalizations.of(context), value),
           style: TextStyle(
             fontSize: 13.5,
             color: faded ? colors.mutedText : null,
@@ -275,19 +295,20 @@ class _AuditEntryDetailScreenState extends State<AuditEntryDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Undo',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            Text(
+              AppLocalizations.of(context).actionUndo,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             Text(
               _undone
-                  ? 'This change has been undone. The undo itself is recorded '
-                        'as a new entry.'
+                  ? AppLocalizations.of(context).descUndone
                   : _entry.canUndo
-                  ? _entry.undoDescription
-                  : 'This entry cannot be undone — it has no saved copy of the '
-                        'earlier version.',
+                  ? auditUndoDescription(
+                      AppLocalizations.of(context),
+                      _entry.action,
+                    )
+                  : AppLocalizations.of(context).descCannotUndo,
               style: TextStyle(color: colors.mutedText, fontSize: 13.5),
             ),
             const SizedBox(height: 12),
@@ -302,7 +323,11 @@ class _AuditEntryDetailScreenState extends State<AuditEntryDetailScreen> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.undo),
-                label: Text(_undone ? 'Undone' : 'Undo this change'),
+                label: Text(
+                  _undone
+                      ? AppLocalizations.of(context).labelUndone
+                      : AppLocalizations.of(context).actionUndoThisChange,
+                ),
               ),
             ),
           ],
@@ -317,9 +342,9 @@ class _AuditEntryDetailScreenState extends State<AuditEntryDetailScreen> {
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         leading: const Icon(Icons.person_outline),
-        title: const Text('Open this contact'),
+        title: Text(AppLocalizations.of(context).titleOpenThisContact),
         subtitle: Text(
-          'See the contact as it is now',
+          AppLocalizations.of(context).descSeeContactNow,
           style: TextStyle(color: colors.mutedText, fontSize: 13),
         ),
         trailing: Icon(Icons.chevron_right, color: colors.mutedText),

@@ -31,13 +31,13 @@ Implement non-root call recording for **SreerajPContactSphere** by leveraging it
 
 ### Android Native Layer (Kotlin & Telecom Integration)
 
-#### [NEW] [CallRecorderManager.kt](file:///l:/Android/SreerajPContactSphere/android/app/src/main/kotlin/in/sreerajp/contact_sphere/CallRecorderManager.kt)
+#### [NEW] [CallRecorderManager.kt](../android/app/src/main/kotlin/in/sreerajp/contact_sphere/CallRecorderManager.kt)
 - Create a dedicated Kotlin manager for audio recording during active telephony calls.
 - Initialize `MediaRecorder` (or fallback `AudioRecord`) configured with `AudioSource.VOICE_COMMUNICATION`, `OutputFormat.MPEG_4`, and `AudioEncoder.AAC`.
 - Provide methods: `startRecording(filePath: String): Boolean`, `stopRecording(): String?`, and `isRecording(): Boolean`.
 - Handle edge cases such as mid-call audio interruption, low storage space, and graceful error teardown.
 
-#### [MODIFY] [MainActivity.kt](file:///l:/Android/SreerajPContactSphere/android/app/src/main/kotlin/in/sreerajp/contact_sphere/MainActivity.kt)
+#### [MODIFY] [MainActivity.kt](../android/app/src/main/kotlin/in/sreerajp/contact_sphere/MainActivity.kt)
 - Register a new `MethodChannel` (`in.sreerajp.contact_sphere/call_recorder`) in `configureFlutterEngine`.
 - Wire `startRecording`, `stopRecording`, and `getRecordingStatus` calls from Dart to `CallRecorderManager`.
 
@@ -45,12 +45,12 @@ Implement non-root call recording for **SreerajPContactSphere** by leveraging it
 
 ### Flutter Service & State Management
 
-#### [NEW] [call_recorder_service.dart](file:///l:/Android/SreerajPContactSphere/lib/services/call_recorder_service.dart)
+#### [NEW] [call_recorder_service.dart](../lib/services/call_recorder_service.dart)
 - Create Dart service communicating with the native `in.sreerajp.contact_sphere/call_recorder` channel.
 - Manage file path generation (`call_YYYYMMDD_HHMMSS_number.mp4`).
 - Provide stream/ValueNotifier for active recording state and elapsed recording time.
 
-#### [MODIFY] [telecom_service.dart](file:///l:/Android/SreerajPContactSphere/lib/services/telecom_service.dart)
+#### [MODIFY] [telecom_service.dart](../lib/services/telecom_service.dart)
 - Integrate auto-stop hook on call teardown (`onCallEnded` / state changes to idle/disconnected).
 - Expose helper methods to bind active call session state to recording state.
 
@@ -58,12 +58,12 @@ Implement non-root call recording for **SreerajPContactSphere** by leveraging it
 
 ### UI Layer (In-Call Screen & Call History)
 
-#### [MODIFY] [in_call_screen.dart](file:///l:/Android/SreerajPContactSphere/lib/screens/in_call_screen.dart)
+#### [MODIFY] [in_call_screen.dart](../lib/screens/in_call_screen.dart)
 - Add a **Record Call** action button to the in-call action grid alongside Mute, Speaker, Hold, and Keypad.
 - Add an animated recording badge (`🔴 00:15`) in the call status header when recording is active.
 - Wire button taps to `CallRecorderService.toggleRecording()`.
 
-#### [MODIFY] [call_history_screen.dart](file:///l:/Android/SreerajPContactSphere/lib/screens/call_history_screen.dart)
+#### [MODIFY] [call_history_screen.dart](../lib/screens/call_history_screen.dart)
 - Add audio playback indicator / preview button for call log items that have an associated call recording file.
 
 ---

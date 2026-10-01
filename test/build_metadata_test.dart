@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_contacts_dialer/core/constants/app_version.g.dart';
 import 'package:smart_contacts_dialer/core/constants/build_date.g.dart';
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/screens/about_screen.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
@@ -25,6 +26,8 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           theme: theme,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           home: const AboutScreen(),
         ),
       );

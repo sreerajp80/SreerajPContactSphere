@@ -1,6 +1,7 @@
 // lib/widgets/voice_input_button.dart
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/services/speech_service.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
@@ -16,13 +17,11 @@ class VoiceInputButton extends StatefulWidget {
   /// Words heard so far; called repeatedly while the user speaks and once
   /// more with `isFinal: true` when the session ends with a result.
   final void Function(String words, bool isFinal) onWords;
-  final String tooltip;
 
-  const VoiceInputButton({
-    super.key,
-    required this.onWords,
-    this.tooltip = 'Voice search',
-  });
+  /// Tooltip while idle; null shows the default "Voice search".
+  final String? tooltip;
+
+  const VoiceInputButton({super.key, required this.onWords, this.tooltip});
 
   @override
   State<VoiceInputButton> createState() => _VoiceInputButtonState();
@@ -72,10 +71,8 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Voice input is not available — check the microphone permission.',
-            ),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).errorVoiceUnavailable),
           ),
         );
       return;
@@ -99,7 +96,9 @@ class _VoiceInputButtonState extends State<VoiceInputButton>
     final accent = theme.colorScheme.primary;
 
     return IconButton(
-      tooltip: _listening ? 'Stop listening' : widget.tooltip,
+      tooltip: _listening
+          ? AppLocalizations.of(context).tooltipStopListening
+          : widget.tooltip ?? AppLocalizations.of(context).tooltipVoiceSearch,
       onPressed: _toggle,
       icon: _listening
           ? ScaleTransition(

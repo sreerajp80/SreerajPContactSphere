@@ -5,7 +5,7 @@ Update `docs/feature_analysis_and_roadmap.md` to reflect the completed status of
 ## Proposed Changes
 
 ### Documentation
-#### [MODIFY] [feature_analysis_and_roadmap.md](file:///l:/Android/SreerajPContactSphere/docs/feature_analysis_and_roadmap.md)
+#### [MODIFY] [feature_analysis_and_roadmap.md](../docs/feature_analysis_and_roadmap.md)
 - Mark Feature 5.5 (Optical air-gap contact transfer) as ✅ **Shipped (size M)** and reference `AirQrService`, `AirQrFrame`, `AirQrShareDialog`, `QrShareDialog`, and `qr_scan_screen.dart`.
 - Mark Feature 5.6 (Safety check on scanned contact QR codes) as ✅ **Shipped (size S)** and reference `ContactQrSafetyService`, `ContactQrPreviewDialog`, and `qr_scan_screen.dart`.
 

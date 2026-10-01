@@ -125,8 +125,7 @@ class ContactRepository {
     if (digits.isEmpty) return const <PhoneMatch>[];
 
     final db = await _dbHelper.database;
-    final rows = await db.rawQuery(
-      '''
+    final rows = await db.rawQuery('''
       SELECT p.number AS number,
              p.label AS label,
              c.id AS contact_id,
@@ -140,8 +139,7 @@ class ContactRepository {
              ) AS contact_name
       FROM phone_numbers p
       JOIN contacts c ON c.id = p.contact_id
-      ''',
-    );
+      ''');
 
     final scoredMatches = <_ScoredMatch>[];
 
@@ -318,15 +316,12 @@ class ContactRepository {
   Future<List<PhoneMatch>> getMatchesForIds(List<int> ids) async {
     if (ids.isEmpty) return const <PhoneMatch>[];
     final db = await _dbHelper.database;
-    final rows = await db.rawQuery(
-      '''
+    final rows = await db.rawQuery('''
       SELECT $_preDialProjection
       FROM contacts c
       WHERE c.id IN (${List.filled(ids.length, '?').join(',')})
         AND c.is_secret = 0 AND c.is_favorite = 0
-      ''',
-      ids,
-    );
+      ''', ids);
     final byId = {
       for (final r in rows) r['contact_id'] as int: _preDialMatch(r),
     };
@@ -610,7 +605,11 @@ class ContactRepository {
       // name on the keypad and dial it with no unlock. Freeing the slot here
       // covers a contact that was assigned first and made secret afterwards.
       if (contact.isSecret) {
-        await txn.delete('speed_dial', where: 'contact_id = ?', whereArgs: [id]);
+        await txn.delete(
+          'speed_dial',
+          where: 'contact_id = ?',
+          whereArgs: [id],
+        );
       }
 
       // Replace children wholesale (simpler and correct for an edit form).
@@ -664,7 +663,10 @@ class ContactRepository {
       if (rows.isNotEmpty) {
         final remoteId = rows.first['remote_sync_id'] as String?;
         final provider = rows.first['sync_provider'] as String?;
-        if (remoteId != null && remoteId.isNotEmpty && provider != null && provider.isNotEmpty) {
+        if (remoteId != null &&
+            remoteId.isNotEmpty &&
+            provider != null &&
+            provider.isNotEmpty) {
           await txn.insert('pending_remote_deletions', {
             'remote_sync_id': remoteId,
             'sync_provider': provider,
@@ -706,7 +708,9 @@ class ContactRepository {
     switch (entry.action) {
       case AuditAction.create:
         final id = entry.contactId;
-        if (id == null) throw StateError('This entry has no contact to remove.');
+        if (id == null) {
+          throw StateError('This entry has no contact to remove.');
+        }
         final existing = await db.query(
           'contacts',
           columns: ['id'],
@@ -1374,7 +1378,82 @@ class ContactRepository {
         if (usePhonetic) ...['$code%', '% $code%'],
       ],
     );
-    return rows.map(_summaryFromRow).toList();
+    final exact = rows.map(_summaryFromRow).toList();
+    if (!useTranslit) return exact;
+
+    final extra = await _searchSimilarNames(
+      db,
+      key,
+      exclude: {for (final c in exact) ?c.id},
+      includeSecret: includeSecret,
+      favoritesOnly: favoritesOnly,
+    );
+    return [...exact, ...extra];
+  }
+
+  /// The second, looser half of [searchContactSummaries]: contacts the SQL
+  /// match missed whose romanized name key either matches the typed [key] with
+  /// spaces ignored (`sree raj` → ശ്രീരാജ്, `sreerajp` → Sreeraj P; see
+  /// [compactKeyMatches]), or is a similar name within a few typing mistakes
+  /// (see [similarNameDistance]). Space-free hits come first in list order,
+  /// then similar names, closest first. SQLite cannot measure similarity, so the
+  /// keys are scanned in Dart — only `id` + `name_translit`, which is cheap.
+  Future<List<Contact>> _searchSimilarNames(
+    Database db,
+    String key, {
+    required Set<int> exclude,
+    required bool includeSecret,
+    required bool favoritesOnly,
+  }) async {
+    final keyRows = await db.rawQuery('''
+      SELECT c.id AS id, c.name_translit AS name_translit
+      FROM contacts c
+      WHERE ${includeSecret ? '1 = 1' : 'c.is_secret = 0'}
+            ${favoritesOnly ? 'AND c.is_favorite = 1' : ''}
+      ORDER BY c.is_self DESC, c.sort_first COLLATE NOCASE ASC, c.id ASC
+      ''');
+
+    final containsIds = <int>[];
+    final similar = <({int id, int distance, int order})>[];
+    for (var i = 0; i < keyRows.length; i++) {
+      final r = keyRows[i];
+      final id = r['id'] as int?;
+      if (id == null || exclude.contains(id)) continue;
+      final nameKey = (r['name_translit'] as String?) ?? '';
+      if (nameKey.isEmpty) continue;
+      if (compactKeyMatches(key, nameKey)) {
+        containsIds.add(id);
+        continue;
+      }
+      final d = similarNameDistance(key, nameKey);
+      if (d != null) similar.add((id: id, distance: d, order: i));
+    }
+    // Closest first; equal distances keep list order.
+    similar.sort((a, b) {
+      final byDistance = a.distance.compareTo(b.distance);
+      return byDistance != 0 ? byDistance : a.order.compareTo(b.order);
+    });
+
+    final ids = [...containsIds, ...similar.map((s) => s.id)];
+    if (ids.isEmpty) return const <Contact>[];
+
+    // Hydrate in chunks (SQLite caps bound variables), then restore the order.
+    final byId = <int, Contact>{};
+    const chunk = 500;
+    for (var start = 0; start < ids.length; start += chunk) {
+      final end = start + chunk < ids.length ? start + chunk : ids.length;
+      final part = ids.sublist(start, end);
+      final placeholders = List.filled(part.length, '?').join(',');
+      final rows = await db.rawQuery(
+        '$_summarySelect WHERE c.id IN ($placeholders)',
+        part,
+      );
+      for (final r in rows) {
+        final c = _summaryFromRow(r);
+        if (c.id != null) byId[c.id!] = c;
+      }
+    }
+    return [for (final id in ids) ?byId[id]];
   }
 
   /// Every distinct tag with the number of contacts using it, for the Tag Cloud
@@ -1494,7 +1573,9 @@ class ContactRepository {
             ? AffiliationKind.house
             : AffiliationKind.company;
         final existing = best[owner];
-        if (existing != null && existing.kind == AffiliationKind.house) continue;
+        if (existing != null && existing.kind == AffiliationKind.house) {
+          continue;
+        }
         best[owner] = AffiliationPeer(
           contactId: owner,
           kind: kind,
@@ -1525,8 +1606,7 @@ class ContactRepository {
     final result = <String, String>{};
     final house = (r['house_name'] as String?)?.trim();
     final company = (r['company_name'] as String?)?.trim();
-    final locality =
-        (r['post_office'] as String?)?.trim().isNotEmpty == true
+    final locality = (r['post_office'] as String?)?.trim().isNotEmpty == true
         ? r['post_office'] as String?
         : r['city_town'] as String?;
 
@@ -1660,9 +1740,10 @@ class ContactRepository {
       );
       final inUse = (rows.first['n'] as int?) ?? 0;
       if (inUse > 0) return false;
-      await txn.rawDelete('DELETE FROM tags WHERE LOWER(TRIM(name)) = LOWER(?)', [
-        name,
-      ]);
+      await txn.rawDelete(
+        'DELETE FROM tags WHERE LOWER(TRIM(name)) = LOWER(?)',
+        [name],
+      );
       return true;
     });
   }
@@ -1933,7 +2014,9 @@ class ContactRepository {
   /// on unrelated contacts and produced false-positive merges. `phonetic_utils.dart`
   /// still exists for contact search, but must not be put back on this path without
   /// a much stricter scoring model.
-  Future<List<DuplicateSet>> findDuplicateGroups({String defaultIso = 'IN'}) async {
+  Future<List<DuplicateSet>> findDuplicateGroups({
+    String defaultIso = 'IN',
+  }) async {
     final db = await _dbHelper.database;
 
     final rows = await db.rawQuery('''
@@ -2336,11 +2419,10 @@ class ContactRepository {
       for (final row in mergedPhoneRows) {
         final digits = normalizeDigits(row['number'] as String);
         if (digits.isEmpty) continue;
-        await txn.insert(
-          'confirmed_merge_phones',
-          {'digits': digits, 'contact_id': primaryId},
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+        await txn.insert('confirmed_merge_phones', {
+          'digits': digits,
+          'contact_id': primaryId,
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
       }
 
       // Delete the duplicate contacts; cascade cleans up any remaining children.
@@ -2361,7 +2443,8 @@ class ContactRepository {
         source: AuditSource.merge,
         before: primaryBefore,
         after: await AuditRepository.capture(txn, primaryId),
-        summary: 'Absorbed ${ids.length} duplicate'
+        summary:
+            'Absorbed ${ids.length} duplicate'
             '${ids.length == 1 ? '' : 's'}',
       );
       for (final entry in duplicatesBefore.entries) {
@@ -2473,4 +2556,3 @@ class _ScoredMatch {
   final int score;
   const _ScoredMatch({required this.match, required this.score});
 }
-

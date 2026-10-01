@@ -142,4 +142,111 @@ void main() {
       expect(sectionLetterFor(''), '#');
     });
   });
+
+  group('letters people type differently', () {
+    test('conjuncts are spelled as said', () {
+      expect(transliterateMalayalam('ആന്റണി'), 'aantani'); // ന്റ → nt
+      expect(transliterateMalayalam('മറ്റം'), 'mattam'); // റ്റ → tt
+      expect(transliterateMalayalam('അങ്ങാടി'), 'angaati'); // ങ്ങ → ng
+    });
+
+    test('vocalic r is ri', () {
+      expect(searchKey('കൃഷ്ണൻ'), searchKey('Krishnan'));
+    });
+
+    test('f and ph give the same key', () {
+      expect(searchKey('Fathima'), searchKey('ഫാത്തിമ'));
+      expect(searchKey('Fathima'), searchKey('Phathima'));
+    });
+  });
+
+  group('editDistance', () {
+    test('counts inserts, deletes, changes and swaps', () {
+      expect(editDistance('suresh', 'suresh'), 0);
+      expect(editDistance('suresh', 'sureesh'), 1); // insert
+      expect(editDistance('vijaian', 'vijaiam'), 1); // change
+      expect(editDistance('ramesh', 'ramseh'), 1); // swap
+      expect(editDistance('', 'abc'), 3);
+    });
+
+    test('gives up past the limit', () {
+      expect(editDistance('abcdef', 'uvwxyz', limit: 1), 2);
+    });
+  });
+
+  group('compactKeyMatches', () {
+    test('ignores spaces but stays word-anchored', () {
+      expect(
+        compactKeyMatches(searchKey('sree raj'), searchKey('ശ്രീരാജ്')),
+        isTrue,
+      );
+      expect(
+        compactKeyMatches(searchKey('sreerajp'), searchKey('Sreeraj P')),
+        isTrue,
+      );
+      expect(
+        compactKeyMatches(searchKey('kumarp'), searchKey('Anil Kumar P')),
+        isTrue,
+      );
+      expect(
+        compactKeyMatches(searchKey('ale'), searchKey('City Time Gallery')),
+        isFalse,
+      );
+      expect(
+        compactKeyMatches(searchKey('raj'), searchKey('ശ്രീരാജ്')),
+        isFalse,
+      );
+    });
+
+    test('short queries never use it', () {
+      expect(compactKeyMatches('sr', 'sriraj'), isFalse);
+    });
+  });
+
+  group('similarNameDistance', () {
+    test('finds names a few letters off', () {
+      expect(similarNameDistance(searchKey('Vijayam'), searchKey('വിജയൻ')), 1);
+      expect(
+        similarNameDistance(searchKey('Rmaesh'), searchKey('Ramesh Kumar')),
+        1,
+      );
+      expect(
+        similarNameDistance(searchKey('Vijayan'), searchKey('Vijayan')),
+        0,
+      );
+    });
+
+    test('every typed word must match', () {
+      expect(
+        similarNameDistance(
+          searchKey('Vijayam Kumar'),
+          searchKey('Vijayan Kumar'),
+        ),
+        1,
+      );
+      expect(
+        similarNameDistance(
+          searchKey('Vijayam Thomas'),
+          searchKey('Vijayan Kumar'),
+        ),
+        isNull,
+      );
+    });
+
+    test('short words and a different first letter do not match', () {
+      expect(similarNameDistance(searchKey('Binu'), searchKey('Vinu')), isNull);
+      expect(
+        similarNameDistance(searchKey('Lijayan'), searchKey('Vijayan')),
+        isNull,
+      );
+    });
+  });
+
+  group('nameMatches uses the looser rules too', () {
+    test('space-free and similar names', () {
+      expect(nameMatches('sree raj', 'ശ്രീരാജ്'), isTrue);
+      expect(nameMatches('Vijayam', 'വിജയൻ'), isTrue);
+      expect(nameMatches('Ale', 'City Time Gallery'), isFalse);
+    });
+  });
 }

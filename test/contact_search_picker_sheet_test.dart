@@ -14,6 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/database/database_helper.dart';
 import 'package:smart_contacts_dialer/models/contact.dart';
 import 'package:smart_contacts_dialer/models/phone_number.dart';
@@ -34,14 +35,21 @@ void main() {
 
   setUp(() async {
     await DatabaseHelper().close();
-    await databaseFactory.deleteDatabase(join(await getDatabasesPath(), dbName));
+    await databaseFactory.deleteDatabase(
+      join(await getDatabasesPath(), dbName),
+    );
   });
 
   tearDown(() async {
     await DatabaseHelper().close();
   });
 
-  final repo = ContactRepository();  Future<void> addContact(WidgetTester tester, String firstName, {String? number}) async {
+  final repo = ContactRepository();
+  Future<void> addContact(
+    WidgetTester tester,
+    String firstName, {
+    String? number,
+  }) async {
     await tester.runAsync(() async {
       final contact = Contact(firstName: firstName);
       if (number != null) {
@@ -78,6 +86,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.calm(const Color(0xFF007A78)),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: const Scaffold(
           body: ContactSearchPickerSheet(
             title: 'Choose a person to call',
@@ -136,7 +146,7 @@ void main() {
     // contact row.)
     await type(tester, 'Nonumber');
     expect(find.widgetWithText(ListTile, 'Nonumber'), findsNothing);
-    expect(find.text('No contacts match "Nonumber".'), findsOneWidget);
+    expect(find.text('No contacts match “Nonumber”.'), findsOneWidget);
   });
 
   // Skipped: the real showModalBottomSheet route (only this test uses it —
@@ -149,42 +159,40 @@ void main() {
   // so this is a Flutter-internal ticker/vsync issue in this test harness,
   // not an app bug — see change_log/20260805_230500_fix_audit_findings.md
   // for the full trace.
-  testWidgets(
-    'tapping a row pops that contact',
-    skip: true,
-    (tester) async {
-      await addContact(tester, 'Ramesh', number: '9876500002');
+  testWidgets('tapping a row pops that contact', skip: true, (tester) async {
+    await addContact(tester, 'Ramesh', number: '9876500002');
 
-      Contact? picked;
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: AppTheme.calm(const Color(0xFF007A78)),
-          home: Scaffold(
-            body: Builder(
-              builder: (ctx) => TextButton(
-                onPressed: () async {
-                  picked = await showContactSearchPickerSheet(
-                    ctx,
-                    requirePhone: true,
-                  );
-                },
-                child: const Text('open'),
-              ),
+    Contact? picked;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.calm(const Color(0xFF007A78)),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Builder(
+            builder: (ctx) => TextButton(
+              onPressed: () async {
+                picked = await showContactSearchPickerSheet(
+                  ctx,
+                  requirePhone: true,
+                );
+              },
+              child: const Text('open'),
             ),
           ),
         ),
-      );
-      await tester.tap(find.text('open'));
-      await settle(tester);
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await settle(tester);
 
-      await tester.tap(find.text('Ramesh'));
-      await settle(tester);
+    await tester.tap(find.text('Ramesh'));
+    await settle(tester);
 
-      expect(picked, isNotNull);
-      expect(picked!.fullName, 'Ramesh');
-      expect(picked!.phoneNumbers.first.number, '9876500002');
-    },
-  );
+    expect(picked, isNotNull);
+    expect(picked!.fullName, 'Ramesh');
+    expect(picked!.phoneNumbers.first.number, '9876500002');
+  });
 
   testWidgets('an empty address book says so', (tester) async {
     await pumpSheet(tester);

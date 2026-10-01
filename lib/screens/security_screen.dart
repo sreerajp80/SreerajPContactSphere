@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/screens/app_pin_setup_screen.dart';
 import 'package:smart_contacts_dialer/screens/audit_log_screen.dart';
 import 'package:smart_contacts_dialer/screens/screenshot_guard_settings_screen.dart';
@@ -18,7 +19,7 @@ class SecurityScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Security')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).titleSecurity)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
@@ -26,8 +27,8 @@ class SecurityScreen extends StatelessWidget {
           const SizedBox(height: 12),
           _SettingsTileCard(
             icon: Icons.screenshot_monitor_outlined,
-            title: 'Screenshot guard',
-            subtitle: 'Block screenshots, recordings, and Recents preview',
+            title: AppLocalizations.of(context).titleScreenshotGuard,
+            subtitle: AppLocalizations.of(context).descScreenshotGuardRow,
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => const ScreenshotGuardSettingsScreen(),
@@ -37,11 +38,11 @@ class SecurityScreen extends StatelessWidget {
           const SizedBox(height: 12),
           _SettingsTileCard(
             icon: Icons.history,
-            title: 'Audit log',
-            subtitle: 'What changed on your contacts, and how to undo it',
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const AuditLogScreen()),
-            ),
+            title: AppLocalizations.of(context).titleAuditLog,
+            subtitle: AppLocalizations.of(context).descAuditLogRow,
+            onTap: () => Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const AuditLogScreen())),
           ),
         ],
       ),
@@ -138,10 +139,10 @@ class _AppLockCardState extends State<AppLockCard> {
   }
 
   String _subtitleFor(LockMode mode) => switch (mode) {
-        LockMode.none => 'Off — the app opens without a lock',
-        LockMode.deviceLock => 'On — unlock with your device lock',
-        LockMode.appPin => 'On — unlock with your app PIN',
-      };
+    LockMode.none => AppLocalizations.of(context).descLockOff,
+    LockMode.deviceLock => AppLocalizations.of(context).descLockDevice,
+    LockMode.appPin => AppLocalizations.of(context).descLockAppPin,
+  };
 
   Future<void> _openChooser(AppSettings settings) async {
     final chosen = await showModalBottomSheet<LockMode>(
@@ -208,9 +209,9 @@ class _AppLockCardState extends State<AppLockCard> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'App lock',
-                      style: TextStyle(
+                    Text(
+                      AppLocalizations.of(context).titleAppLock,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
@@ -253,7 +254,7 @@ class _LockModeSheet extends StatelessWidget {
             child: Align(
               alignment: Alignment.centerLeft,
               child: Text(
-                'App lock',
+                AppLocalizations.of(context).titleAppLock,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
@@ -262,17 +263,17 @@ class _LockModeSheet extends StatelessWidget {
             context,
             mode: LockMode.none,
             icon: Icons.lock_open_outlined,
-            title: 'Off',
-            subtitle: 'No lock when opening the app',
+            title: AppLocalizations.of(context).labelLockOff,
+            subtitle: AppLocalizations.of(context).descLockOffOption,
           ),
           _option(
             context,
             mode: LockMode.deviceLock,
             icon: Icons.fingerprint,
-            title: 'Device lock',
+            title: AppLocalizations.of(context).labelDeviceLock,
             subtitle: deviceLockAvailable
-                ? 'Fingerprint, face or device PIN'
-                : 'Set a screen lock on your device to use this',
+                ? AppLocalizations.of(context).descDeviceLockOption
+                : AppLocalizations.of(context).descDeviceLockUnavailable,
             enabled: deviceLockAvailable,
             colors: colors,
           ),
@@ -280,8 +281,8 @@ class _LockModeSheet extends StatelessWidget {
             context,
             mode: LockMode.appPin,
             icon: Icons.pin_outlined,
-            title: 'App PIN',
-            subtitle: 'A separate PIN just for this app',
+            title: AppLocalizations.of(context).labelAppPin,
+            subtitle: AppLocalizations.of(context).descAppPinOption,
           ),
           const SizedBox(height: 8),
         ],

@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
@@ -16,7 +17,9 @@ class PostCallFeedbackScreen extends StatelessWidget {
     final enabled = context.watch<AppSettings>().postCallFeedbackEnabled;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Post-call Options')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).titlePostCallOptions),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
@@ -31,12 +34,15 @@ class PostCallFeedbackScreen extends StatelessWidget {
               activeThumbColor: accent,
               onChanged: (v) =>
                   context.read<AppSettings>().setPostCallFeedbackEnabled(v),
-              title: const Text(
-                'Ask after calls',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              title: Text(
+                AppLocalizations.of(context).labelAskAfterCalls,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
               subtitle: Text(
-                'Show the “How did it go?” sheet when a call ends',
+                AppLocalizations.of(context).descAskAfterCalls,
                 style: TextStyle(color: colors.mutedText, fontSize: 13),
               ),
             ),

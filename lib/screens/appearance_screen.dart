@@ -1,6 +1,7 @@
 // lib/screens/appearance_screen.dart
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 import 'package:smart_contacts_dialer/screens/accent_color_settings_screen.dart';
 import 'package:smart_contacts_dialer/screens/theme_mode_settings_screen.dart';
@@ -13,28 +14,28 @@ class AppearanceScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Appearance')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).titleAppearance)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           _SettingsSectionCard(
             icon: Icons.brightness_6_outlined,
-            title: 'Theme Mode',
-            subtitle: 'Choose between Light, Dark, or System mode',
+            title: AppLocalizations.of(context).titleThemeMode,
+            subtitle: AppLocalizations.of(context).descThemeModeRow,
             onTap: () => _push(context, const ThemeModeSettingsScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsSectionCard(
             icon: Icons.font_download_outlined,
-            title: 'Typography & Text Size',
-            subtitle: 'App font family and text scale preferences',
+            title: AppLocalizations.of(context).titleTypography,
+            subtitle: AppLocalizations.of(context).descTypographyRow,
             onTap: () => _push(context, const TypographySettingsScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsSectionCard(
             icon: Icons.color_lens_outlined,
-            title: 'Accent Color',
-            subtitle: 'Custom color palette, presets, and live preview',
+            title: AppLocalizations.of(context).titleAccentColor,
+            subtitle: AppLocalizations.of(context).descAccentColorRow,
             onTap: () => _push(context, const AccentColorSettingsScreen()),
           ),
         ],

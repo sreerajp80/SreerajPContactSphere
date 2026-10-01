@@ -12,7 +12,7 @@ No code files change. This is a documentation-only change.
 ## What is wrong with the document today
 
 I checked the roadmap doc against the actual code (`lib/`, `android/.../kotlin/`) and against
-`docs/features.md`, and I read the 18 app feature docs listed in `L:\Android\MyFlutterApps\myapps.md`.
+`docs/features.md`, and I read the 18 app feature docs listed in the author's list of other apps.
 Problems found:
 
 1. **Stale "existing capabilities" section.** It describes Smart Redial as a reminder, but the

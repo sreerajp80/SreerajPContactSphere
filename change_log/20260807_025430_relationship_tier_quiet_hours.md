@@ -1,6 +1,6 @@
 # Change Log: Relationship-Tier Quiet Hours (Feature 5.4)
 
-Implements plan: [`plans/20260807_025205_relationship_tier_quiet_hours.md`](file:///l:/Android/SreerajPContactSphere/plans/20260807_025205_relationship_tier_quiet_hours.md)
+Implements plan: [`plans/20260807_025205_relationship_tier_quiet_hours.md`](../plans/20260807_025205_relationship_tier_quiet_hours.md)
 
 ## Summary of Changes
 

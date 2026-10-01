@@ -1,7 +1,7 @@
 # Change Log: Specific Relationship Selection for Allowed Contacts
 
 **Date/Time:** 2026-08-07 21:11:11
-**Implemented Plan:** [plans/20260807_211037_specific_relationships_allowed_contacts.md](file:///l:/Android/SreerajPContactSphere/plans/20260807_211037_specific_relationships_allowed_contacts.md)
+**Implemented Plan:** [plans/20260807_211037_specific_relationships_allowed_contacts.md](../plans/20260807_211037_specific_relationships_allowed_contacts.md)
 
 ## Summary of Changes
 

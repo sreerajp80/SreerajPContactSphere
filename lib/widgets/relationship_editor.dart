@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/contact.dart';
 import 'package:smart_contacts_dialer/models/relationship.dart';
 import 'package:smart_contacts_dialer/repositories/contact_repository.dart';
@@ -191,6 +192,7 @@ class _LabelStepState extends State<_LabelStep> {
             children: [
               IconButton(
                 icon: const Icon(Icons.arrow_back),
+                tooltip: AppLocalizations.of(context).tooltipBack,
                 onPressed: widget.onBack,
               ),
               Expanded(
@@ -209,10 +211,7 @@ class _LabelStepState extends State<_LabelStep> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
-              Text(
-                widget.category.emoji,
-                style: const TextStyle(fontSize: 18),
-              ),
+              Text(widget.category.emoji, style: const TextStyle(fontSize: 18)),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -226,7 +225,7 @@ class _LabelStepState extends State<_LabelStep> {
               if (widget.onChangeCategory != null)
                 TextButton(
                   onPressed: widget.onChangeCategory,
-                  child: const Text('Change'),
+                  child: Text(AppLocalizations.of(context).actionChange),
                 ),
             ],
           ),
@@ -240,10 +239,10 @@ class _LabelStepState extends State<_LabelStep> {
             textCapitalization: TextCapitalization.words,
             maxLength: 40,
             textInputAction: TextInputAction.done,
-            decoration: const InputDecoration(
-              labelText: 'Relationship label',
-              hintText: 'e.g. Father',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: AppLocalizations.of(context).labelRelationshipLabel,
+              hintText: AppLocalizations.of(context).hintRelationshipExample,
+              border: const OutlineInputBorder(),
               isDense: true,
               counterText: '',
             ),
@@ -282,7 +281,7 @@ class _LabelStepState extends State<_LabelStep> {
               width: double.infinity,
               child: FilledButton(
                 onPressed: _controller.text.trim().isEmpty ? null : _submit,
-                child: const Text('Save'),
+                child: Text(AppLocalizations.of(context).actionSave),
               ),
             ),
           ),
@@ -330,13 +329,14 @@ class _TypePickerSheetState extends State<_TypePickerSheet> {
                       children: [
                         IconButton(
                           icon: const Icon(Icons.arrow_back),
+                          tooltip: AppLocalizations.of(context).tooltipBack,
                           onPressed: () =>
                               setState(() => _choosingCategory = false),
                         ),
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'Pick a category',
-                            style: TextStyle(
+                            AppLocalizations.of(context).titlePickCategory,
+                            style: const TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w700,
                             ),
@@ -359,13 +359,15 @@ class _TypePickerSheetState extends State<_TypePickerSheet> {
             : _LabelStep(
                 category: _category,
                 initialLabel: widget.currentType,
-                prompt: 'How is ${widget.personName} related?',
+                prompt: AppLocalizations.of(
+                  context,
+                ).titleHowIsRelated(widget.personName),
                 onBack: () => Navigator.of(context).pop(),
                 onChangeCategory: () =>
                     setState(() => _choosingCategory = true),
-                onDone: (label) => Navigator.of(context).pop(
-                  RelationshipTypeChoice(category: _category, type: label),
-                ),
+                onDone: (label) => Navigator.of(
+                  context,
+                ).pop(RelationshipTypeChoice(category: _category, type: label)),
               ),
       ),
     );
@@ -459,7 +461,9 @@ class _RelationshipEditorSheetState extends State<_RelationshipEditorSheet> {
       body = _LabelStep(
         category: category,
         initialLabel: null,
-        prompt: 'How is ${picked.firstName} related?',
+        prompt: AppLocalizations.of(
+          context,
+        ).titleHowIsRelated(picked.firstName),
         onBack: () => setState(() => _category = null),
         onChangeCategory: () => setState(() => _category = null),
         onDone: (label) => _confirm(picked, category, label),
@@ -478,13 +482,13 @@ class _RelationshipEditorSheetState extends State<_RelationshipEditorSheet> {
   Widget _buildContactPicker() {
     return Column(
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(20, 4, 20, 8),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              'Link a contact',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              AppLocalizations.of(context).titleLinkContact,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
             ),
           ),
         ),
@@ -492,10 +496,10 @@ class _RelationshipEditorSheetState extends State<_RelationshipEditorSheet> {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: TextField(
             autofocus: true,
-            decoration: const InputDecoration(
-              hintText: 'Search contacts',
-              prefixIcon: Icon(Icons.search),
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              hintText: AppLocalizations.of(context).hintSearchContacts,
+              prefixIcon: const Icon(Icons.search),
+              border: const OutlineInputBorder(),
               isDense: true,
             ),
             onChanged: (v) => setState(() => _query = v),
@@ -506,7 +510,11 @@ class _RelationshipEditorSheetState extends State<_RelationshipEditorSheet> {
           child: _loading
               ? const Center(child: CircularProgressIndicator())
               : _filtered.isEmpty
-              ? const Center(child: Text('No contacts available'))
+              ? Center(
+                  child: Text(
+                    AppLocalizations.of(context).emptyNoContactsAvailable,
+                  ),
+                )
               : ListView.builder(
                   itemCount: _filtered.length,
                   itemBuilder: (context, i) {
@@ -532,11 +540,14 @@ class _RelationshipEditorSheetState extends State<_RelationshipEditorSheet> {
             children: [
               IconButton(
                 icon: const Icon(Icons.arrow_back),
+                tooltip: AppLocalizations.of(context).tooltipBack,
                 onPressed: () => setState(() => _picked = null),
               ),
               Expanded(
                 child: Text(
-                  'Where does ${picked.firstName} belong?',
+                  AppLocalizations.of(
+                    context,
+                  ).titleWhereBelongs(picked.firstName),
                   style: const TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,

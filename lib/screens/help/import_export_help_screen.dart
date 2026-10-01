@@ -8,6 +8,7 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/screens/help/help_article.dart';
 
 class ImportExportHelpScreen extends StatelessWidget {
@@ -15,114 +16,56 @@ class ImportExportHelpScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const HelpArticleScaffold(
-      title: 'Import & export files',
+    return HelpArticleScaffold(
+      title: AppLocalizations.of(context).helpImportExportTitle1,
       children: [
-        HelpIntro(
-          'You can move contacts in and out of the app as ordinary files — a '
-          'spreadsheet-friendly CSV, or a vCard (.vcf) that any phone or '
-          'computer address book understands.',
-        ),
-        SizedBox(height: 24),
+        HelpIntro(AppLocalizations.of(context).helpImportExportIntro),
+        const SizedBox(height: 24),
 
         HelpSection(
           icon: Icons.import_export_outlined,
-          title: 'Where to find it',
+          title: AppLocalizations.of(context).helpImportExportTitle2,
           children: [
-            HelpBullet(
-              'Open the Contacts tab, tap the three-dot menu in the top bar, '
-              'and choose "Import / Export".',
-            ),
-            HelpBullet(
-              'Four choices appear: Import CSV, Export CSV, Import vCard '
-              '(.vcf), and Export vCard (.vcf).',
-            ),
+            HelpBullet(AppLocalizations.of(context).helpImportExportBullet1),
+            HelpBullet(AppLocalizations.of(context).helpImportExportBullet2),
           ],
         ),
 
         HelpSection(
           icon: Icons.file_download_outlined,
-          title: 'Importing',
+          title: AppLocalizations.of(context).helpImportExportTitle3,
           children: [
-            HelpBullet(
-              'You pick the file yourself through the system file picker. The '
-              'app never browses your storage on its own.',
-            ),
-            HelpBullet(
-              'Imported contacts are added to the app. When the import '
-              'finishes you are told how many came in.',
-            ),
-            HelpBullet(
-              'If the file brings in people you already have, run Contacts → '
-              'menu → "Find Duplicates" afterwards to tidy up.',
-            ),
+            HelpBullet(AppLocalizations.of(context).helpImportExportBullet3),
+            HelpBullet(AppLocalizations.of(context).helpImportExportBullet4),
+            HelpBullet(AppLocalizations.of(context).helpImportExportBullet5),
           ],
         ),
 
         HelpSection(
           icon: Icons.file_upload_outlined,
-          title: 'Exporting',
+          title: AppLocalizations.of(context).helpImportExportTitle4,
           children: [
-            HelpBullet(
-              'An export writes a file and then opens the system share sheet, '
-              'so you decide where it goes.',
-            ),
-            HelpBullet(
-              'An export file is plain and not password-protected. Treat it '
-              'like a copy of your address book and delete it when you are '
-              'done.',
-            ),
-            HelpBullet(
-              'Secret contacts are left out of a normal export unless you turn '
-              'on "Include secret contacts in export" under Settings → '
-              'Contacts → Secret contacts & export.',
-            ),
-            HelpBullet(
-              'That same screen has "Export secret contacts", which saves a '
-              'separate file holding only the secret ones. It asks for your '
-              'fingerprint, face, or PIN first.',
-            ),
-            HelpBullet(
-              'For a full, password-locked copy of everything — call history, '
-              'photos, settings and all — use Settings → Backup & Restore '
-              'instead.',
-            ),
+            HelpBullet(AppLocalizations.of(context).helpImportExportBullet6),
+            HelpBullet(AppLocalizations.of(context).helpImportExportBullet7),
+            HelpBullet(AppLocalizations.of(context).helpImportExportBullet8),
+            HelpBullet(AppLocalizations.of(context).helpImportExportBullet9),
+            HelpBullet(AppLocalizations.of(context).helpImportExportBullet10),
           ],
         ),
 
         HelpSection(
           icon: Icons.sensors,
-          title: 'AirQR: sending more than one QR code can hold',
+          title: AppLocalizations.of(context).helpImportExportTitle5,
           children: [
-            HelpBullet(
-              'A single QR code cannot hold a photo or a long contact card. '
-              'AirQR splits the data across many frames and plays them as an '
-              'animated QR code.',
-            ),
-            HelpBullet(
-              'Open a contact, choose "Share as QR code", then tap the '
-              'Air-Gap Stream button in that dialog to start the animation.',
-            ),
-            HelpBullet(
-              'On the other phone, open Contacts → menu → "Scan QR code" and '
-              'point the camera at the animation. It shows the progress while '
-              'the frames come in and saves the contact once they are all '
-              'there.',
-            ),
-            HelpBullet(
-              'Nothing is sent over Bluetooth, Wi-Fi or the internet — the '
-              'only path is the camera looking at the screen. Keep both phones '
-              'steady until it completes.',
-            ),
+            HelpBullet(AppLocalizations.of(context).helpImportExportBullet11),
+            HelpBullet(AppLocalizations.of(context).helpImportExportBullet12),
+            HelpBullet(AppLocalizations.of(context).helpImportExportBullet13),
+            HelpBullet(AppLocalizations.of(context).helpImportExportBullet14),
           ],
         ),
 
-        SizedBox(height: 8),
-        HelpFooter(
-          'Tip: vCard (.vcf) is the safer choice for moving to another phone, '
-          'because it keeps multiple numbers, emails and photos. CSV is best '
-          'when you want to open the list in a spreadsheet.',
-        ),
+        const SizedBox(height: 8),
+        HelpFooter(AppLocalizations.of(context).helpImportExportFooter),
       ],
     );
   }

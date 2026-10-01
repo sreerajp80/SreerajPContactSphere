@@ -1,6 +1,7 @@
 // lib/screens/groups_screen.dart
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/contact.dart';
 import 'package:smart_contacts_dialer/models/group.dart';
 import 'package:smart_contacts_dialer/repositories/contact_repository.dart';
@@ -44,13 +45,20 @@ class _GroupsScreenState extends State<GroupsScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      _showMessage('Failed to load groups: $e');
+      _say((l) => l.errorFailedLoadGroups('$e'));
     }
   }
 
   void _showMessage(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  /// Shows a translated snackbar. The message is built only after the
+  /// `mounted` check, so this is safe to call after an `await`.
+  void _say(String Function(AppLocalizations l) message) {
+    if (!mounted) return;
+    _showMessage(message(AppLocalizations.of(context)));
   }
 
   Future<void> _createGroup() async {
@@ -60,7 +68,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
       await _repository.createGroup(name.trim());
       await _load();
     } catch (e) {
-      _showMessage('Could not create group (name may already exist)');
+      _say((l) => l.errorCouldNotCreateGroup);
     }
   }
 
@@ -69,20 +77,22 @@ class _GroupsScreenState extends State<GroupsScreen> {
     return showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Group name'),
+        title: Text(AppLocalizations.of(context).titleGroupName),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(hintText: 'e.g. Family'),
+          decoration: InputDecoration(
+            hintText: AppLocalizations.of(context).hintGroupExample,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, controller.text),
-            child: const Text('OK'),
+            child: Text(AppLocalizations.of(context).actionOk),
           ),
         ],
       ),
@@ -115,7 +125,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
         label = file.label;
       }
     } catch (e) {
-      _showMessage('Could not pick ringtone: $e');
+      _say((l) => l.errorCouldNotPickRingtone('$e'));
       return;
     }
 
@@ -123,7 +133,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
       await _repository.setGroupRingtone(group.id!, path: path, label: label);
       await _load();
     } catch (e) {
-      _showMessage('Could not save ringtone: $e');
+      _say((l) => l.errorCouldNotSaveRingtone('$e'));
     }
   }
 
@@ -138,14 +148,14 @@ class _GroupsScreenState extends State<GroupsScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.notifications_active_outlined),
-              title: const Text('Phone ringtones'),
-              subtitle: const Text('Choose from the ringtones on this device'),
+              title: Text(AppLocalizations.of(context).titlePhoneRingtones),
+              subtitle: Text(AppLocalizations.of(context).descPhoneRingtones),
               onTap: () => Navigator.pop(sheetContext, _RingtoneSource.phone),
             ),
             ListTile(
               leading: const Icon(Icons.folder_open),
-              title: const Text('Audio file'),
-              subtitle: const Text('Pick an audio file from your folders'),
+              title: Text(AppLocalizations.of(context).titleAudioFile),
+              subtitle: Text(AppLocalizations.of(context).descAudioFile),
               onTap: () => Navigator.pop(sheetContext, _RingtoneSource.file),
             ),
           ],
@@ -160,7 +170,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
       await _repository.setGroupRingtone(group.id!);
       await _load();
     } catch (e) {
-      _showMessage('Could not clear ringtone: $e');
+      _say((l) => l.errorCouldNotClearRingtone('$e'));
     }
   }
 
@@ -174,13 +184,13 @@ class _GroupsScreenState extends State<GroupsScreen> {
       contacts = await _contactRepository.getAllContacts();
       existing = await _repository.contactIdsInGroup(group.id!);
     } catch (e) {
-      _showMessage('Could not load contacts: $e');
+      _say((l) => l.errorCouldNotLoadContacts('$e'));
       return;
     }
     if (!mounted) return;
     final selectable = contacts.where((c) => c.id != null).toList();
     if (selectable.isEmpty) {
-      _showMessage('No contacts to add');
+      _say((l) => l.errorNoContactsToAdd);
       return;
     }
 
@@ -188,7 +198,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
       context: context,
       isScrollControlled: true,
       builder: (_) => ContactMultiPickerSheet(
-        title: 'Add to "${group.name}"',
+        title: AppLocalizations.of(context).titleAddToGroup(group.name),
         contacts: selectable,
         alreadyIn: existing,
       ),
@@ -198,7 +208,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
     // Only add contacts that were not already members.
     final toAdd = picked.difference(existing);
     if (toAdd.isEmpty) {
-      _showMessage('No new contacts added');
+      _say((l) => l.msgNoNewContactsAdded);
       return;
     }
     try {
@@ -206,11 +216,9 @@ class _GroupsScreenState extends State<GroupsScreen> {
         await _repository.addContactToGroup(id, group.id!);
       }
       await _load();
-      _showMessage(
-        '${toAdd.length} contact(s) added to "${group.name}"',
-      );
+      _say((l) => l.msgContactsAddedToGroup(toAdd.length, group.name));
     } catch (e) {
-      _showMessage('Could not add contacts: $e');
+      _say((l) => l.errorCouldNotAddContacts('$e'));
     }
   }
 
@@ -218,18 +226,18 @@ class _GroupsScreenState extends State<GroupsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Delete "${group.name}"?'),
-        content: const Text(
-          'The group is removed; contacts in it are not deleted.',
+        title: Text(
+          AppLocalizations.of(context).titleDeleteGroupConfirm(group.name),
         ),
+        content: Text(AppLocalizations.of(context).descDeleteGroup),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete'),
+            child: Text(AppLocalizations.of(context).actionDelete),
           ),
         ],
       ),
@@ -239,22 +247,23 @@ class _GroupsScreenState extends State<GroupsScreen> {
       await _repository.deleteGroup(group.id!);
       await _load();
     } catch (e) {
-      _showMessage('Delete failed: $e');
+      _say((l) => l.errorDeleteFailed('$e'));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Groups')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).tooltipGroups)),
       floatingActionButton: FloatingActionButton(
         onPressed: _createGroup,
+        tooltip: AppLocalizations.of(context).tooltipCreateGroup,
         child: const Icon(Icons.add),
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _groups.isEmpty
-          ? const Center(child: Text('No groups yet'))
+          ? Center(child: Text(AppLocalizations.of(context).emptyNoGroups))
           : ListView.builder(
               itemCount: _groups.length,
               itemBuilder: (context, i) {
@@ -265,10 +274,13 @@ class _GroupsScreenState extends State<GroupsScreen> {
                   title: Text(g.name),
                   subtitle: Text(
                     hasTone
-                        ? '${g.contactCount} contact(s) · ${g.ringtoneLabel ?? 'Custom ringtone'}'
-                        : '${g.contactCount} contact(s)',
+                        ? '${AppLocalizations.of(context).labelContactCount(g.contactCount)} · ${g.ringtoneLabel ?? AppLocalizations.of(context).labelCustomRingtone}'
+                        : AppLocalizations.of(
+                            context,
+                          ).labelContactCount(g.contactCount),
                   ),
                   trailing: PopupMenuButton<String>(
+                    tooltip: AppLocalizations.of(context).tooltipMore,
                     onSelected: (action) {
                       switch (action) {
                         case 'add_contacts':
@@ -282,36 +294,46 @@ class _GroupsScreenState extends State<GroupsScreen> {
                       }
                     },
                     itemBuilder: (ctx) => [
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'add_contacts',
                         child: ListTile(
-                          leading: Icon(Icons.person_add_alt),
-                          title: Text('Add contacts…'),
+                          leading: const Icon(Icons.person_add_alt),
+                          title: Text(
+                            AppLocalizations.of(
+                              context,
+                            ).actionAddContactsEllipsis,
+                          ),
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'ringtone',
                         child: ListTile(
-                          leading: Icon(Icons.music_note),
-                          title: Text('Ringtone…'),
+                          leading: const Icon(Icons.music_note),
+                          title: Text(
+                            AppLocalizations.of(context).actionRingtoneEllipsis,
+                          ),
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),
                       if (hasTone)
-                        const PopupMenuItem(
+                        PopupMenuItem(
                           value: 'clear_ringtone',
                           child: ListTile(
-                            leading: Icon(Icons.music_off),
-                            title: Text('Clear ringtone'),
+                            leading: const Icon(Icons.music_off),
+                            title: Text(
+                              AppLocalizations.of(context).actionClearRingtone,
+                            ),
                             contentPadding: EdgeInsets.zero,
                           ),
                         ),
-                      const PopupMenuItem(
+                      PopupMenuItem(
                         value: 'delete',
                         child: ListTile(
-                          leading: Icon(Icons.delete_outline),
-                          title: Text('Delete'),
+                          leading: const Icon(Icons.delete_outline),
+                          title: Text(
+                            AppLocalizations.of(context).actionDelete,
+                          ),
                           contentPadding: EdgeInsets.zero,
                         ),
                       ),

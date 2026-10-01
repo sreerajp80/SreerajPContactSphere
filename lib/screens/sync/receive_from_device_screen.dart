@@ -10,6 +10,7 @@ import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/services/p2p_sync_service.dart';
 import 'package:smart_contacts_dialer/state/app_settings.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
@@ -42,7 +43,9 @@ class _ReceiveFromDeviceScreenState extends State<ReceiveFromDeviceScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Receive from Another Device')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).titleReceiveFromDevice),
+      ),
       body: ListenableBuilder(
         listenable: _service,
         builder: (context, _) {
@@ -62,11 +65,13 @@ class _ReceiveFromDeviceScreenState extends State<ReceiveFromDeviceScreen> {
 
   Widget _body(BuildContext context, SyncState state) {
     if (state is SyncConnecting) {
-      return const SyncProgressView(message: 'Connecting…');
+      return SyncProgressView(
+        message: AppLocalizations.of(context).msgConnecting,
+      );
     }
     if (state is SyncWaitingForSender) {
-      return const SyncProgressView(
-        message: 'Connected — waiting for the sender to choose…',
+      return SyncProgressView(
+        message: AppLocalizations.of(context).msgWaitingForSender,
       );
     }
     if (state is SyncInProgress) {
@@ -76,11 +81,10 @@ class _ReceiveFromDeviceScreenState extends State<ReceiveFromDeviceScreen> {
       final s = state.summary;
       return SyncResultView(
         success: true,
-        title: 'Received',
-        message:
-            'Added ${s.contactsAdded} new contacts '
-            '(${s.contactsSkipped} already on this phone were kept). '
-            'Nothing was removed.',
+        title: AppLocalizations.of(context).titleReceived,
+        message: AppLocalizations.of(
+          context,
+        ).descReceivedSummary(s.contactsAdded, s.contactsSkipped),
         onDone: () {
           _settingsReloaded = false;
           _service.cancel();
@@ -90,7 +94,7 @@ class _ReceiveFromDeviceScreenState extends State<ReceiveFromDeviceScreen> {
     if (state is SyncError) {
       return SyncResultView(
         success: false,
-        title: 'Could not receive',
+        title: AppLocalizations.of(context).titleCouldNotReceive,
         message: state.message,
         onDone: () => _service.cancel(),
       );
@@ -122,8 +126,8 @@ class _ReceiveFromDeviceScreenState extends State<ReceiveFromDeviceScreen> {
     final code = _codeController.text.trim();
     if (ip.isEmpty || port == null || code.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Enter the address, port and pairing code'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).errorEnterAddressPortCode),
         ),
       );
       return;
@@ -165,18 +169,15 @@ class _ReceiveForm extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SyncInfoCard(
+        SyncInfoCard(
           icon: Icons.download_outlined,
-          text:
-              'This ADDS the other phone\'s contacts to this phone. Contacts '
-              'you already have are kept as they are — nothing here is changed '
-              'or removed.',
+          text: AppLocalizations.of(context).descReceiveAddsOnly,
         ),
         const SizedBox(height: 16),
         FilledButton.icon(
           onPressed: onScan,
           icon: const Icon(Icons.qr_code_scanner),
-          label: const Text('Scan the other phone\'s QR'),
+          label: Text(AppLocalizations.of(context).actionScanOtherPhoneQr),
         ),
         const SizedBox(height: 20),
         Row(
@@ -187,7 +188,7 @@ class _ReceiveForm extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Text(
-                'or enter by hand',
+                AppLocalizations.of(context).descOrEnterByHand,
                 style: TextStyle(color: colors.mutedText, fontSize: 12.5),
               ),
             ),
@@ -207,10 +208,12 @@ class _ReceiveForm extends StatelessWidget {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
-                decoration: const InputDecoration(
-                  labelText: 'Other phone\'s address',
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(
+                    context,
+                  ).labelOtherPhoneAddress,
                   hintText: 'e.g. 192.168.1.42',
-                  prefixIcon: Icon(Icons.wifi),
+                  prefixIcon: const Icon(Icons.wifi),
                 ),
               ),
             ),
@@ -219,8 +222,8 @@ class _ReceiveForm extends StatelessWidget {
               child: TextField(
                 controller: portController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Port',
+                decoration: InputDecoration(
+                  labelText: AppLocalizations.of(context).labelPort,
                   hintText: 'e.g. 51234',
                 ),
               ),
@@ -231,21 +234,21 @@ class _ReceiveForm extends StatelessWidget {
         TextField(
           controller: codeController,
           textCapitalization: TextCapitalization.characters,
-          decoration: const InputDecoration(
-            labelText: 'Pairing code',
-            hintText: 'shown on the other phone',
-            prefixIcon: Icon(Icons.password),
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).labelPairingCode,
+            hintText: AppLocalizations.of(context).hintShownOnOtherPhone,
+            prefixIcon: const Icon(Icons.password),
           ),
         ),
         const SizedBox(height: 20),
         FilledButton.icon(
           onPressed: onConnect,
           icon: const Icon(Icons.link),
-          label: const Text('Connect'),
+          label: Text(AppLocalizations.of(context).actionConnect),
         ),
         const SizedBox(height: 8),
         Text(
-          'Both phones must be on the same Wi-Fi network.',
+          AppLocalizations.of(context).descSameWifi,
           style: TextStyle(color: colors.mutedText, fontSize: 12.5),
           textAlign: TextAlign.center,
         ),
@@ -294,7 +297,9 @@ class _SyncQrScanScreenState extends State<_SyncQrScanScreen> {
     if (parsed == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Not a SreerajP Contacts Sphere pairing code')),
+          SnackBar(
+            content: Text(AppLocalizations.of(context).errorNotPairingCode),
+          ),
         );
       }
       try {
@@ -314,7 +319,7 @@ class _SyncQrScanScreenState extends State<_SyncQrScanScreen> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: const Text('Scan pairing code'),
+        title: Text(AppLocalizations.of(context).titleScanPairingCode),
       ),
       body: Stack(
         fit: StackFit.expand,

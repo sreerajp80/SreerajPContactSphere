@@ -1,4 +1,5 @@
 // lib/screens/quick_replies_screen.dart
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -28,26 +29,30 @@ class _QuickRepliesScreenState extends State<QuickRepliesScreen> {
     final text = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(index == null ? 'New quick reply' : 'Edit quick reply'),
+        title: Text(
+          index == null
+              ? AppLocalizations.of(context).titleNewQuickReply
+              : AppLocalizations.of(context).titleEditQuickReply,
+        ),
         content: TextField(
           controller: controller,
           autofocus: true,
           maxLength: 160,
           textCapitalization: TextCapitalization.sentences,
-          decoration: const InputDecoration(
-            labelText: 'Message',
-            hintText: "e.g. Can't talk now. Call you later.",
+          decoration: InputDecoration(
+            labelText: AppLocalizations.of(context).labelMessage,
+            hintText: AppLocalizations.of(context).hintQuickReplyExample,
           ),
           onSubmitted: (v) => Navigator.of(ctx).pop(v),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(controller.text),
-            child: const Text('Save'),
+            child: Text(AppLocalizations.of(context).actionSave),
           ),
         ],
       ),
@@ -72,18 +77,16 @@ class _QuickRepliesScreenState extends State<QuickRepliesScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Reset quick replies?'),
-        content: const Text(
-          'Your custom messages will be replaced by the default ones.',
-        ),
+        title: Text(AppLocalizations.of(context).titleResetQuickReplies),
+        content: Text(AppLocalizations.of(context).descResetQuickReplies),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).actionCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Reset'),
+            child: Text(AppLocalizations.of(context).actionReset),
           ),
         ],
       ),
@@ -98,11 +101,11 @@ class _QuickRepliesScreenState extends State<QuickRepliesScreen> {
     final replies = context.watch<AppSettings>().quickReplies;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quick replies'),
+        title: Text(AppLocalizations.of(context).labelQuickReplies),
         actions: [
           IconButton(
             icon: const Icon(Icons.restart_alt),
-            tooltip: 'Reset to defaults',
+            tooltip: AppLocalizations.of(context).tooltipResetToDefaults,
             onPressed: _resetToDefaults,
           ),
         ],
@@ -134,9 +137,7 @@ class _QuickRepliesScreenState extends State<QuickRepliesScreen> {
             const SizedBox(width: 14),
             Expanded(
               child: Text(
-                'Quick replies appear when you reject an incoming call with a '
-                'message. The reply is sent to the caller as an SMS from the '
-                'SIM the call came in on.',
+                AppLocalizations.of(context).descQuickRepliesInfo,
                 style: TextStyle(color: colors.mutedText, fontSize: 13.5),
               ),
             ),
@@ -171,16 +172,16 @@ class _QuickRepliesScreenState extends State<QuickRepliesScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Add a reply',
-                      style: TextStyle(
+                    Text(
+                      AppLocalizations.of(context).actionAddReply,
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Write a message to offer when rejecting a call',
+                      AppLocalizations.of(context).descAddReply,
                       style: TextStyle(color: colors.mutedText, fontSize: 13),
                     ),
                   ],
@@ -198,8 +199,7 @@ class _QuickRepliesScreenState extends State<QuickRepliesScreen> {
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Text(
-        'No quick replies yet. Add one, or reset to the defaults from the '
-        'top-right.',
+        AppLocalizations.of(context).emptyNoQuickReplies,
         textAlign: TextAlign.center,
         style: TextStyle(color: colors.mutedText, fontSize: 13.5),
       ),
@@ -217,7 +217,7 @@ class _QuickRepliesScreenState extends State<QuickRepliesScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
               child: Text(
-                'Replies (${replies.length})',
+                AppLocalizations.of(context).labelRepliesCount(replies.length),
                 style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
@@ -254,7 +254,7 @@ class _QuickRepliesScreenState extends State<QuickRepliesScreen> {
             ),
             IconButton(
               icon: Icon(Icons.close, color: colors.mutedText, size: 20),
-              tooltip: 'Delete',
+              tooltip: AppLocalizations.of(context).actionDelete,
               onPressed: () => _removeReply(index),
             ),
           ],

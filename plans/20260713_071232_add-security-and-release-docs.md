@@ -18,7 +18,7 @@ folder currently has only `architecture.md`, `dependencies.md`, `known-gaps.md`,
 `README.md`, and `GUIDELINES_MANIFEST.md`.
 
 The manifest's "local copy wins" rule means we should copy the two master templates
-(`l:\Android\Flutter_Guidelines\security.md` and `release_process.md`) into this app's `docs/`
+(`security.md` and `release_process.md` from the shared guidelines repository) into this app's `docs/`
 and **fill them in with ContactSphere's actual decisions** (they ship as blank templates with
 `<placeholder>` fields).
 

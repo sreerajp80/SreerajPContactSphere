@@ -1,6 +1,7 @@
 // lib/screens/sim_settings_screen.dart
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 import 'package:smart_contacts_dialer/widgets/default_dialer_card.dart';
 import 'package:smart_contacts_dialer/screens/identification_settings_screen.dart';
@@ -18,7 +19,7 @@ class SimSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('SIM & calling')),
+      appBar: AppBar(title: Text(AppLocalizations.of(context).titleSimCalling)),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
@@ -26,50 +27,50 @@ class SimSettingsScreen extends StatelessWidget {
           const SizedBox(height: 12),
           _SettingsSectionCard(
             icon: Icons.sim_card_outlined,
-            title: 'SIM Cards & Accounts',
-            subtitle: 'Default SIM, ask per call, and SIM colours',
+            title: AppLocalizations.of(context).labelSimCardsAccounts,
+            subtitle: AppLocalizations.of(context).descSimCardsAccounts,
             onTap: () => _push(context, const SimPreferencesScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsSectionCard(
             icon: Icons.verified_user_outlined,
-            title: 'Identification',
-            subtitle: 'Caller identification and spam filtering',
+            title: AppLocalizations.of(context).labelIdentification,
+            subtitle: AppLocalizations.of(context).descIdentification,
             onTap: () => _push(context, const IdentificationSettingsScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsSectionCard(
             icon: Icons.record_voice_over_outlined,
-            title: 'Spoken caller announcement',
-            subtitle: 'Announce caller\'s name over ringtone',
+            title: AppLocalizations.of(context).labelSpokenAnnouncement,
+            subtitle: AppLocalizations.of(context).descSpokenAnnouncement,
             onTap: () => _push(context, const SpokenAnnouncementsScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsSectionCard(
             icon: Icons.bedtime_outlined,
-            title: 'Relationship-tier quiet hours',
-            subtitle: 'Silence calls at night except for chosen relationship tiers',
+            title: AppLocalizations.of(context).labelTierQuietHours,
+            subtitle: AppLocalizations.of(context).descTierQuietHours,
             onTap: () => _push(context, const RelationshipQuietHoursScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsSectionCard(
             icon: Icons.sms_outlined,
-            title: 'Quick replies',
-            subtitle: 'Messages offered when rejecting a call with a text',
+            title: AppLocalizations.of(context).labelQuickReplies,
+            subtitle: AppLocalizations.of(context).descQuickReplies,
             onTap: () => _push(context, const QuickRepliesScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsSectionCard(
             icon: Icons.rate_review_outlined,
-            title: 'Post-call options',
-            subtitle: 'Configure the post-call feedback sheet',
+            title: AppLocalizations.of(context).labelPostCallOptions,
+            subtitle: AppLocalizations.of(context).descPostCallOptions,
             onTap: () => _push(context, const PostCallFeedbackScreen()),
           ),
           const SizedBox(height: 12),
           _SettingsSectionCard(
             icon: Icons.phone_forwarded_outlined,
-            title: 'Smart Redial & "Reach Me"',
-            subtitle: 'Auto-retry and reach-me SMS when calls are unanswered',
+            title: AppLocalizations.of(context).titleSmartRedialReachMe,
+            subtitle: AppLocalizations.of(context).descSmartRedialCard,
             onTap: () => _push(context, const SmartRedialSettingsScreen()),
           ),
         ],

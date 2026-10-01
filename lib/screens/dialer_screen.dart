@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:provider/provider.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/speed_dial_entry.dart';
 import 'package:smart_contacts_dialer/repositories/contact_repository.dart';
 import 'package:smart_contacts_dialer/repositories/speed_dial_repository.dart';
@@ -217,13 +218,15 @@ class DialerScreenState extends State<DialerScreen>
         await _loadSpeedDial();
         if (mounted) {
           final name = _speedDialEntries[slot]?.label ?? '';
-          _showMessage('Key $slot now calls $name');
+          _showMessage(
+            AppLocalizations.of(context).msgSpeedDialAssigned('$slot', name),
+          );
         }
       }
       return;
     }
 
-    _showMessage('Calling ${entry.label}…');
+    _showMessage(AppLocalizations.of(context).msgCallingName(entry.label));
     await startCall(
       contactId: entry.contactId,
       number: entry.phoneNumber,
@@ -378,7 +381,7 @@ class DialerScreenState extends State<DialerScreen>
     final name = match.contactName.trim().isEmpty
         ? match.number
         : match.contactName;
-    _showSnack('Calling $name…');
+    _showSnack(AppLocalizations.of(context).msgCallingName(name));
     _placeCall();
   }
 
@@ -453,7 +456,7 @@ class DialerScreenState extends State<DialerScreen>
   Future<void> _refreshSuggestions() async {
     final token = ++_queryToken;
     final query = _number;
-    if (query.isEmpty) {
+    if (query.isEmpty || widget.dtmfMode) {
       if (mounted) setState(() => _suggestions = const []);
       return;
     }
@@ -593,13 +596,17 @@ class DialerScreenState extends State<DialerScreen>
                   Navigator.of(context).pop();
                 }
               },
-              tooltip: widget.dtmfMode ? 'Hide keypad' : 'Back',
+              tooltip: widget.dtmfMode
+                  ? AppLocalizations.of(context).actionHideKeypad
+                  : AppLocalizations.of(context).tooltipBack,
             ),
           Expanded(
             child: Text(
               widget.dtmfMode
-                  ? 'Keypad (DTMF)'
-                  : (widget.addCallMode ? 'Add call' : 'Dialer'),
+                  ? AppLocalizations.of(context).titleKeypadDtmf
+                  : (widget.addCallMode
+                        ? AppLocalizations.of(context).titleAddCall
+                        : AppLocalizations.of(context).navDialer),
               style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
@@ -608,12 +615,15 @@ class DialerScreenState extends State<DialerScreen>
             ),
           ),
           PopupMenuButton<String>(
-            tooltip: 'More',
+            tooltip: AppLocalizations.of(context).tooltipMore,
             onSelected: (v) {
               if (v == 'settings') _openSettings();
             },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'settings', child: Text('Settings')),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'settings',
+                child: Text(AppLocalizations.of(context).titleSettings),
+              ),
             ],
             icon: Container(
               width: 38,
@@ -632,7 +642,8 @@ class DialerScreenState extends State<DialerScreen>
 
   Widget _numberDisplay(AppColors colors) {
     final defaultIso = context.watch<AppSettings>().defaultCountryIso;
-    final validation = _number.isNotEmpty
+    // Tone digits are not a phone number, so no "+91 …" check line for them.
+    final validation = _number.isNotEmpty && !widget.dtmfMode
         ? PhoneNormalizer.validateNumber(_number, defaultIso: defaultIso)
         : null;
 
@@ -671,7 +682,9 @@ class DialerScreenState extends State<DialerScreen>
                         focusedBorder: InputBorder.none,
                         contentPadding: EdgeInsets.zero,
                         isDense: true,
-                        hintText: 'Start typing to find a contact',
+                        hintText: AppLocalizations.of(
+                          context,
+                        ).hintStartTypingToFind,
                         hintStyle: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
@@ -683,10 +696,14 @@ class DialerScreenState extends State<DialerScreen>
                 ),
                 SizedBox(
                   width: 40,
-                  child: VoiceInputButton(
-                    tooltip: 'Voice dialing',
-                    onWords: _onVoiceWords,
-                  ),
+                  child: widget.dtmfMode
+                      ? null
+                      : VoiceInputButton(
+                          tooltip: AppLocalizations.of(
+                            context,
+                          ).tooltipVoiceDialing,
+                          onWords: _onVoiceWords,
+                        ),
                 ),
               ],
             ),
@@ -725,6 +742,10 @@ class DialerScreenState extends State<DialerScreen>
   }
 
   Widget _strip(AppColors colors) {
+    // Sending tones on a live call: no contact search, favorites or "Add to
+    // contacts". The empty space keeps the keypad where it is.
+    if (widget.dtmfMode) return const SizedBox.shrink();
+
     // Typing, with matches → live suggestions.
     if (_number.isNotEmpty && _suggestions.isNotEmpty) {
       final n = _suggestions.length;
@@ -732,7 +753,7 @@ class DialerScreenState extends State<DialerScreen>
         shrinkWrap: true,
         padding: const EdgeInsets.fromLTRB(16, 2, 16, 4),
         children: [
-          _header(n == 1 ? '1 match' : '$n matches', colors),
+          _header(AppLocalizations.of(context).labelMatchCount(n), colors),
           for (final m in _suggestions) _matchRow(m, colors, favorite: false),
         ],
       );
@@ -748,7 +769,7 @@ class DialerScreenState extends State<DialerScreen>
           Padding(
             padding: const EdgeInsets.fromLTRB(4, 18, 4, 4),
             child: Text(
-              'No saved contact for this number yet.',
+              AppLocalizations.of(context).emptyNoContactForNumber,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13.5,
@@ -768,7 +789,7 @@ class DialerScreenState extends State<DialerScreen>
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
-              'No contact matches "$_voiceQuery".',
+              AppLocalizations.of(context).emptyNoVoiceMatch(_voiceQuery!),
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13.5,
@@ -783,7 +804,10 @@ class DialerScreenState extends State<DialerScreen>
         shrinkWrap: true,
         padding: const EdgeInsets.fromLTRB(16, 2, 16, 4),
         children: [
-          _header('Heard "$_voiceQuery"', colors),
+          _header(
+            AppLocalizations.of(context).labelHeardQuery(_voiceQuery!),
+            colors,
+          ),
           for (final m in _voiceMatches) _matchRow(m, colors, favorite: false),
         ],
       );
@@ -795,7 +819,7 @@ class DialerScreenState extends State<DialerScreen>
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            'Star a contact to see it here',
+            AppLocalizations.of(context).emptyStarContact,
             textAlign: TextAlign.center,
             style: TextStyle(color: colors.mutedText, fontSize: 13.5),
           ),
@@ -807,14 +831,20 @@ class DialerScreenState extends State<DialerScreen>
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 4),
       children: [
         if (_favorites.isNotEmpty) ...[
-          _header('Favorites', colors),
+          _header(AppLocalizations.of(context).labelFavorites, colors),
           for (final m in _favorites) _matchRow(m, colors, favorite: true),
         ],
         if (_topContacts.isNotEmpty) ...[
           _header(switch (_topSource) {
-            DialerTopSource.relations => 'Family & friends',
-            DialerTopSource.likelyToAnswer => 'Likely to answer now',
-            DialerTopSource.recent => 'Top contacts',
+            DialerTopSource.relations => AppLocalizations.of(
+              context,
+            ).labelFamilyFriends,
+            DialerTopSource.likelyToAnswer => AppLocalizations.of(
+              context,
+            ).labelLikelyToAnswer,
+            DialerTopSource.recent => AppLocalizations.of(
+              context,
+            ).labelTopContacts,
           }, colors),
           for (final m in _topContacts) _matchRow(m, colors, favorite: true),
         ],
@@ -863,9 +893,9 @@ class DialerScreenState extends State<DialerScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Add to contacts',
-                      style: TextStyle(
+                    Text(
+                      AppLocalizations.of(context).actionAddToContacts,
+                      style: const TextStyle(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w800,
                       ),
@@ -959,7 +989,7 @@ class DialerScreenState extends State<DialerScreen>
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Call',
+                  tooltip: AppLocalizations.of(context).tooltipCall,
                   onPressed: hasNumber ? () => _callMatch(m) : null,
                   icon: Container(
                     width: 34,
@@ -1140,28 +1170,28 @@ class DialerScreenState extends State<DialerScreen>
             ),
             child: Material(
               color: Colors.transparent,
-              child: GestureDetector(
+              // Tones go out from raw pointer events, not a tap recognizer: the
+              // InkWell below would win the tap contest and a quick tap would
+              // then send no tone at all.
+              child: Listener(
                 behavior: HitTestBehavior.opaque,
-                onTapDown: (_) {
-                  if (widget.dtmfMode) {
-                    _telecom.playDtmf(k.digit);
-                  }
-                },
-                onTapUp: (_) {
-                  if (widget.dtmfMode) {
-                    _telecom.stopDtmf();
-                  }
-                },
-                onTapCancel: () {
-                  if (widget.dtmfMode) {
-                    _telecom.stopDtmf();
-                  }
-                },
+                onPointerDown: widget.dtmfMode
+                    ? (_) => _telecom.playDtmf(k.digit)
+                    : null,
+                onPointerUp: widget.dtmfMode
+                    ? (_) => _telecom.stopDtmf()
+                    : null,
+                onPointerCancel: widget.dtmfMode
+                    ? (_) => _telecom.stopDtmf()
+                    : null,
                 child: InkWell(
                   highlightColor: accent.withValues(alpha: 0.12),
                   splashColor: accent.withValues(alpha: 0.14),
                   onTap: () => _press(k.digit),
-                  onLongPress: isZero
+                  // No speed dial or '+' while sending tones on a live call.
+                  onLongPress: widget.dtmfMode
+                      ? null
+                      : isZero
                       ? () => _press('+')
                       : canSpeedDial
                       ? () => _onSpeedDialKeyLongPress(speedDialSlot)
@@ -1291,9 +1321,12 @@ class DialerScreenState extends State<DialerScreen>
               child: Center(
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.expand_more, size: 20),
-                  label: const Text(
-                    'Hide Keypad',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  label: Text(
+                    AppLocalizations.of(context).actionHideKeypad,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.white,
@@ -1382,7 +1415,7 @@ class DialerScreenState extends State<DialerScreen>
                         size: 22,
                       ),
                       onPressed: () {},
-                      tooltip: 'Backspace (hold to delete continuously)',
+                      tooltip: AppLocalizations.of(context).tooltipBackspace,
                     ),
                   )
                 : null,

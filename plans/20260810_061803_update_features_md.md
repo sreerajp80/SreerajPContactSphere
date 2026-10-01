@@ -28,7 +28,7 @@ An audit of the ContactSphere codebase (`lib/` Dart code and `android/` Kotlin c
 
 ## Proposed Changes
 
-### [MODIFY] `docs/features.md` (file:///l:/Android/SreerajPContactSphere/docs/features.md)
+### [MODIFY] `docs/features.md` (docs/features.md)
 - Update **Section 1 (Contacts management)**: Add Relationship-tier Quiet Hours filtering and allowed contacts configuration.
 - Update **Section 2 (Dialer / calling)**: Add Spoken Caller Announcements (English/Malayalam voice announcements over ringtone with quiet hours exception and test preview).
 - Update **Section 4 (Sharing / interoperability)**:

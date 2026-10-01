@@ -56,11 +56,11 @@ Transform `SecurityScreen` into a clean card hub:
 ## Files to Modify / Create
 
 ### Files to Modify:
-- [lib/screens/sim_settings_screen.dart](file:///l:/Android/SreerajPContactSphere/lib/screens/sim_settings_screen.dart)
-- [lib/screens/contacts_settings_screen.dart](file:///l:/Android/SreerajPContactSphere/lib/screens/contacts_settings_screen.dart)
-- [lib/screens/ringtone_settings_screen.dart](file:///l:/Android/SreerajPContactSphere/lib/screens/ringtone_settings_screen.dart)
-- [lib/screens/appearance_screen.dart](file:///l:/Android/SreerajPContactSphere/lib/screens/appearance_screen.dart)
-- [lib/screens/security_screen.dart](file:///l:/Android/SreerajPContactSphere/lib/screens/security_screen.dart)
+- [lib/screens/sim_settings_screen.dart](../lib/screens/sim_settings_screen.dart)
+- [lib/screens/contacts_settings_screen.dart](../lib/screens/contacts_settings_screen.dart)
+- [lib/screens/ringtone_settings_screen.dart](../lib/screens/ringtone_settings_screen.dart)
+- [lib/screens/appearance_screen.dart](../lib/screens/appearance_screen.dart)
+- [lib/screens/security_screen.dart](../lib/screens/security_screen.dart)
 
 ### Files to Create:
 - `lib/screens/sim_preferences_screen.dart`

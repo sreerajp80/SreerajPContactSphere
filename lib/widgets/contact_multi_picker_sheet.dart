@@ -9,6 +9,7 @@
 // caller diffs against [alreadyIn] to decide what to write.
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/contact.dart';
 import 'package:smart_contacts_dialer/repositories/contact_repository.dart';
 import 'package:smart_contacts_dialer/services/contact_sync_service.dart';
@@ -158,16 +159,20 @@ class _ContactMultiPickerSheetState extends State<ContactMultiPickerSheet> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: TextField(
                 autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search contacts',
-                  prefixIcon: Icon(Icons.search),
+                decoration: InputDecoration(
+                  hintText: AppLocalizations.of(context).hintSearchContacts,
+                  prefixIcon: const Icon(Icons.search),
                 ),
                 onChanged: (v) => setState(() => _query = v),
               ),
             ),
             Expanded(
               child: filtered.isEmpty && suggestions.isEmpty
-                  ? const Center(child: Text('No contacts found'))
+                  ? Center(
+                      child: Text(
+                        AppLocalizations.of(context).emptyNoContactsFound,
+                      ),
+                    )
                   : ListView.builder(
                       // Suggestions sit above the full list, behind a header
                       // row; the remaining indices are the list itself.
@@ -200,14 +205,14 @@ class _ContactMultiPickerSheetState extends State<ContactMultiPickerSheet> {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => Navigator.pop(context),
-                        child: const Text('Cancel'),
+                        child: Text(AppLocalizations.of(context).actionCancel),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: FilledButton(
                         onPressed: () => Navigator.pop(context, _selected),
-                        child: const Text('Add'),
+                        child: Text(AppLocalizations.of(context).actionAdd),
                       ),
                     ),
                   ],
@@ -228,7 +233,7 @@ class _ContactMultiPickerSheetState extends State<ContactMultiPickerSheet> {
           Icon(Icons.auto_awesome, size: 16, color: colors.mutedText),
           const SizedBox(width: 6),
           Text(
-            'Suggested',
+            AppLocalizations.of(context).labelSuggested,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
@@ -253,7 +258,7 @@ class _ContactMultiPickerSheetState extends State<ContactMultiPickerSheet> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
       child: Text(
-        'All contacts',
+        AppLocalizations.of(context).labelAllContacts,
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.w700,
@@ -270,7 +275,9 @@ class _ContactMultiPickerSheetState extends State<ContactMultiPickerSheet> {
       value: _selected.contains(id),
       onChanged: (v) => _toggle(id, v == true),
       title: Text(
-        s.contact.fullName.isEmpty ? '(No name)' : s.contact.fullName,
+        s.contact.fullName.isEmpty
+            ? AppLocalizations.of(context).labelNoName
+            : s.contact.fullName,
       ),
       subtitle: Text(
         s.peer.reason,
@@ -289,8 +296,14 @@ class _ContactMultiPickerSheetState extends State<ContactMultiPickerSheet> {
       // Members can't be unchecked here (removal is done from the contact
       // editor, or the tag screen for tags); keep them locked on.
       onChanged: member ? null : (v) => _toggle(id, v == true),
-      title: Text(c.fullName.isEmpty ? '(No name)' : c.fullName),
-      subtitle: member ? const Text('Already added') : null,
+      title: Text(
+        c.fullName.isEmpty
+            ? AppLocalizations.of(context).labelNoName
+            : c.fullName,
+      ),
+      subtitle: member
+          ? Text(AppLocalizations.of(context).labelAlreadyAdded)
+          : null,
       controlAffinity: ListTileControlAffinity.leading,
     );
   }

@@ -5,7 +5,7 @@ Users currently have to long-press the Call button or select text in the text bo
 
 ## Proposed Changes
 
-### [lib/screens/dialer_screen.dart](file:///l:/Android/SreerajPContactSphere/lib/screens/dialer_screen.dart)
+### [lib/screens/dialer_screen.dart](../lib/screens/dialer_screen.dart)
 
 1. **Add `_backspace()` method**:
    - Deletes selected text if there is an active selection in `_numberController`.

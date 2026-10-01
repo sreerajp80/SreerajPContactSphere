@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/services/contact_qr_safety_service.dart';
 
 enum ContactQrImportDecision { importSanitized, importOriginal, cancel }
@@ -30,23 +31,25 @@ class ContactQrPreviewDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final isSafe = report.isSafe;
     final isHighRisk = report.riskLevel == ContactQrRiskLevel.highRisk;
 
     final badgeColor = isSafe
         ? Colors.green
         : isHighRisk
-            ? Colors.red
-            : Colors.orange;
+        ? Colors.red
+        : Colors.orange;
 
     final badgeIcon = isSafe
         ? Icons.verified_user_outlined
         : isHighRisk
-            ? Icons.shield_outlined
-            : Icons.warning_amber_rounded;
+        ? Icons.shield_outlined
+        : Icons.warning_amber_rounded;
 
-    final contactsToPreview =
-        isHighRisk ? report.sanitizedContacts : report.originalContacts;
+    final contactsToPreview = isHighRisk
+        ? report.sanitizedContacts
+        : report.originalContacts;
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
@@ -58,7 +61,7 @@ class ContactQrPreviewDialog extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              isSafe ? 'Scanned Contact' : 'Security Check',
+              isSafe ? l10n.titleScannedContact : l10n.titleSecurityCheck,
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -123,7 +126,7 @@ class ContactQrPreviewDialog extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Contacts to Import (${contactsToPreview.length}):',
+              l10n.labelContactsToImport(contactsToPreview.length),
               style: theme.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -144,22 +147,30 @@ class ContactQrPreviewDialog extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      c.fullName.isNotEmpty ? c.fullName : 'Unnamed Contact',
+                      c.fullName.isNotEmpty
+                          ? c.fullName
+                          : l10n.labelUnnamedContact,
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     if (c.phoneNumbers.isNotEmpty)
                       Text(
-                        'Phones: ${c.phoneNumbers.map((p) => p.number).join(", ")}',
+                        l10n.labelPhonesList(
+                          c.phoneNumbers.map((p) => p.number).join(', '),
+                        ),
                         style: theme.textTheme.bodySmall,
                       ),
                     if (c.emails.isNotEmpty)
                       Text(
-                        'Emails: ${c.emails.map((e) => e.email).join(", ")}',
+                        l10n.labelEmailsList(
+                          c.emails.map((e) => e.email).join(', '),
+                        ),
                         style: theme.textTheme.bodySmall,
                       ),
                     if (c.socialLinks.isNotEmpty)
                       Text(
-                        'Web Links: ${c.socialLinks.map((s) => s.value).join(", ")}',
+                        l10n.labelWebLinksList(
+                          c.socialLinks.map((s) => s.value).join(', '),
+                        ),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: Colors.blue.shade700,
                         ),
@@ -173,21 +184,21 @@ class ContactQrPreviewDialog extends StatelessWidget {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(ContactQrImportDecision.cancel),
-          child: const Text('Cancel'),
+          onPressed: () =>
+              Navigator.of(context).pop(ContactQrImportDecision.cancel),
+          child: Text(l10n.actionCancel),
         ),
         if (!isSafe)
           TextButton(
             onPressed: () => Navigator.of(
               context,
             ).pop(ContactQrImportDecision.importSanitized),
-            child: const Text('Import Safe Only'),
+            child: Text(l10n.actionImportSafeOnly),
           ),
         FilledButton(
-          onPressed: () => Navigator.of(
-            context,
-          ).pop(ContactQrImportDecision.importOriginal),
-          child: Text(isSafe ? 'Import' : 'Import All'),
+          onPressed: () =>
+              Navigator.of(context).pop(ContactQrImportDecision.importOriginal),
+          child: Text(isSafe ? l10n.actionImport : l10n.actionImportAll),
         ),
       ],
     );

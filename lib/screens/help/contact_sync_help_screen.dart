@@ -8,6 +8,7 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
 class ContactSyncHelpScreen extends StatelessWidget {
@@ -16,93 +17,47 @@ class ContactSyncHelpScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Contact Sync')),
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context).helpContactSyncText),
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
-        children: const [
-          _Intro(
-            'Sync keeps the app and your phone in step. You control each '
-            'direction yourself — nothing here runs automatically. Open it from '
-            'Settings → Contacts → Device & cloud sync.',
-          ),
-          SizedBox(height: 24),
+        children: [
+          _Intro(AppLocalizations.of(context).helpContactSyncIntro),
+          const SizedBox(height: 24),
 
           _Section(
             icon: Icons.sync_outlined,
-            title: 'The two normal actions',
+            title: AppLocalizations.of(context).helpContactSyncTitle1,
             children: [
-              _Bullet(
-                'Add device contacts to app: copies the phone\'s address book '
-                'into the app. It only adds or updates — it never deletes.',
-              ),
-              _Bullet(
-                'Add app contacts to device: copies your app contacts into '
-                'the phone. It only adds or updates — it never deletes. Your '
-                '"Me" contact and secret contacts are never sent to the '
-                'phone.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpContactSyncBullet1),
+              _Bullet(AppLocalizations.of(context).helpContactSyncBullet2),
             ],
           ),
 
           _Section(
             icon: Icons.sync_problem_outlined,
-            title: 'Destructive sync',
+            title: AppLocalizations.of(context).helpContactSyncTitle2,
             children: [
-              _Bullet(
-                'The two "(destructive)" actions make the target an exact '
-                'copy of the source. As well as adding and updating, they '
-                'delete extras — so use them with care. Each one asks you to '
-                'confirm first.',
-              ),
-              _Bullet(
-                'Add device contacts to app (destructive): after importing, '
-                'it deletes app contacts that came from the phone but are no '
-                'longer on it. It never deletes your "Me" contact, your secret '
-                'contacts, or any contact you created only in the app.',
-              ),
-              _Bullet(
-                'Add app contacts to device (destructive): after copying, it '
-                'deletes device contacts that are not in the app. Device '
-                'contacts that match your "Me" contact or a secret contact '
-                'are never deleted, even though those are never copied to the '
-                'phone.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpContactSyncBullet3),
+              _Bullet(AppLocalizations.of(context).helpContactSyncBullet4),
+              _Bullet(AppLocalizations.of(context).helpContactSyncBullet5),
             ],
           ),
 
           _Section(
             icon: Icons.call_outlined,
-            title: 'Call log',
+            title: AppLocalizations.of(context).helpContactSyncTitle3,
             children: [
-              _Bullet(
-                'The phone\'s call log syncs into Recents on its own — when '
-                'the app starts, when you open Recents, and when a call ends. '
-                'Calls made from another dialer, or while the app was closed, '
-                'come in this way. You do not have to do anything.',
-              ),
-              _Bullet(
-                'Add device call log to app: brings in the phone\'s older call '
-                'history in one go, further back than the automatic sync '
-                'reaches. It skips calls the app already has, so running it '
-                'again is safe.',
-              ),
-              _Bullet(
-                'Add device call log to app (destructive): clears Recents and '
-                'rebuilds it from the phone\'s call log. Any call notes or '
-                'feedback you saved in the app are lost.',
-              ),
-              _Bullet(
-                'There is no "app to device" for the call log: Android owns '
-                'the phone\'s call log and records calls on its own.',
-              ),
+              _Bullet(AppLocalizations.of(context).helpContactSyncBullet6),
+              _Bullet(AppLocalizations.of(context).helpContactSyncBullet7),
+              _Bullet(AppLocalizations.of(context).helpContactSyncBullet8),
+              _Bullet(AppLocalizations.of(context).helpContactSyncBullet9),
             ],
           ),
 
-          SizedBox(height: 8),
-          _Footer(
-            'Tip: a destructive sync cannot be undone. If you are unsure, make a '
-            'backup first (Settings → Backup & Restore).',
-          ),
+          const SizedBox(height: 8),
+          _Footer(AppLocalizations.of(context).helpContactSyncFooter),
         ],
       ),
     );

@@ -1,7 +1,9 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/relationship.dart';
 import 'package:smart_contacts_dialer/screens/features_screen.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
@@ -16,15 +18,25 @@ Future<void> _pumpTall(WidgetTester tester) async {
   await tester.pumpWidget(
     MaterialApp(
       theme: AppTheme.calm(const Color(0xFF007A78)),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: const FeaturesScreen(),
     ),
   );
 }
 
-/// The page's own source. The claims this file guards are `const` strings, so
-/// reading the file is the cheapest way to assert on all of them at once —
-/// including the ones that must NOT be there.
-String _source() => File('lib/screens/features_screen.dart').readAsStringSync();
+/// The page's English text. The feature catalog lives in the ARB (keys
+/// starting with `feature`), so reading those entries is the cheapest way to
+/// assert on every claim at once — including the ones that must NOT be there.
+String _source() {
+  final arb =
+      jsonDecode(File('lib/l10n/app_en.arb').readAsStringSync())
+          as Map<String, dynamic>;
+  return [
+    for (final e in arb.entries)
+      if (e.key.startsWith('feature')) e.value.toString(),
+  ].join('\n');
+}
 
 void main() {
   testWidgets('FeaturesScreen renders every category', (tester) async {
@@ -134,6 +146,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         theme: AppTheme.calm(const Color(0xFF007A78)),
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         home: const FeaturesScreen(),
       ),
     );

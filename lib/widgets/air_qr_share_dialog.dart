@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import 'package:smart_contacts_dialer/models/air_qr_frame.dart';
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/contact.dart';
 import 'package:smart_contacts_dialer/services/air_qr_service.dart';
 import 'package:smart_contacts_dialer/services/vcard_service.dart';
@@ -104,25 +105,28 @@ class _AirQrShareDialogState extends State<AirQrShareDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final titleName = widget.contact?.fullName ??
-        '${widget.contacts?.length ?? 0} Contacts';
+    final l10n = AppLocalizations.of(context);
+    final titleName =
+        widget.contact?.fullName ??
+        l10n.labelContactCount(widget.contacts?.length ?? 0);
 
     if (_frames.isEmpty) {
       return AlertDialog(
         title: Text(titleName),
-        content: const Text('Could not generate AirQR payload for this contact.'),
+        content: Text(l10n.errorAirQrPayload),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+            child: Text(l10n.actionClose),
           ),
         ],
       );
     }
 
     final currentFrame = _frames[_currentIndex];
-    final frameTypeLabel =
-        currentFrame.isParity ? 'Fountain Parity' : 'Systematic Block';
+    final frameTypeLabel = currentFrame.isParity
+        ? l10n.labelFrameParity
+        : l10n.labelFrameSystematic;
 
     return AlertDialog(
       title: Text(titleName),
@@ -135,7 +139,7 @@ class _AirQrShareDialogState extends State<AirQrShareDialog> {
               const Icon(Icons.sensors, size: 16, color: Colors.blue),
               const SizedBox(width: 6),
               Text(
-                'Optical Air-Gap Stream (${_frames.length} frames)',
+                l10n.descAirGapStream(_frames.length),
                 style: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   color: Colors.blue.shade700,
@@ -156,15 +160,18 @@ class _AirQrShareDialogState extends State<AirQrShareDialog> {
                 data: currentFrame.toQrString(),
                 size: 240,
                 backgroundColor: Colors.white,
-                errorStateBuilder: (_, _) => const Center(
-                  child: Text('Frame rendering error'),
-                ),
+                errorStateBuilder: (_, _) =>
+                    Center(child: Text(l10n.errorFrameRender)),
               ),
             ),
           ),
           const SizedBox(height: 12),
           Text(
-            'Frame ${_currentIndex + 1} / ${_frames.length} • $frameTypeLabel',
+            l10n.labelFrameProgress(
+              _currentIndex + 1,
+              _frames.length,
+              frameTypeLabel,
+            ),
             style: theme.textTheme.bodySmall,
           ),
           const SizedBox(height: 8),
@@ -176,7 +183,9 @@ class _AirQrShareDialogState extends State<AirQrShareDialog> {
                 iconSize: 32,
                 color: theme.colorScheme.primary,
                 onPressed: _togglePlayPause,
-                tooltip: _isPlaying ? 'Pause stream' : 'Resume stream',
+                tooltip: _isPlaying
+                    ? l10n.tooltipPauseStream
+                    : l10n.tooltipResumeStream,
               ),
               const SizedBox(width: 16),
               ChoiceChip(
@@ -203,7 +212,7 @@ class _AirQrShareDialogState extends State<AirQrShareDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Close'),
+          child: Text(l10n.actionClose),
         ),
       ],
     );

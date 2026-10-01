@@ -1,6 +1,6 @@
 # Change Log: Fix Dialer Keypad Jumping When Typing
 
-**Plan Implemented:** [plans/20260727_192732_fix_dialer_jumping.md](file:///l:/Android/SreerajPContactSphere/plans/20260727_192732_fix_dialer_jumping.md)
+**Plan Implemented:** [plans/20260727_192732_fix_dialer_jumping.md](../plans/20260727_192732_fix_dialer_jumping.md)
 
 ## Summary of Changes
 - Modified `lib/screens/dialer_screen.dart`:

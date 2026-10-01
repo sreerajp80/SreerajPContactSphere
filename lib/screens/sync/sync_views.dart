@@ -5,6 +5,7 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/theme/app_theme.dart';
 
 /// Centred spinner + label. [fraction] draws a determinate ring when known.
@@ -79,7 +80,10 @@ class SyncResultView extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          FilledButton(onPressed: onDone, child: const Text('Done')),
+          FilledButton(
+            onPressed: onDone,
+            child: Text(AppLocalizations.of(context).actionDone),
+          ),
         ],
       ),
     );
@@ -179,6 +183,7 @@ class SyncLabeledValue extends StatelessWidget {
             ),
             IconButton(
               onPressed: onCopy,
+              tooltip: AppLocalizations.of(context).actionCopy,
               icon: const Icon(Icons.copy, size: 18),
               visualDensity: VisualDensity.compact,
             ),

@@ -8,6 +8,8 @@ package `in`.sreerajp.contact_sphere
  * obeying every system sound rule the platform would normally apply on our behalf.
  * Those rules used to be a single `when (ringerMode)`, which honoured silent/vibrate mode
  * but ignored both the user's "Vibrate for calls" system setting and Do Not Disturb.
+ * During DND "Priority only" the ringer mode apps see is forced to silent, so for a
+ * caller DND allows the phone's real ringer mode is used instead (see [decide]).
  *
  * Deliberately **pure**: no Android imports, no context, no I/O — just ints in, a
  * [Decision] out. That is what lets the whole ringing policy be unit tested on the plain
@@ -34,23 +36,44 @@ object RingerPolicy {
      * @param vibrateWhenRinging the user's system-wide "Vibrate for calls" setting —
      *   `Settings.System.VIBRATE_WHEN_RINGING`.
      * @param appVibrateEnabled the app's own "Vibrate on incoming calls" toggle.
+     * @param callerAllowedByDnd whether Do Not Disturb lets this caller through —
+     *   `NotificationManager.matchesCallFilter(Uri)`; null when it couldn't be checked.
+     * @param internalRingerMode the phone's real ringer mode — `Settings.Global.MODE_RINGER`;
+     *   null when it couldn't be read.
      */
     fun decide(
         ringerMode: Int,
         interruptionFilter: Int,
         vibrateWhenRinging: Boolean,
         appVibrateEnabled: Boolean,
+        callerAllowedByDnd: Boolean? = null,
+        internalRingerMode: Int? = null,
     ): Decision {
         // Do Not Disturb, total silence or alarms-only: neither sound nor vibration.
         // Checked before the ringer mode because these filters leave the ringer mode at
         // NORMAL on most devices, which is exactly why the old code rang straight through
-        // them. FILTER_PRIORITY deliberately still rings — see the class doc on the
-        // ACCESS_NOTIFICATION_POLICY trade-off.
+        // them.
         if (interruptionFilter == FILTER_NONE || interruptionFilter == FILTER_ALARMS) {
             return Decision(playSound = false, vibrate = false)
         }
 
-        return when (ringerMode) {
+        // DND "Priority only" (which Google's Driving mode uses) reports the ringer mode
+        // to apps as SILENT while the phone's real mode stays NORMAL — so reading
+        // AudioManager alone silenced every call, even callers DND lets through. For a
+        // caller DND has allowed, use the real mode instead (still honouring a phone the
+        // user really set to silent/vibrate). Anything unknown keeps the app-facing
+        // mode, so a caller DND blocks is never rung.
+        val effectiveMode =
+            if (interruptionFilter == FILTER_PRIORITY &&
+                callerAllowedByDnd == true &&
+                internalRingerMode != null
+            ) {
+                internalRingerMode
+            } else {
+                ringerMode
+            }
+
+        return when (effectiveMode) {
             MODE_SILENT -> Decision(playSound = false, vibrate = false)
 
             // Vibrate mode: the phone must buzz — that is the whole point of the mode — so

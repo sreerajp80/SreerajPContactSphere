@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:smart_contacts_dialer/models/call_state.dart';
 import 'package:smart_contacts_dialer/models/sim_account.dart';
 import 'package:smart_contacts_dialer/repositories/interaction_repository.dart';
@@ -17,7 +18,6 @@ import 'package:smart_contacts_dialer/state/app_settings.dart';
 import 'package:smart_contacts_dialer/widgets/post_call_feedback_sheet.dart';
 import 'package:smart_contacts_dialer/widgets/sim_picker_sheet.dart';
 import 'package:smart_contacts_dialer/widgets/smart_redial_sheet.dart';
-
 
 /// Shared "place a call → reconcile on resume → ask for feedback" behaviour for
 /// any screen that can start a call (dialer, contact detail, contact list).
@@ -160,9 +160,13 @@ mixin CallLifecycleMixin<T extends StatefulWidget>
       _sawOngoing = false;
       _pendingOutcome = null;
     } on CallPermissionDeniedException {
-      _showMessage('Call permission denied');
+      if (mounted) {
+        _showMessage(AppLocalizations.of(context).errorCallPermissionDenied);
+      }
     } catch (e) {
-      _showMessage('Could not place call: $e');
+      if (mounted) {
+        _showMessage(AppLocalizations.of(context).errorCouldNotPlaceCall('$e'));
+      }
     }
   }
 
@@ -199,7 +203,7 @@ mixin CallLifecycleMixin<T extends StatefulWidget>
           context,
           sims: sims,
           preselectedId: resolved?.phoneAccountId,
-          preselectedNote: 'Usual SIM for this call',
+          preselectedNote: AppLocalizations.of(context).labelUsualSimForCall,
         );
         return chosen ?? _aborted;
       }
@@ -281,7 +285,6 @@ mixin CallLifecycleMixin<T extends StatefulWidget>
       }
 
       if (mounted) onCallReconciled();
-
     } finally {
       _reconciling = false;
     }

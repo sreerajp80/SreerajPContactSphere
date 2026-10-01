@@ -157,6 +157,17 @@ android {
         }
     }
 
+    bundle {
+        // Play splits an App Bundle by language by default, so a device set to
+        // English would only receive English resources. The in-app language
+        // picker lets a user pick Malayalam or Sanskrit on any device, so every
+        // language must ship to every device. Required by engineering standard
+        // section 8.1.
+        language {
+            enableSplit = false
+        }
+    }
+
     flavorDimensions += "env"
 
     productFlavors {

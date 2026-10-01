@@ -10,6 +10,10 @@
 
 import 'package:flutter/material.dart';
 
+/// Bundled font family (pubspec.yaml) that supplies Devanagari glyphs for the
+/// Sanskrit UI. Used only as a fallback, never as a pickable font.
+const String kDevanagariFontFamily = 'Noto Sans Devanagari';
+
 /// A relationship-health mood derived from a 0–100 score. Mirrors the `mood()`
 /// function in the design mockup.
 class Mood {
@@ -257,6 +261,10 @@ class AppTheme {
       scaffoldBackgroundColor: background,
       // The user-picked bundled font, or the platform default (Roboto).
       fontFamily: fontFamily ?? 'Roboto',
+      // None of the pickable fonts carry Devanagari, so the Sanskrit (sa) UI
+      // falls through to the bundled Noto Sans Devanagari (standard §8.3.3)
+      // instead of whatever the device happens to have.
+      fontFamilyFallback: const [kDevanagariFontFamily],
     );
     return base.copyWith(
       extensions: <ThemeExtension<dynamic>>[extension],

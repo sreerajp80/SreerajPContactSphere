@@ -10,7 +10,7 @@ Updating Section 12 to accurately reflect the modular sub-page layout of the Set
 
 ## Proposed Changes
 
-### [MODIFY] [docs/features.md](file:///l:/Android/SreerajPContactSphere/docs/features.md)
+### [MODIFY] [docs/features.md](../docs/features.md)
 
 1. **Section 12 (Settings screen)**:
    - Re-structure Section 12 to document the modular sub-page architecture of the Settings hub:

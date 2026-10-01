@@ -50,6 +50,56 @@ void main() {
       expect(state.heldPhase, CallPhase.none);
     });
 
+    test('parses conference participants and the held-conference flag', () {
+      final state = CallState.fromMap(const {
+        'state': 'active',
+        'isConference': true,
+        'heldIsConference': true,
+        'participants': [
+          {
+            'callId': 3,
+            'number': '5550100',
+            'state': 'active',
+            'canDisconnect': true,
+            'canSeparate': false,
+          },
+          {'callId': 4, 'number': null, 'state': 'holding'},
+          // No id: can't be acted on, so it is skipped.
+          {'number': '5550111', 'state': 'active'},
+          'not a map',
+        ],
+      });
+
+      expect(state.heldIsConference, isTrue);
+      expect(state.participants, hasLength(2));
+      final first = state.participants.first;
+      expect(first.callId, 3);
+      expect(first.number, '5550100');
+      expect(first.phase, CallPhase.active);
+      expect(first.canDisconnect, isTrue);
+      expect(first.canSeparate, isFalse);
+      final second = state.participants.last;
+      expect(second.number, isNull);
+      expect(second.phase, CallPhase.holding);
+      expect(second.canDisconnect, isFalse);
+    });
+
+    test('participants default to empty when absent or malformed', () {
+      expect(
+        CallState.fromMap(const {'state': 'active'}).participants,
+        isEmpty,
+      );
+      expect(
+        CallState.fromMap(const {
+          'state': 'active',
+          'participants': 'oops',
+        }).participants,
+        isEmpty,
+      );
+      expect(CallState.none.participants, isEmpty);
+      expect(CallState.none.heldIsConference, isFalse);
+    });
+
     test('CallState.none carries no held call', () {
       expect(CallState.none.heldNumber, isNull);
       expect(CallState.none.heldPhase, CallPhase.none);
@@ -99,5 +149,18 @@ void main() {
         expect(calls.first.arguments, {'digit': '5'});
       },
     );
+
+    test('participant controls forward the call id', () async {
+      final telecom = TelecomService();
+      await telecom.disconnectParticipant(7);
+      await telecom.separateParticipant(8);
+
+      expect(calls.map((c) => c.method), [
+        'disconnectParticipant',
+        'separateParticipant',
+      ]);
+      expect(calls[0].arguments, {'callId': 7});
+      expect(calls[1].arguments, {'callId': 8});
+    });
   });
 }

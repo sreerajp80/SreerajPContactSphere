@@ -22,7 +22,7 @@ but the import path's `findMatch` does not — this is the inconsistency.
 
 ### Call log repository
 
-#### [MODIFY] [call_log_repository.dart](file:///l:/Android/SreerajPContactSphere/lib/repositories/call_log_repository.dart)
+#### [MODIFY] [call_log_repository.dart](../lib/repositories/call_log_repository.dart)
 
 - Add an optional `bool? isOutgoing` parameter to `findMatch()`.
 - When provided, skip candidates whose direction doesn't match
@@ -33,7 +33,7 @@ but the import path's `findMatch` does not — this is the inconsistency.
 
 ### Call log import service
 
-#### [MODIFY] [call_log_import_service.dart](file:///l:/Android/SreerajPContactSphere/lib/services/call_log_import_service.dart)
+#### [MODIFY] [call_log_import_service.dart](../lib/services/call_log_import_service.dart)
 
 - Pass the mapped `callType`'s direction to `findMatch()` so the import never
   cross-matches an incoming device entry against an outgoing stored row (or
@@ -41,14 +41,14 @@ but the import path's `findMatch` does not — this is the inconsistency.
 
 ### Outgoing outcome drain (CallEventLogger)
 
-#### [MODIFY] [call_event_logger.dart](file:///l:/Android/SreerajPContactSphere/lib/services/call_event_logger.dart)
+#### [MODIFY] [call_event_logger.dart](../lib/services/call_event_logger.dart)
 
 - The `drainOutgoingOutcomes` path also calls `findMatch`. Pass
   `isOutgoing: true` there (these are always outgoing outcomes).
 
 ### Existing tests
 
-#### [MODIFY] [call_log_matching_test.dart](file:///l:/Android/SreerajPContactSphere/test/call_log_matching_test.dart)
+#### [MODIFY] [call_log_matching_test.dart](../test/call_log_matching_test.dart)
 
 - Add a test: an outgoing stored row and an incoming device entry within
   the match window must **not** match.

@@ -4,10 +4,10 @@
 Audited the ContactSphere codebase against `docs/features.md` to ensure all app features, architecture layers, settings screens, security measures, sync options, and native Kotlin integrations are fully, accurately, and completely documented.
 
 ## Plan Implemented
-- [plans/20260810_104500_audit_features_doc.md](file:///l:/Android/SreerajPContactSphere/plans/20260810_104500_audit_features_doc.md)
+- [plans/20260810_104500_audit_features_doc.md](../plans/20260810_104500_audit_features_doc.md)
 
 ## Changes Made
-- Updated [docs/features.md](file:///l:/Android/SreerajPContactSphere/docs/features.md) header timestamp note to indicate the document has been fully audited and verified accurate as of August 10, 2026.
+- Updated [docs/features.md](../docs/features.md) header timestamp note to indicate the document has been fully audited and verified accurate as of August 10, 2026.
 - Confirmed comprehensive coverage across all 13 core sections, including:
   1. Contacts management & relationship sphere, relationship quiet hours, streak badges, tamper-evident audit logging, and ephemeral contact auto-scrubbing.
   2. T9 multi-script dialer, voice dialing, caller context, Smart Redial, missed-call handling, canned SMS quick replies, spoken caller announcements, pre-ring call screening, and identification settings.

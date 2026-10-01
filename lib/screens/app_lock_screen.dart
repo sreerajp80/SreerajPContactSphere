@@ -1,4 +1,5 @@
 // lib/screens/app_lock_screen.dart
+import 'package:smart_contacts_dialer/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -17,7 +18,7 @@ import 'package:smart_contacts_dialer/widgets/pin_keypad.dart';
 /// * [LockMode.deviceLock] prompts for the device credential (biometrics / PIN)
 ///   via [AuthService] on first show, with an Unlock button to retry.
 /// * [LockMode.appPin] shows an in-app numeric keypad verified by
-///   [AppPinService], plus a "Forgot PIN?" path that accepts the recovery code,
+///   [AppPinService], plus a AppLocalizations.of(context).actionForgotPin path that accepts the recovery code,
 ///   turns App lock off, and lets the user in.
 class AppLockScreen extends StatefulWidget {
   final LockMode mode;
@@ -81,7 +82,9 @@ class _DeviceUnlockState extends State<_DeviceUnlock> {
   Future<void> _unlock() async {
     if (_authenticating) return;
     setState(() => _authenticating = true);
-    final ok = await _auth.authenticate(reason: 'Unlock SreerajP Contacts Sphere');
+    final ok = await _auth.authenticate(
+      reason: AppLocalizations.of(context).descUnlockReason,
+    );
     if (!mounted) return;
     if (ok) {
       Navigator.of(context).pop(true);
@@ -104,13 +107,13 @@ class _DeviceUnlockState extends State<_DeviceUnlock> {
           children: [
             _LockBadge(accent: accent),
             const SizedBox(height: 24),
-            const Text(
-              'SreerajP Contacts Sphere is locked',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+            Text(
+              AppLocalizations.of(context).titleAppLocked,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
             Text(
-              'Unlock with your fingerprint, face or device PIN to continue',
+              AppLocalizations.of(context).descUnlockDevice,
               textAlign: TextAlign.center,
               style: TextStyle(color: colors.mutedText, fontSize: 14),
             ),
@@ -124,7 +127,11 @@ class _DeviceUnlockState extends State<_DeviceUnlock> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.lock_open_outlined),
-              label: Text(_authenticating ? 'Unlocking…' : 'Unlock'),
+              label: Text(
+                _authenticating
+                    ? AppLocalizations.of(context).labelUnlocking
+                    : AppLocalizations.of(context).actionUnlock,
+              ),
             ),
           ],
         ),
@@ -213,13 +220,15 @@ class _PinUnlockState extends State<_PinUnlock> {
           const SizedBox(height: 24),
           _LockBadge(accent: accent),
           const SizedBox(height: 20),
-          const Text(
-            'SreerajP Contacts Sphere is locked',
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+          Text(
+            AppLocalizations.of(context).titleAppLocked,
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 8),
           Text(
-            _error ? 'Wrong PIN — try again' : 'Enter your app PIN to continue',
+            _error
+                ? AppLocalizations.of(context).errorWrongPinTryAgain
+                : AppLocalizations.of(context).descEnterAppPin,
             textAlign: TextAlign.center,
             style: TextStyle(
               color: _error ? theme.colorScheme.error : colors.mutedText,
@@ -233,7 +242,7 @@ class _PinUnlockState extends State<_PinUnlock> {
           const SizedBox(height: 12),
           TextButton(
             onPressed: _checking ? null : _forgotPin,
-            child: const Text('Forgot PIN?'),
+            child: Text(AppLocalizations.of(context).actionForgotPin),
           ),
         ],
       ),
@@ -289,23 +298,22 @@ class _RecoveryDialogState extends State<_RecoveryDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Enter recovery code'),
+      title: Text(AppLocalizations.of(context).titleEnterRecoveryCode),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Enter the recovery code you saved when setting the PIN. This turns '
-            'App lock off so you can set a new PIN.',
-          ),
+          Text(AppLocalizations.of(context).descEnterRecoveryCode),
           const SizedBox(height: 16),
           TextField(
             controller: _controller,
             autofocus: true,
             textCapitalization: TextCapitalization.characters,
             decoration: InputDecoration(
-              labelText: 'Recovery code',
-              errorText: _error ? 'Incorrect code' : null,
+              labelText: AppLocalizations.of(context).labelRecoveryCode,
+              errorText: _error
+                  ? AppLocalizations.of(context).errorIncorrectCode
+                  : null,
               border: const OutlineInputBorder(),
             ),
             onSubmitted: (_) => _submit(),
@@ -315,7 +323,7 @@ class _RecoveryDialogState extends State<_RecoveryDialog> {
       actions: [
         TextButton(
           onPressed: _checking ? null : () => Navigator.of(context).pop(false),
-          child: const Text('Cancel'),
+          child: Text(AppLocalizations.of(context).actionCancel),
         ),
         FilledButton(
           onPressed: _checking ? null : _submit,
@@ -325,7 +333,7 @@ class _RecoveryDialogState extends State<_RecoveryDialog> {
                   height: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Unlock'),
+              : Text(AppLocalizations.of(context).actionUnlock),
         ),
       ],
     );

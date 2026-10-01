@@ -18,7 +18,10 @@ class CallLogRepository {
   /// Pass [offset] to page further back in history — Recents loads the next
   /// page as the user scrolls, so a full device-log import stays reachable
   /// instead of being cut off at the first page.
-  Future<List<CallRecord>> recentCalls({int limit = 300, int offset = 0}) async {
+  Future<List<CallRecord>> recentCalls({
+    int limit = 300,
+    int offset = 0,
+  }) async {
     final db = await _dbHelper.database;
     final rows = await db.rawQuery(
       '''
@@ -103,6 +106,101 @@ class CallLogRepository {
         if (usePhonetic) ...['$code%', '% $code%'],
         limit,
       ],
+    );
+    return rows.map((r) {
+      final name = (r['contact_name'] as String?)?.trim();
+      final normalized = Map<String, dynamic>.of(r);
+      normalized['contact_name'] = (name == null || name.isEmpty) ? null : name;
+      return CallRecord.fromJoinedMap(normalized);
+    }).toList();
+  }
+
+  /// Calls with one saved contact, newest first — the contact screen's History
+  /// tab.
+  ///
+  /// Includes calls linked to [contactId], plus calls linked to nobody whose
+  /// number matches one of the contact's [numbers] (by [matchKey], so the
+  /// `+91…`, `0…` and bare forms are one number). The second part picks up
+  /// calls logged before the contact was saved. Calls linked to a *different*
+  /// contact are never included.
+  Future<List<CallRecord>> callsForContact(
+    int contactId,
+    List<String> numbers, {
+    int limit = 500,
+  }) async {
+    final keys = _digitKeys(numbers);
+    final numberMatch = keys.isEmpty
+        ? ''
+        : 'OR (cl.contact_id IS NULL AND ('
+              '${List.filled(keys.length, '$_digitsExpr LIKE ?').join(' OR ')}'
+              '))';
+    final rows = await _joinedCalls('cl.contact_id = ? $numberMatch', [
+      contactId,
+      for (final k in keys) '%$k',
+    ], limit);
+    return rows
+        .where(
+          (c) =>
+              c.contactId == contactId ||
+              keys.contains(matchKey(c.phoneNumber)),
+        )
+        .toList();
+  }
+
+  /// Every call with [number], linked to a contact or not, newest first — the
+  /// History tab for a number that is not saved as a contact. Matches by
+  /// [matchKey], like [callsForContact].
+  Future<List<CallRecord>> callsForNumber(
+    String number, {
+    int limit = 500,
+  }) async {
+    final keys = _digitKeys([number]);
+    if (keys.isEmpty) return const <CallRecord>[];
+    final key = keys.first;
+    final rows = await _joinedCalls('$_digitsExpr LIKE ?', ['%$key'], limit);
+    return rows.where((c) => matchKey(c.phoneNumber) == key).toList();
+  }
+
+  /// `cl.phone_number` with the usual separators stripped, for a suffix match
+  /// against a [matchKey]. The SQL match is only a first cut: a short code
+  /// would also match any longer number ending in it, so callers re-check each
+  /// row with [matchKey] in Dart.
+  static const String _digitsExpr =
+      'REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE('
+      "cl.phone_number, ' ', ''), '-', ''), '(', ''), ')', ''), '+', ''), '.', '')";
+
+  /// The distinct digit-only [matchKey]s of [numbers]. Numbers with no digits
+  /// (e.g. "Private") are dropped — there is nothing to match them on.
+  static List<String> _digitKeys(List<String> numbers) => {
+    for (final n in numbers)
+      if (RegExp(r'\d').hasMatch(n)) matchKey(n),
+  }.toList();
+
+  /// Call rows joined to the contact's name and photo, filtered by [where],
+  /// newest first. Shared by the per-contact and per-number lookups.
+  Future<List<CallRecord>> _joinedCalls(
+    String where,
+    List<Object?> args,
+    int limit,
+  ) async {
+    final db = await _dbHelper.database;
+    final rows = await db.rawQuery(
+      '''
+      SELECT cl.*,
+             c.photo_path AS photo_path,
+             TRIM(
+               COALESCE(c.salutation || ' ', '') ||
+               COALESCE(c.first_name, '') ||
+               COALESCE(' ' || c.middle_name, '') ||
+               COALESCE(' ' || c.last_name, '')
+             ) AS contact_name
+      FROM call_logs cl
+      LEFT JOIN contacts c ON c.id = cl.contact_id
+      WHERE $where
+      ORDER BY cl.timestamp DESC
+      LIMIT ?
+      ''',
+      [...args, limit],
     );
     return rows.map((r) {
       final name = (r['contact_name'] as String?)?.trim();
@@ -246,7 +344,10 @@ class CallLogRepository {
   Future<int> mergeDuplicateCalls() async {
     final db = await _dbHelper.database;
     return db.transaction<int>((txn) async {
-      final rows = await txn.query('call_logs', orderBy: 'timestamp ASC, id ASC');
+      final rows = await txn.query(
+        'call_logs',
+        orderBy: 'timestamp ASC, id ASC',
+      );
       // Survivor per (match key + type), tracked with the time it sits at
       // so a long run of calls to one number only merges the close pairs.
       final kept = <String, Map<String, Object?>>{};

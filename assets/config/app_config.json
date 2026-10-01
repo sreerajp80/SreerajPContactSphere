@@ -1,13 +1,37 @@
 {
-  "appName": "SreerajP Contacts Sphere",
-  "description": "Advanced contacts and dialer app with SQLite.",
-  "version": "15.17.12",
-  "build": "95",
+  "appName": {
+    "en": "SreerajP Contacts Sphere",
+    "ml": "ശ്രീരാജ്പി കോൺടാക്ട്സ് സ്ഫിയർ",
+    "sa": "श्रीराजपी काण्टाक्ट्स् स्फियर्"
+  },
+  "description": {
+    "en": "Advanced contacts and dialer app with SQLite.",
+    "ml": "SQLite ഉപയോഗിക്കുന്ന നൂതനമായ വിലാസവിവര, ഡയലർ ആപ്പ്.",
+    "sa": "SQLite-आधारितः उन्नतः सम्पर्क-आह्वानानुप्रयोगः।"
+  },
+  "version": "15.17.14",
+  "build": "97",
   "details": {
-    "Author": "Sreeraj P",
-    "Email": "sreerajp@zohomail.in",
-    "License": "All libraries used are open source.",
-    "AI used": "Anthropic Claude, Gemini 3.6 Flash",
-    "IDE used": "Visual Studio Code, Antigravity"
+    "author": {
+      "en": "Sreeraj P",
+      "ml": "ശ്രീരാജ് പി",
+      "sa": "श्रीराजः पी"
+    },
+    "email": "sreerajp@zohomail.in",
+    "license": {
+      "en": "All libraries used are open source.",
+      "ml": "ഉപയോഗിച്ച എല്ലാ ലൈബ്രറികളും ഓപ്പൺ സോഴ്സ് ആണ്.",
+      "sa": "सर्वाणि प्रयुक्तानि पुस्तकालयानि मुक्तस्रोतानि सन्ति।"
+    },
+    "aiUsed": {
+      "en": "Anthropic Claude, Gemini 3.6 Flash",
+      "ml": "ആന്ത്രോപിക് ക്ലോഡ്, ജെമിനി 3.6 ഫ്ലാഷ്",
+      "sa": "आन्थ्रोपिक् क्लोड्, जेमिनि 3.6 फ्लाश्"
+    },
+    "ideUsed": {
+      "en": "Visual Studio Code, Antigravity",
+      "ml": "വിഷ്വൽ സ്റ്റുഡിയോ കോഡ്, ആന്റിഗ്രാവിറ്റി",
+      "sa": "विष्वल् स्टुडियो कोड्, आन्टिग्राविटि"
+    }
   }
 }
